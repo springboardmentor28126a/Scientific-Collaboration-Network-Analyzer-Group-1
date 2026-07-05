@@ -38,6 +38,7 @@ class User(Base):
     # ↑ onupdate=func.now() → SQLAlchemy sets this automatically whenever you .commit() a change
     # NOTE: this only fires through SQLAlchemy, not raw SQL updates
 
+    researcher = relationship("Researcher", back_populates="user", uselist=False)
     #researcher = relationship("Researcher", back_populates="user", uselist=False)
     # ↑ NOT a database column — pure Python convenience.
     # Lets you write `some_user.researcher` to get the linked Researcher object
