@@ -3,8 +3,12 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from app.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+from urllib.parse import quote_plus
 
+DATABASE_URL = (
+    f"postgresql://{DB_USER}:{quote_plus(DB_PASSWORD)}@"
+    f"{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(
