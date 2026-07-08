@@ -1,7 +1,7 @@
+from app.routers import publication
+from app.models.publication import Publication
+
 from app.routers import researcher
-
-
-
 
 from app.models.researcher import Researcher
 from app.routers import user
@@ -13,9 +13,12 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-app.include_router(researcher.router)
+
 
 app.include_router(user.router)
+app.include_router(researcher.router)
+
+app.include_router(publication.router)
 @app.get("/")
 def home():
     return {"message": "Welcome to Scientific Collaboration Network Analyzer"}

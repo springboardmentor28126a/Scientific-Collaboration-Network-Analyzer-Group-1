@@ -6,8 +6,11 @@ class Researcher(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+
     full_name = Column(String)
+    academic_profile = Column(String)
     department = Column(String)
     institution = Column(String)
-    designation = Column(String)
+    skills = Column(String)
     research_interest = Column(String)
+    affiliations = Column(String)

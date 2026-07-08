@@ -1,6 +1,4 @@
-from fastapi import HTTPException
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.database import SessionLocal
@@ -20,15 +18,21 @@ def get_db():
     finally:
         db.close()
 
+
 @router.post("/", response_model=ResearcherResponse)
-def create_researcher(researcher: ResearcherCreate, db: Session = Depends(get_db)):
+def create_researcher(
+    researcher: ResearcherCreate,
+    db: Session = Depends(get_db)
+):
     new_researcher = Researcher(
         user_id=researcher.user_id,
         full_name=researcher.full_name,
+        academic_profile=researcher.academic_profile,
         department=researcher.department,
         institution=researcher.institution,
-        designation=researcher.designation,
-        research_interest=researcher.research_interest
+        skills=researcher.skills,
+        research_interest=researcher.research_interest,
+        affiliations=researcher.affiliations
     )
 
     db.add(new_researcher)
@@ -37,16 +41,24 @@ def create_researcher(researcher: ResearcherCreate, db: Session = Depends(get_db
 
     return new_researcher
 
+
 @router.get("/{researcher_id}", response_model=ResearcherResponse)
-def get_researcher(researcher_id: int, db: Session = Depends(get_db)):
+def get_researcher(
+    researcher_id: int,
+    db: Session = Depends(get_db)
+):
     researcher = db.query(Researcher).filter(
         Researcher.id == researcher_id
     ).first()
 
     if not researcher:
-        raise HTTPException(status_code=404, detail="Researcher not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Researcher not found"
+        )
 
     return researcher
+
 
 @router.put("/{researcher_id}", response_model=ResearcherResponse)
 def update_researcher(
@@ -59,14 +71,19 @@ def update_researcher(
     ).first()
 
     if not researcher:
-        raise HTTPException(status_code=404, detail="Researcher not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Researcher not found"
+        )
 
     researcher.user_id = updated_data.user_id
     researcher.full_name = updated_data.full_name
+    researcher.academic_profile = updated_data.academic_profile
     researcher.department = updated_data.department
     researcher.institution = updated_data.institution
-    researcher.designation = updated_data.designation
+    researcher.skills = updated_data.skills
     researcher.research_interest = updated_data.research_interest
+    researcher.affiliations = updated_data.affiliations
 
     db.commit()
     db.refresh(researcher)
@@ -75,15 +92,23 @@ def update_researcher(
 
 
 @router.delete("/{researcher_id}")
-def delete_researcher(researcher_id: int, db: Session = Depends(get_db)):
+def delete_researcher(
+    researcher_id: int,
+    db: Session = Depends(get_db)
+):
     researcher = db.query(Researcher).filter(
         Researcher.id == researcher_id
     ).first()
 
     if not researcher:
-        raise HTTPException(status_code=404, detail="Researcher not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Researcher not found"
+        )
 
     db.delete(researcher)
     db.commit()
 
-    return {"message": "Researcher deleted successfully"}
+    return {
+        "message": "Researcher deleted successfully"
+    }
