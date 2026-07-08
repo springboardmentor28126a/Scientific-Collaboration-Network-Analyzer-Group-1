@@ -1,16 +1,16 @@
-# from flask_sqlalchemy import SQLAlchemy
-
-# db = SQLAlchemy()
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "sqlite:///./scientific_collaboration.db"
+DATABASE_URL = (
+    "postgresql+psycopg2://"
+    "postgres.ejjalcfggrwadhhzatem:Tejeswararao@"
+    "aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+    "?sslmode=require"
+)
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    connect_args={"sslmode": "require"}
 )
 
 SessionLocal = sessionmaker(

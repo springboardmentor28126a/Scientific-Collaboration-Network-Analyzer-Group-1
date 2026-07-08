@@ -1,14 +1,14 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Publications from "./pages/Publications";
+import Register from "./pages/Register";
 import ResearcherProfile from "./pages/ResearcherProfile";
 
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         <Route path="/" element={<Login />} />
@@ -19,8 +19,10 @@ function App() {
 
         <Route path="/profile" element={<ResearcherProfile />} />
 
-      </Routes>
+        {/* Publication Module */}
+        <Route path="/publications" element={<Publications />} />
 
+      </Routes>
     </BrowserRouter>
   );
 }
