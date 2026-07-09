@@ -24,7 +24,7 @@ def create_user(db: Session, name: str, email: str, password: str):
 
     
 def login_user(user, db):
-    db_user = db.query(User).filter(User.email == user.email).first()
+    db_user = db.query(User).filter(User.email == user.username).first()
 
     if not db_user:
         return {"message": "Invalid email"}

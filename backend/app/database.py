@@ -18,6 +18,7 @@ SessionLocal = sessionmaker(
 )
 
 from app.models.user_model import Base
+from app.models import researcher_model
 
 Base.metadata.create_all(bind=engine)
 
