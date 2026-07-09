@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="auth-page">
+    <form class="auth-card" id="registerForm">
+      <p class="eyebrow">Create account</p>
+      <h1>Register</h1>
+      <label>Username</label>
+      <input name="username" required>
+      <label>Email</label>
+      <input name="email" type="email" required>
+      <label>Password</label>
+      <input name="password" type="password" required>
+      <label>Role</label>
+      <select name="role" required>
+        <option value="Researcher">Researcher</option>
+        <option value="Institution Admin">Institution Admin</option>
+        <option value="Reviewer">Reviewer</option>
+        <option value="System Admin">System Admin</option>
+      </select>
+      <button type="submit">Create account</button>
+      <p class="subtle">Already registered? <a href="{{ url_for('login_page') }}">Login</a>.</p>
+    </form>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/auth-page.js') }}"></script>
+{% endblock scripts %}

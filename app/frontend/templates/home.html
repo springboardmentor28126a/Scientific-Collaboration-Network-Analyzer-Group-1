@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Scientific Collaboration Network Analyzer</p>
+        <h1>Research collaboration management dashboard</h1>
+        <p class="subtle">Track the high-level state of users, researchers, publications, projects, and partnerships.</p>
+      </div>
+      <a class="btn btn-dark" href="/docs" target="_blank">API Docs</a>
+    </section>
+
+    <section class="metric-grid" id="metrics">
+      <div class="metric"><span>Users</span><strong id="metricUsers">0</strong></div>
+      <div class="metric"><span>Researchers</span><strong id="metricResearchers">0</strong></div>
+      <div class="metric"><span>Institutions</span><strong id="metricInstitutions">0</strong></div>
+      <div class="metric"><span>Publications</span><strong id="metricPublications">0</strong></div>
+      <div class="metric"><span>Projects</span><strong id="metricProjects">0</strong></div>
+      <div class="metric"><span>Collaborations</span><strong id="metricCollaborations">0</strong></div>
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Researcher Dashboard</h2>
+            <p>Open profile and academic management tools.</p>
+          </div>
+          <a class="panel-link" href="{{ url_for('researchers_page') }}">Open</a>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Publication Repository</h2>
+            <p>Manage journal papers, conference papers, books, patents, and reports.</p>
+          </div>
+          <a class="panel-link" href="{{ url_for('publications_page') }}">Open</a>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Collaboration Network</h2>
+            <p>Manage co-authors, projects, conferences, and collaboration records.</p>
+          </div>
+          <a class="panel-link" href="{{ url_for('collaborations_page') }}">Open</a>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Reports</h2>
+            <p>Review publication analytics, research summaries, and audit records.</p>
+          </div>
+          <a class="panel-link" href="{{ url_for('reports_page') }}">Open</a>
+        </div>
+      </div>
+    </section>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock scripts %}
