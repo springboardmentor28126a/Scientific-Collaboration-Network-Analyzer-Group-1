@@ -90,7 +90,19 @@ function Publications() {
       console.log(error);
     }
   };
+    const statsCard = {
 
+    background: "white",
+
+    padding: "25px",
+
+    borderRadius: "15px",
+
+    textAlign: "center",
+
+    boxShadow: "0 5px 15px rgba(0,0,0,.1)"
+
+};
   return (
     <div style={{ padding: "30px" }}>
 
@@ -193,58 +205,152 @@ function Publications() {
         </button>
 
       </div>
+    <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(4,1fr)",
+    gap: "20px",
+    marginBottom: "30px",
+  }}
+>
+  <div style={statsCard}>
+    <h3>📚 Total</h3>
+    <h1>{publications.length}</h1>
+  </div>
 
-      <table
-        border="1"
-        cellPadding="10"
+  <div style={statsCard}>
+    <h3>🟢 Published</h3>
+    <h1>
+      {
+        publications.filter(
+          (p) => p.status === "Published"
+        ).length
+      }
+    </h1>
+  </div>
+
+  <div style={statsCard}>
+    <h3>🟡 Draft</h3>
+    <h1>
+      {
+        publications.filter(
+          (p) => p.status === "Draft"
+        ).length
+      }
+    </h1>
+  </div>
+
+  <div style={statsCard}>
+    <h3>🔵 Submitted</h3>
+    <h1>
+      {
+        publications.filter(
+          (p) => p.status === "Submitted"
+        ).length
+      }
+    </h1>
+  </div>
+</div> 
+
+     <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+    gap: "20px",
+    marginTop: "30px",
+  }}
+>
+  {publications.map((publication) => (
+    <div
+      key={publication.id}
+      style={{
+        background: "white",
+        borderRadius: "15px",
+        padding: "20px",
+        boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+      }}
+    >
+      <h2 style={{ color: "#2563eb" }}>
+        📄 {publication.title}
+      </h2>
+
+      <p><b>👨‍🔬 Authors:</b> {publication.authors}</p>
+
+      <p><b>📚 Journal:</b> {publication.journal}</p>
+
+      <p><b>📅 Year:</b> {publication.publication_year}</p>
+
+      <p>
+        <b>Status:</b>{" "}
+        <span
+          style={{
+            color:
+              publication.status === "Published"
+                ? "green"
+                : publication.status === "Draft"
+                ? "orange"
+                : "blue",
+            fontWeight: "bold",
+          }}
+        >
+          {publication.status}
+        </span>
+      </p>
+
+      <p><b>🔗 DOI:</b> {publication.doi || "N/A"}</p>
+
+      <p><b>🏷 Keywords:</b> {publication.keywords || "N/A"}</p>
+
+      <div
         style={{
-          width: "100%",
-          borderCollapse: "collapse",
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "20px",
         }}
       >
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Authors</th>
-            <th>Journal</th>
-            <th>Year</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+        <button
+          style={{
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          👁 View
+        </button>
 
-        <tbody>
-          {publications.map((publication) => (
-            <tr key={publication.id}>
-              <td>{publication.id}</td>
-              <td>{publication.title}</td>
-              <td>{publication.authors}</td>
-              <td>{publication.journal}</td>
-              <td>{publication.publication_year}</td>
-              <td>{publication.status}</td>
+        <button
+          style={{
+            background: "#22c55e",
+            color: "white",
+            border: "none",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          ✏ Edit
+        </button>
 
-              <td>
-                <button
-                  onClick={() => deletePublication(publication.id)}
-                  style={{
-                    backgroundColor: "red",
-                    color: "white",
-                    border: "none",
-                    padding: "6px 10px",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Delete
-                </button>
-              </td>
-
-            </tr>
-          ))}
-        </tbody>
-
-      </table>
+        <button
+          onClick={() => deletePublication(publication.id)}
+          style={{
+            background: "#ef4444",
+            color: "white",
+            border: "none",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          🗑 Delete
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
 
     </div>
   );
