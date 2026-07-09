@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.models.user import User
@@ -14,6 +15,16 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer API",
     version="1.0.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+    "http://localhost:5173",
+    "http://localhost:5174",
+],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(auth_router)
 app.include_router(paper_router)
