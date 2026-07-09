@@ -21,19 +21,10 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const passwordChecks = {
-    length: formData.password.length >= 8,
-    upper: /[A-Z]/.test(formData.password),
-    lower: /[a-z]/.test(formData.password),
-    number: /\d/.test(formData.password),
-    special: /[@$!%*?&]/.test(formData.password),
-  };
 
-  const score = Object.values(passwordChecks).filter(Boolean).length;
-  const strength =
-    score <= 2 ? "Weak" : score <= 4 ? "Medium" : "Strong";
 
 const validate = () => {
 
@@ -59,10 +50,8 @@ const validate = () => {
 
     // Password
     if (!formData.password) {
-        e.password = "Password is required";
-    } else if (score < 5) {
-        e.password = "Use a stronger password";
-    }
+    e.password = "Password is required";
+}
 
     // Confirm Password
     if (!formData.confirmPassword) {
@@ -76,44 +65,46 @@ const validate = () => {
     return Object.keys(e).length === 0;
 };
 
- const handleChange = (e) => {
+  const handleChange = (e) => {
 
-  const { name, value } = e.target;
+    const { name, value } = e.target;
 
-  setFormData({
-    ...formData,
-    [name]: value,
-  });
+    const updatedForm = {
+        ...formData,
+        [name]: value
+    };
 
-  let newErrors = { ...errors };
+    setFormData(updatedForm);
 
-  if (name === "email") {
+    let newErrors = { ...errors };
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (name === "email") {
 
-    if (!value.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(value.trim())) {
-      newErrors.email = "Enter a valid email address";
-    } else {
-      newErrors.email = "";
-    }
-  }
-  // Live Confirm Password Validation
-if (name === "password" || name === "confirmPassword") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (
-        updatedForm.confirmPassword &&
-        updatedForm.password !== updatedForm.confirmPassword
-    ) {
-        newErrors.confirmPassword = "Passwords do not match";
-    } else {
-        newErrors.confirmPassword = "";
+        if (!value.trim()) {
+            newErrors.email = "Email is required";
+        } else if (!emailRegex.test(value.trim())) {
+            newErrors.email = "Enter a valid email address";
+        } else {
+            newErrors.email = "";
+        }
+
     }
 
-}
-  setErrors(newErrors);
-  setServerError("");
+    if (updatedForm.confirmPassword) {
+
+        if (updatedForm.password !== updatedForm.confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match";
+        } else {
+            newErrors.confirmPassword = "";
+        }
+
+    }
+
+    setErrors(newErrors);
+    setServerError("");
+
 };
     const generatePassword = () => {
 
@@ -148,8 +139,11 @@ if (name === "password" || name === "confirmPassword") {
         role: formData.role,
       });
 
-      alert("Registration successful");
-      navigate("/");
+      setSuccessMessage("🎉 Registration Successful! Redirecting to Login...");
+
+setTimeout(() => {
+    navigate("/");
+}, 2000);
     } catch (err) {
 
     if (err.response?.status === 400) {
@@ -221,7 +215,7 @@ if (name === "password" || name === "confirmPassword") {
         <input
           type={showPassword?"text":"password"}
           name="password"
-          placeholder="Min. 8 chars, Aa, 1, @"
+          placeholder="Enter Password"
           value={formData.password}
           onChange={handleChange}
           style={{
@@ -237,23 +231,6 @@ if (name === "password" || name === "confirmPassword") {
     borderRadius:"6px"
 }}
         />
-        <button
-  type="button"
-  onClick={generatePassword}
-  style={{
-    marginTop: "10px",
-    marginBottom: "10px",
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "bold"
-  }}
->
-  🔑 Generate Strong Password
-</button>
 
         <button
     type="button"
@@ -270,72 +247,7 @@ if (name === "password" || name === "confirmPassword") {
     {showPassword ? "🙈" : "👁"}
 </button>
 
-        <div style={{marginTop:10}}>
-          <b
-  style={{
-    color:
-      strength === "Weak"
-        ? "red"
-        : strength === "Medium"
-        ? "orange"
-        : "green"
-  }}
->
-  Password Strength: {strength}
-</b>
-         
-        </div>
-        <div style={{ marginTop: 10 }}>
 
-  <b
-    style={{
-      color:
-        strength === "Weak"
-          ? "red"
-          : strength === "Medium"
-          ? "orange"
-          : "green"
-    }}
-  >
-    
-  </b>
-
-  {/* Progress Bar */}
-  <div
-    style={{
-      width: "100%",
-      height: "8px",
-      background: "#ddd",
-      borderRadius: "10px",
-      marginTop: "8px",
-      marginBottom: "12px"
-    }}
-  >
-    <div
-      style={{
-        width: `${score * 20}%`,
-        height: "100%",
-        background:
-          strength === "Weak"
-            ? "red"
-            : strength === "Medium"
-            ? "orange"
-            : "green",
-        borderRadius: "10px",
-        transition: "0.3s"
-      }}
-    ></div>
-  </div>
-
-  <ul style={{ paddingLeft: "20px" }}>
-    <li>{passwordChecks.length ? "✅" : "❌"} 8+ characters</li>
-    <li>{passwordChecks.upper ? "✅" : "❌"} Uppercase</li>
-    <li>{passwordChecks.lower ? "✅" : "❌"} Lowercase</li>
-    <li>{passwordChecks.number ? "✅" : "❌"} Number</li>
-    <li>{passwordChecks.special ? "✅" : "❌"} Special character</li>
-  </ul>
-
-</div>
 
         {
 errors.confirmPassword ?
@@ -395,7 +307,24 @@ null
           <option>Reviewer</option>
           <option>System Admin</option>
         </select>
+        {successMessage && (
 
+<div
+    style={{
+        background: "#dcfce7",
+        color: "#166534",
+        border: "1px solid #22c55e",
+        padding: "12px",
+        borderRadius: "8px",
+        marginTop: "15px",
+        textAlign: "center",
+        fontWeight: "bold"
+    }}
+>
+    {successMessage}
+</div>
+
+)}
         <button
   disabled={
     loading ||
@@ -432,7 +361,23 @@ null
           {loading?"Registering...":"Register"}
         </button>
 
-        <p style={{color:"red"}}>{serverError}</p>
+       {serverError && (
+
+<div
+    style={{
+        background: "#fee2e2",
+        color: "#b91c1c",
+        border: "1px solid #ef4444",
+        padding: "12px",
+        borderRadius: "8px",
+        marginTop: "15px",
+        textAlign: "center"
+    }}
+>
+    {serverError}
+</div>
+
+)}
 
       </div>
     </div>
