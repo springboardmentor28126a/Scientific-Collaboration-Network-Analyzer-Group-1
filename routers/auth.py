@@ -18,7 +18,7 @@ from passlib.context import CryptContext
 from utils.security import create_access_token
 from database.database import get_db
 from database.models import User
-from schemas.user import UserCreate, UserLogin
+from schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse
 
 router = APIRouter(
     prefix="/auth",
@@ -57,13 +57,59 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return {
         "message": "User Registered Successfully"
     }
-    @router.post("/forgot-password")
-    def forgot_password(email: str):
 
-     return {
-        "message":
-        "OTP Sent Successfully"
+
+@router.post("/forgot-password")
+def forgot_password(email: str):
+    return {
+        "message": "OTP Sent Successfully"
     }
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.id == user_id).first()
+
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return existing_user
+
+
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.id == user_id).first()
+
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.name is not None:
+        existing_user.name = user.name
+    if user.email is not None:
+        existing_user.email = user.email
+    if user.role is not None:
+        existing_user.role = user.role
+    if user.password is not None:
+        existing_user.password = pwd_context.hash(user.password)
+
+    db.commit()
+    db.refresh(existing_user)
+
+    return existing_user
+
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.id == user_id).first()
+
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(existing_user)
+    db.commit()
+
+    return {"message": "User deleted successfully"}
+
 
 # 👇 Paste the login API HERE
 
