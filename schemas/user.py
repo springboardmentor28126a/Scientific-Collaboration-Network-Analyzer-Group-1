@@ -21,3 +21,36 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ProfileCreate(BaseModel):
+
+    phone: str | None = None
+
+    department: str | None = None
+
+    institution: str | None = None
+
+    designation: str | None = None
+
+    research_interest: str | None = None
+
+    skills: str | None = None
+
+    bio: str | None = None
+
+    linkedin: str | None = None
+
+    orcid: str | None = None
+
+    google_scholar: str | None = None
+
+
+class ProfileResponse(ProfileCreate):
+
+    id: int
+
+    user_id: int
+
+    class Config:
+
+        from_attributes = True

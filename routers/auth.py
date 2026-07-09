@@ -34,8 +34,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
+        raise HTTPException(
+            status_code=400,
+            detail="⚠ This email is already registered. Please login or use another email."
+        )
+    
     hashed_password = pwd_context.hash(user.password)
 
     new_user = User(
@@ -46,13 +49,21 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     )
 
     db.add(new_user)
+    print("Registering:", new_user.email)
+    print("Connected DB:", db.bind.url)
     db.commit()
     db.refresh(new_user)
 
     return {
         "message": "User Registered Successfully"
     }
+    @router.post("/forgot-password")
+    def forgot_password(email: str):
 
+     return {
+        "message":
+        "OTP Sent Successfully"
+    }
 
 # 👇 Paste the login API HERE
 

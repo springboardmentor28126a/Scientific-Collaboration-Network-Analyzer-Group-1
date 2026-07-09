@@ -17,15 +17,31 @@ class User(Base):
 class ResearcherProfile(Base):
     __tablename__ = "researcher_profiles"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
+
     user_id = Column(Integer, ForeignKey("users.id"))
+
+    phone = Column(String)
+
     department = Column(String)
+
     institution = Column(String)
+
+    designation = Column(String)
+
     research_interest = Column(String)
+
     skills = Column(String)
 
-    user = relationship("User")
+    bio = Column(String)
 
+    linkedin = Column(String)
+
+    orcid = Column(String)
+
+    google_scholar = Column(String)
+
+    user = relationship("User")
 
 class Publication(Base):
     __tablename__ = "publications"
