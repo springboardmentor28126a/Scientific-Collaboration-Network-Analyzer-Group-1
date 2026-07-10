@@ -1,173 +1,200 @@
 import { useNavigate } from "react-router-dom";
+import {
+    FaMicroscope,
+    FaHome,
+    FaUser,
+    FaBook,
+    FaUsers,
+    FaBell,
+    FaCog,
+    FaSignOutAlt,
+    FaFileAlt,
+    FaQuoteRight
+} from "react-icons/fa";
+
+import "./Dashboard.css";
 
 function Dashboard() {
+
     const navigate = useNavigate();
+
     const user = JSON.parse(
         localStorage.getItem("user")
     );
+
     const logout = () => {
 
-    localStorage.removeItem("token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
-    localStorage.removeItem("user");
+        navigate("/");
 
-    navigate("/");
-
-};
+    };
 
     return (
 
-    <div
-        style={{
-            display: "flex",
-            minHeight: "100vh",
-            background: "#f4f7fb"
-        }}
-    >
+        <div className="dashboard-container">
 
-        {/* Sidebar */}
+            {/* Sidebar */}
 
-        <div
-            style={{
-                width: "250px",
-                background: "#2563eb",
-                color: "white",
-                padding: "25px"
-            }}
-        >
+            <div className="sidebar">
 
-            <h2>🔬 SCNA</h2>
+                <div className="sidebar-logo">
 
-            <hr style={{ borderColor: "white" }} />
+                    <FaMicroscope className="logo-icon" />
 
-            <p style={menuStyle}>🏠 Dashboard</p>
+                    <div>
 
-            <p
-    style={menuStyle}
-    onClick={() => navigate("/profile")}
->
-👤 Profile
-</p>
+                        <h2>SCNA</h2>
 
-            <p
-    style={menuStyle}
-    onClick={() => navigate("/publications")}
->
-📚 Publications
-</p>
+                        <small>Research Platform</small>
 
-            <p style={menuStyle}>🤝 Collaborations</p>
+                    </div>
 
-            <p style={menuStyle}>🔔 Notifications</p>
+                </div>
 
-            <p style={menuStyle}>⚙ Settings</p>
+                <div className="sidebar-menu">
 
-            <p
-    style={menuStyle}
-    onClick={logout}
->
-    🚪 Logout
-</p>
+                    <div className="menu-item active">
+
+                        <FaHome />
+
+                        <span>Dashboard</span>
+
+                    </div>
+
+                    <div
+                        className="menu-item"
+                        onClick={() => navigate("/profile")}
+                    >
+
+                        <FaUser />
+
+                        <span>Profile</span>
+
+                    </div>
+
+                    <div
+                        className="menu-item"
+                        onClick={() => navigate("/publications")}
+                    >
+
+                        <FaBook />
+
+                        <span>Publications</span>
+
+                    </div>
+
+                    <div className="menu-item">
+
+                        <FaUsers />
+
+                        <span>Collaborations</span>
+
+                    </div>
+
+                    <div className="menu-item">
+
+                        <FaBell />
+
+                        <span>Notifications</span>
+
+                    </div>
+
+                    <div className="menu-item">
+
+                        <FaCog />
+
+                        <span>Settings</span>
+
+                    </div>
+
+                </div>
+
+                <div
+                    className="logout-btn"
+                    onClick={logout}
+                >
+
+                    <FaSignOutAlt />
+
+                    <span>Logout</span>
+
+                </div>
+
+            </div>
+
+            {/* Main Content */}
+
+            <div className="dashboard-main">
+
+                <div className="dashboard-header">
+
+                    <h1>
+
+                        Welcome Back, {user?.name} 👋
+
+                    </h1>
+
+                    <p className="dashboard-role">
+
+                        Role : {user?.role}
+
+                    </p>
+
+                </div>
+                <div className="dashboard-cards">
+
+                    <div className="dashboard-card">
+
+                        <FaBook className="card-icon" />
+
+                        <h3>Publications</h3>
+
+                        <h1>12</h1>
+
+                    </div>
+
+                    <div className="dashboard-card">
+
+                        <FaUsers className="card-icon" />
+
+                        <h3>Collaborations</h3>
+
+                        <h1>4</h1>
+
+                    </div>
+
+                    <div className="dashboard-card">
+
+                        <FaQuoteRight className="card-icon" />
+
+                        <h3>Citations</h3>
+
+                        <h1>38</h1>
+
+                    </div>
+
+                    <div className="dashboard-card">
+
+                        <FaFileAlt className="card-icon" />
+
+                        <h3>Pending Reviews</h3>
+
+                        <h1>2</h1>
+
+                    </div>
+
+                </div>
+
+
+
+            </div>
 
         </div>
 
-        {/* Main Content */}
-
-        <div
-            style={{
-                flex: 1,
-                padding: "40px"
-            }}
-        >
-
-            <h1>
-
-                Welcome,
-                {" "}
-                {user?.name}
-                {" "}
-                👋
-
-            </h1>
-
-            <p
-                style={{
-                    color: "#666",
-                    fontSize: "18px"
-                }}
-            >
-
-                Role :
-                {" "}
-                {user?.role}
-
-            </p>
-
-            <hr />
-<div
-    style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4,1fr)",
-        gap: "20px",
-        marginTop: "30px"
-    }}
->
-
-    <div style={cardStyle}>
-        <h3>📚 Publications</h3>
-        <h1>12</h1>
-    </div>
-
-    <div style={cardStyle}>
-        <h3>🤝 Collaborations</h3>
-        <h1>4</h1>
-    </div>
-
-    <div style={cardStyle}>
-        <h3>⭐ Citations</h3>
-        <h1>38</h1>
-    </div>
-
-    <div style={cardStyle}>
-        <h3>📝 Pending Reviews</h3>
-        <h1>2</h1>
-    </div>
-
-</div>
-        </div>
-
-    </div>
-
-);
+    );
 
 }
 
-const menuStyle = {
-
-    padding: "12px",
-
-    cursor: "pointer",
-
-    borderRadius: "8px",
-
-    marginBottom: "10px",
-
-    transition: "0.3s"
-
-};
-const cardStyle = {
-
-    background: "white",
-
-    padding: "25px",
-
-    borderRadius: "12px",
-
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-
-    textAlign: "center",
-
-    transition: "0.3s"
-
-};
 export default Dashboard;
