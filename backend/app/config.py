@@ -1,5 +1,5 @@
 DB_HOST = "localhost"
 DB_PORT = "5432"
-DB_NAME = "infosys_db"
+DB_NAME = "scientific_collaboration_db"
 DB_USER = "postgres"
-DB_PASSWORD = "likki@2006"
+DB_PASSWORD = "Naveen@02"
