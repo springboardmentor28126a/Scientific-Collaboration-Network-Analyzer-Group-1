@@ -15,6 +15,15 @@ class ResearcherCreate(BaseModel):
     biography: Optional[str] = None
     profile_image: Optional[str] = None
 
+class ResearcherUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    designation: Optional[str] = None
+    qualification: Optional[str] = None
+    research_interests: Optional[str] = None
+    skills: Optional[str] = None
+    biography: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class ResearcherResponse(BaseModel):
     id: int

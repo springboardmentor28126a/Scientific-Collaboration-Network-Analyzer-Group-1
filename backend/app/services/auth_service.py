@@ -13,7 +13,8 @@ def authenticate_user(
     password: str,
 ):
     """
-    Authenticate a user and return a JWT token.
+    Authenticate a user and return user information
+    along with a JWT token.
     """
 
     user = (
@@ -27,15 +28,22 @@ def authenticate_user(
 
     if not verify_password(
         password,
-        user.password_hash
+        user.password_hash,
     ):
         return None
 
     token = create_access_token(
         {
             "sub": user.username,
+            "user_id": user.id,
             "role": user.role,
         }
     )
 
-    return token
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role,
+    }

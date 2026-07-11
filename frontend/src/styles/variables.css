@@ -1,0 +1,62 @@
+:root {
+
+  /* ===============================
+     Primary Brand Colors
+  =============================== */
+
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+
+  --secondary-color: #0f172a;
+
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+
+  /* ===============================
+     Background Colors
+  =============================== */
+
+  --background-color: #f8fafc;
+
+  --card-color: #ffffff;
+
+  --border-color: #e5e7eb;
+
+  /* ===============================
+     Text Colors
+  =============================== */
+
+  --heading-color: #1e293b;
+
+  --text-color: #475569;
+
+  --muted-color: #94a3b8;
+
+  /* ===============================
+     Shadows
+  =============================== */
+
+  --shadow-sm: 0 4px 10px rgba(0,0,0,0.05);
+
+  --shadow-md: 0 8px 25px rgba(0,0,0,0.08);
+
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+
+  /* ===============================
+     Radius
+  =============================== */
+
+  --radius-sm: 8px;
+
+  --radius-md: 12px;
+
+  --radius-lg: 18px;
+
+  /* ===============================
+     Transition
+  =============================== */
+
+  --transition: all .3s ease;
+
+}

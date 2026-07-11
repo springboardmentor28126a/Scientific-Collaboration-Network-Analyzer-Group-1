@@ -1,12 +1,19 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+# --------------------------------------
+# Public Registration Schema
+# --------------------------------------
+
+class UserRegister(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
 
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
     role: str
-
 
 class UserResponse(BaseModel):
     id: int

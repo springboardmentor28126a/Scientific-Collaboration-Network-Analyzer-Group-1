@@ -7,6 +7,10 @@ class DepartmentCreate(BaseModel):
     department_name: str
     description: Optional[str] = None
 
+class DepartmentUpdate(BaseModel):
+    institution_id: int
+    department_name: str
+    description: Optional[str] = None
 
 class DepartmentResponse(BaseModel):
     id: int

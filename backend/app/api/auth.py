@@ -6,39 +6,40 @@ from fastapi import status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+
 from app.schemas.auth import (
     LoginRequest,
     TokenResponse,
 )
+
 from app.services.auth_service import authenticate_user
 
 router = APIRouter(
     prefix="/auth",
-    tags=["Authentication"]
+    tags=["Authentication"],
 )
 
 
 @router.post(
     "/login",
-    response_model=TokenResponse
+    response_model=TokenResponse,
 )
 def login(
     login_data: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    token = authenticate_user(
+
+    result = authenticate_user(
         db,
         login_data.username,
         login_data.password,
     )
 
-    if token is None:
+    if result is None:
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return result

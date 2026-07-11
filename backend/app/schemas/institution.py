@@ -12,6 +12,15 @@ class InstitutionCreate(BaseModel):
     state: Optional[str] = None
     country: Optional[str] = None
 
+class InstitutionUpdate(BaseModel):
+    institution_name: str
+    email: str
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
 
 class InstitutionResponse(BaseModel):
     id: int
