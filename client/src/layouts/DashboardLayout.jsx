@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Dashboard from "../pages/Dashboard";
+import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 
 function DashboardLayout() {
@@ -16,7 +16,7 @@ function DashboardLayout() {
 
             {/* Sidebar */}
 
-            <Dashboard />
+            <Sidebar />
 
             {/* Right Content */}
 

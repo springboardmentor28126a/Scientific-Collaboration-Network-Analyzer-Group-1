@@ -19,7 +19,13 @@ from utils.security import create_access_token
 from database.database import get_db
 from database.models import User
 from schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse
-
+from database.models import User, ResearcherProfile
+from schemas.user import (
+    RegisterRequest,
+    UserLogin,
+    UserUpdate,
+    UserResponse
+)
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -29,33 +35,89 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(
+    user: RegisterRequest,
+    db: Session = Depends(get_db)
+):
 
-    existing_user = db.query(User).filter(User.email == user.email).first()
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
     if existing_user:
         raise HTTPException(
             status_code=400,
-            detail="⚠ This email is already registered. Please login or use another email."
+            detail="⚠ This email is already registered."
         )
-    
+
     hashed_password = pwd_context.hash(user.password)
 
+    # --------------------------
+    # Create User
+    # --------------------------
+
     new_user = User(
+
         name=user.name,
+
         email=user.email,
+
         password=hashed_password,
+
         role=user.role
+
     )
 
     db.add(new_user)
-    print("Registering:", new_user.email)
-    print("Connected DB:", db.bind.url)
+
     db.commit()
+
     db.refresh(new_user)
 
+    # --------------------------
+    # Create Profile
+    # --------------------------
+
+    profile = ResearcherProfile(
+
+        user_id=new_user.id,
+
+        phone=user.phone,
+
+        department=user.department,
+
+        institution=user.institution,
+
+        designation=user.designation,
+
+        research_interest=user.research_interest,
+
+        skills=user.skills,
+
+        bio=user.bio,
+
+        country=user.country,
+
+        linkedin=user.linkedin,
+
+        orcid=user.orcid,
+
+        google_scholar=user.google_scholar
+
+    )
+
+    db.add(profile)
+
+    db.commit()
+
+    db.refresh(profile)
+
     return {
-        "message": "User Registered Successfully"
+
+        "message": "Registration Successful",
+
+        "user_id": new_user.id
+
     }
 
 

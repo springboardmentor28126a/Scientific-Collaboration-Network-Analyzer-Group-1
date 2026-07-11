@@ -35,11 +35,15 @@ class ResearcherProfile(Base):
 
     bio = Column(String)
 
+    country = Column(String)
+
     linkedin = Column(String)
 
     orcid = Column(String)
 
     google_scholar = Column(String)
+
+    profile_photo = Column(String)
 
     user = relationship("User")
 
@@ -47,11 +51,25 @@ class Publication(Base):
     __tablename__ = "publications"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    researcher_id = Column(Integer, ForeignKey("users.id"))
+
     title = Column(String, nullable=False)
+
     authors = Column(String, nullable=False)
+
+    abstract = Column(String)
+
     journal = Column(String)
+
     publication_year = Column(Integer)
+
     doi = Column(String, unique=True)
+
     keywords = Column(String)
+
+    pdf_file = Column(String)
+
     status = Column(String, default="Draft")
-    researcher_id = Column(Integer, nullable=True)
+
+    user = relationship("User")

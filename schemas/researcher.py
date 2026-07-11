@@ -23,6 +23,7 @@ class ResearcherCreate(BaseModel):
     orcid: str
 
     google_scholar: str
+    country: str
 
 
 class ResearcherResponse(BaseModel):
@@ -49,6 +50,7 @@ class ResearcherResponse(BaseModel):
     orcid: str
 
     google_scholar: str
+    country: str
 
     class Config:
         from_attributes = True

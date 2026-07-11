@@ -27,12 +27,26 @@ export default function Register() {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        role: "Researcher",
-    });
+
+    name: "",
+
+    email: "",
+
+    password: "",
+
+    confirmPassword: "",
+
+    role: "Researcher",
+
+    institution: "",
+
+    department: "",
+
+    research_interest: "",
+
+    country: ""
+
+});
 
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -135,12 +149,23 @@ export default function Register() {
 
             await api.post("/auth/register", {
 
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                role: formData.role
+    name: formData.name,
 
-            });
+    email: formData.email,
+
+    password: formData.password,
+
+    role: formData.role,
+
+    institution: formData.institution,
+
+    department: formData.department,
+
+    research_interest: formData.research_interest,
+
+    country: formData.country
+
+});
 
             setSuccessMessage(
                 "Registration Successful! Redirecting..."
@@ -409,14 +434,106 @@ export default function Register() {
                                 className="role-select"
                             >
                                 <option value="Researcher">Researcher</option>
-                                <option value="Institution Admin">Institution Admin</option>
-                                <option value="Reviewer">Reviewer</option>
+                                <option value="Student">Student</option>
+                                <option value="Faculty">Faculty</option>
+                                <option value="Industry Researcher">Industry Researcher</option>
                                 <option value="System Admin">System Admin</option>
                             </select>
 
                         </div>
 
                     </div>
+                    {/* PROFESSIONAL INFORMATION */}
+
+<h3
+    style={{
+        marginTop: "25px",
+        marginBottom: "15px",
+        color: "#2563eb"
+    }}
+>
+    Professional Information
+</h3>
+
+{/* Institution */}
+
+<div className="form-group">
+
+    <label>Institution</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="institution"
+            placeholder="Enter Institution"
+            value={formData.institution}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+
+{/* Department */}
+
+<div className="form-group">
+
+    <label>Department</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="department"
+            placeholder="Enter Department"
+            value={formData.department}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+
+{/* Research Interest */}
+
+<div className="form-group">
+
+    <label>Research Interest</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="research_interest"
+            placeholder="Machine Learning, AI..."
+            value={formData.research_interest}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+
+{/* Country */}
+
+<div className="form-group">
+
+    <label>Country</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="country"
+            placeholder="India"
+            value={formData.country}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
                     {/* SUCCESS */}
 
                     {
@@ -439,15 +556,28 @@ export default function Register() {
                         onClick={handleSubmit}
 
                         disabled={
-                            loading ||
-                            !formData.name.trim() ||
-                            !formData.email.trim() ||
-                            !formData.password ||
-                            !formData.confirmPassword ||
-                            Object.keys(errors).some(
-                                key => errors[key]
-                            )
-                        }
+    loading ||
+
+    !formData.name.trim() ||
+
+    !formData.email.trim() ||
+
+    !formData.password ||
+
+    !formData.confirmPassword ||
+
+    !formData.institution.trim() ||
+
+    !formData.department.trim() ||
+
+    !formData.research_interest.trim() ||
+
+    !formData.country.trim() ||
+
+    Object.keys(errors).some(
+        key => errors[key]
+    )
+}
 
                     >
 
