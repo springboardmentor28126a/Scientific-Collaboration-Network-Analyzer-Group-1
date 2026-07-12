@@ -7,6 +7,7 @@ import database.models
 from routers.auth import router as auth_router
 from routers.researcher import router as researcher_router
 from routers.publication import router as publication_router
+from routers import collaboration
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer",
     description="Research Collaboration Management Platform",
@@ -32,6 +33,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(researcher_router)
 app.include_router(publication_router)
+app.include_router(collaboration.router)
 # Home
 @app.get("/")
 def home():

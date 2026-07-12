@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
+from sqlalchemy import DateTime
+from datetime import datetime
 from database.database import Base
 
 
@@ -52,7 +54,10 @@ class Publication(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    researcher_id = Column(Integer, ForeignKey("users.id"))
+    researcher_id = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
 
     title = Column(String, nullable=False)
 
@@ -64,7 +69,7 @@ class Publication(Base):
 
     publication_year = Column(Integer)
 
-    doi = Column(String, unique=True)
+    doi = Column(String)
 
     keywords = Column(String)
 
@@ -73,3 +78,79 @@ class Publication(Base):
     status = Column(String, default="Draft")
 
     user = relationship("User")
+
+
+
+class CollaborationRequest(Base):
+    __tablename__ = "collaboration_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    sender_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    receiver_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    status = Column(
+        String,
+        default="Pending"
+    )
+
+    message = Column(String)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    sender = relationship(
+        "User",
+        foreign_keys=[sender_id]
+    )
+
+    receiver = relationship(
+        "User",
+        foreign_keys=[receiver_id]
+    )
+
+class Collaboration(Base):
+
+    __tablename__ = "collaborations"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    user1_id = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
+
+    user2_id = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    user1 = relationship(
+        "User",
+        foreign_keys=[user1_id]
+    )
+
+    user2 = relationship(
+        "User",
+        foreign_keys=[user2_id]
+    )

@@ -40,6 +40,13 @@ function Sidebar() {
             />
 
             <MenuItem
+    icon={<FaUsers />}
+    text="Researchers"
+    active={location.pathname === "/researchers"}
+    onClick={() => navigate("/researchers")}
+/>
+
+            <MenuItem
                 icon={<FaUser />}
                 text="Profile"
                 active={location.pathname === "/profile"}

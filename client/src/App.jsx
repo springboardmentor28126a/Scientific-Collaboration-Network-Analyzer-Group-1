@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import Researchers from "./pages/Researchers";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -8,7 +8,8 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardHome from "./pages/DashboardHome";
 import Profile from "./pages/Profile";
 import Publications from "./pages/Publications";
-
+import PublicProfile from "./pages/PublicProfile";
+import Notifications from "./pages/Notifications";
 function App() {
 
     return (
@@ -37,11 +38,18 @@ function App() {
                 {/* Dashboard Layout */}
 
                 <Route element={<DashboardLayout />}>
+                <Route
+    path="/dashboard"
+    element={<DashboardHome />}
+/>
 
                     <Route
-                        path="/dashboard"
-                        element={<DashboardHome />}
-                    />
+    path="/researchers"
+    element={<Researchers />}
+/><Route
+    path="/researcher/:id"
+    element={<PublicProfile />}
+/>
 
                     <Route
                         path="/profile"
@@ -52,6 +60,10 @@ function App() {
                         path="/publications"
                         element={<Publications />}
                     />
+                    <Route
+    path="/notifications"
+    element={<Notifications />}
+/>
 
                 </Route>
 
