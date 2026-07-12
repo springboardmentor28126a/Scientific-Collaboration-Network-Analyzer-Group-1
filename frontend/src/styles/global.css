@@ -1,50 +1,52 @@
-@import "./variables.css";
-@import "./components.css";
-@import "./layout.css";
-@import "./auth.css";
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
-
-:root{
-    --primary:#2563EB;
-    --primary-dark:#1E40AF;
-
-    --navbar:#0F172A;
-
-    --background:#F8FAFC;
-
-    --card:#FFFFFF;
-
-    --text:#1E293B;
-
-    --border:#E2E8F0;
-
-    --success:#22C55E;
+* {
+  box-sizing: border-box;
 }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+html, body {
+  margin: 0;
+  padding: 0;
 }
 
-body{
-
-    font-family:"Poppins",sans-serif;
-
-    background:var(--background);
-
-    color:var(--text);
-
-    min-height:100vh;
+body {
+  font-family: var(--font-body);
+  color: var(--color-slate);
+  background: var(--color-paper);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-a{
-    text-decoration:none;
+h1, h2, h3, h4 {
+  font-family: var(--font-display), Georgia, serif;
+  color: var(--color-ink);
+  margin: 0 0 1rem 0;
+  line-height: 1.15;
 }
 
-button{
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-    border:none;
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
 
-    outline:none;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -29,3 +29,8 @@ export const registerUser = async (userData) => {
     return response.data;
 
 };
+
+export const changePassword = async (payload) => {
+  const response = await api.post("/auth/change-password", payload);
+  return response.data;
+};

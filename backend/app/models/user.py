@@ -1,11 +1,15 @@
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.db.database import Base
+from app.utils.constants import UserStatus
 
 
 class User(Base):
@@ -26,17 +30,50 @@ class User(Base):
 
     role = Column(String(50), nullable=False)
 
+    status = Column(
+        SAEnum(UserStatus, name="user_status"),
+        default=UserStatus.PENDING,
+        nullable=False,
+    )
+
     is_active = Column(Boolean, default=True)
+
+    must_reset_password = Column(Boolean, default=False, nullable=False)
+
+    institution_id = Column(
+        Integer,
+        ForeignKey("institutions.id"),
+        nullable=True,
+    )
+
+    created_by = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    approved_by = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+
+    approved_at = Column(DateTime(timezone=True), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
-        nullable=False
+        nullable=False,
     )
 
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
-        nullable=False
+        nullable=False,
+    )
+
+    institution = relationship(
+        "Institution",
+        foreign_keys=[institution_id],
     )

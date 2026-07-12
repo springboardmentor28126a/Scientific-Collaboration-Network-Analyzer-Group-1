@@ -1,62 +1,47 @@
 :root {
+  /* Color */
+  --color-ink: #0F1B2E;
+  --color-surface: #16243F;
+  --color-surface-raised: #1D2E4F;
+  --color-teal: #2FB8A6;
+  --color-teal-dim: #23897C;
+  --color-amber: #E8A33D;
+  --color-paper: #F7F6F2;
+  --color-paper-dim: #EDEBE4;
+  --color-slate: #3A4152;
+  --color-slate-light: #6B7280;
+  --color-white: #FFFFFF;
+  --color-danger: #D14343;
+  --color-success: #2FA36A;
 
-  /* ===============================
-     Primary Brand Colors
-  =============================== */
+  /* Type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
+  /* Scale */
+  --fs-hero: clamp(2.75rem, 5vw, 4.5rem);
+  --fs-h1: clamp(2rem, 3vw, 2.75rem);
+  --fs-h2: 1.75rem;
+  --fs-h3: 1.25rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-tiny: 0.75rem;
 
-  --secondary-color: #0f172a;
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: 4rem;
+  --space-xxl: 6rem;
 
-  --success-color: #22c55e;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
+  /* Radius / Shadow */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 3px rgba(15, 27, 46, 0.08), 0 8px 24px rgba(15, 27, 46, 0.06);
+  --shadow-raised: 0 4px 12px rgba(15, 27, 46, 0.12), 0 16px 40px rgba(15, 27, 46, 0.1);
 
-  /* ===============================
-     Background Colors
-  =============================== */
-
-  --background-color: #f8fafc;
-
-  --card-color: #ffffff;
-
-  --border-color: #e5e7eb;
-
-  /* ===============================
-     Text Colors
-  =============================== */
-
-  --heading-color: #1e293b;
-
-  --text-color: #475569;
-
-  --muted-color: #94a3b8;
-
-  /* ===============================
-     Shadows
-  =============================== */
-
-  --shadow-sm: 0 4px 10px rgba(0,0,0,0.05);
-
-  --shadow-md: 0 8px 25px rgba(0,0,0,0.08);
-
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
-
-  /* ===============================
-     Radius
-  =============================== */
-
-  --radius-sm: 8px;
-
-  --radius-md: 12px;
-
-  --radius-lg: 18px;
-
-  /* ===============================
-     Transition
-  =============================== */
-
-  --transition: all .3s ease;
-
+  --transition: 180ms ease;
 }

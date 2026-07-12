@@ -6,6 +6,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/global.css";
+import "./styles/variables.css";
 import "./index.css";
 
 import App from "./App";

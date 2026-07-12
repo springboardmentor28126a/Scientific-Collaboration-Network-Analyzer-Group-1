@@ -58,10 +58,6 @@ function InstitutionPage() {
     }
   };
 
-  //--------------------------------------
-  // CREATE / UPDATE
-  //--------------------------------------
-
   const handleSubmitInstitution = async (institution) => {
 
     try {
@@ -103,10 +99,6 @@ function InstitutionPage() {
 
   };
 
-  //--------------------------------------
-  // DELETE
-  //--------------------------------------
-
   const handleDeleteInstitution = async (id) => {
 
     const confirmed = window.confirm(
@@ -144,10 +136,6 @@ function InstitutionPage() {
 
   };
 
-  //--------------------------------------
-  // EDIT
-  //--------------------------------------
-
   const handleEditInstitution = (institution) => {
 
     setSelectedInstitution(institution);
@@ -158,10 +146,6 @@ function InstitutionPage() {
     });
 
   };
-
-  //--------------------------------------
-  // CANCEL EDIT
-  //--------------------------------------
 
   const handleCancelEdit = () => {
 

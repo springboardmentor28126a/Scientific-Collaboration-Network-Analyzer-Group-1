@@ -1,0 +1,116 @@
+.admin-form-section,
+.admin-links-section {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  padding: var(--space-lg);
+  margin-top: var(--space-md);
+  border: 1px solid var(--color-paper-dim);
+}
+
+.admin-form-header h2,
+.admin-links-section h2 {
+  font-size: var(--fs-h3);
+  margin-bottom: 0.25rem;
+}
+
+.admin-form-sub {
+  color: var(--color-slate-light);
+  font-size: var(--fs-small);
+  margin-bottom: var(--space-md);
+}
+
+.admin-form {
+  max-width: 520px;
+}
+
+.admin-form label {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--color-slate);
+  margin: var(--space-sm) 0 0.35rem;
+}
+
+.admin-form input,
+.admin-form select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #D8D6CE;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  background: var(--color-white);
+  color: #0F1B2E;
+}
+
+.admin-form input::placeholder {
+  color: #9CA3AF;
+}
+
+.admin-form input:focus,
+.admin-form select:focus {
+  border-color: var(--color-teal);
+  outline: none;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.admin-password-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-password-row input {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+}
+
+.btn-ghost-outline {
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--color-teal);
+  color: var(--color-teal-dim);
+  border-radius: var(--radius-sm);
+  padding: 0 1rem;
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+.btn-ghost-outline:hover { background: rgba(47,184,166,0.08); }
+
+.admin-form button[type="submit"] {
+  margin-top: var(--space-md);
+}
+
+.admin-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-sm);
+}
+
+.admin-link-card {
+  display: block;
+  background: var(--color-paper);
+  border: 1px solid var(--color-paper-dim);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  transition: border-color var(--transition);
+}
+.admin-link-card:hover { border-color: var(--color-teal); }
+
+.admin-link-card span {
+  font-weight: 600;
+  color: var(--color-ink);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.admin-link-card p {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--color-slate-light);
+}

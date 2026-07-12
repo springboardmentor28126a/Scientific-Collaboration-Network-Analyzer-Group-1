@@ -1,248 +1,163 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import { toast } from "react-toastify";
 
 import { registerUser } from "../services/authService";
-
+import { fetchInstitutions } from "../services/institutionService";
+import { fetchDepartmentsByInstitution } from "../services/departmentService";
 import "../styles/auth.css";
 
 function RegisterPage() {
-
-  const navigate = useNavigate();
-
-  const [loading, setLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
-
+  const [form, setForm] = useState({
     username: "",
-
     email: "",
-
     password: "",
-
     confirmPassword: "",
-
+    first_name: "",
+    last_name: "",
+    institution_id: "",
+    department_id: "",
   });
 
-  const handleChange = (event) => {
+  const [institutions, setInstitutions] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
 
-    const { name, value } = event.target;
+  useEffect(() => {
+    fetchInstitutions()
+      .then(setInstitutions)
+      .catch(() => toast.error("Could not load institutions."));
+  }, []);
 
-    setFormData((previous) => ({
+  useEffect(() => {
+    if (!form.institution_id) {
+      setDepartments([]);
+      return;
+    }
+    fetchDepartmentsByInstitution(form.institution_id)
+      .then(setDepartments)
+      .catch(() => toast.error("Could not load departments."));
+  }, [form.institution_id]);
 
-      ...previous,
-
-      [name]: value,
-
-    }));
-
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    event.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-
-      toast.error(
-        "Passwords do not match."
-      );
-
+    if (form.password !== form.confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
-
     }
 
     setLoading(true);
-
     try {
-
       await registerUser({
-
-        username: formData.username,
-
-        email: formData.email,
-
-        password: formData.password,
-
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        institution_id: Number(form.institution_id),
+        department_id: Number(form.department_id),
       });
-
-      toast.success(
-        "Registration successful. Please login."
-      );
-
-      navigate("/login");
-
-    }
-
-    catch (error) {
-
-      toast.error(
-
-        error.response?.data?.detail ||
-
-        "Registration failed."
-
-      );
-
-    }
-
-    finally {
-
+      setSubmitted(true);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Registration failed.");
+    } finally {
       setLoading(false);
-
     }
-
   };
 
-  return (
-
-    <div className="auth-page">
-
-      <div className="auth-card">
-
-        <div className="auth-logo">
-
-          <i className="bi bi-person-plus-fill"></i>
-
+  if (submitted) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card auth-card-center">
+          <span className="auth-status-badge">Pending</span>
+          <h1>Your account is pending approval</h1>
+          <p className="auth-sub">
+            Your institution's admin needs to approve your account before you can log in.
+            You'll be able to sign in as soon as that happens.
+          </p>
+          <Link to="/" className="btn-primary btn-block">Back to home</Link>
         </div>
+      </div>
+    );
+  }
 
-        <h2 className="auth-title">
-
-          Create Account
-
-        </h2>
-
-        <p className="auth-subtitle">
-
-          Scientific Collaboration Network Analyzer
-
+  return (
+    <div className="auth-page">
+      <div className="auth-card auth-card-wide">
+        <h1>Register as a researcher</h1>
+        <p className="auth-sub">
+          Already have an account? <Link to="/login">Log in</Link>
         </p>
 
         <form onSubmit={handleSubmit}>
-
-          <div className="mb-3">
-
-            <label className="form-label">
-
-              Username
-
-            </label>
-
-            <input
-              className="form-control"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-
+          <div className="auth-grid-2">
+            <div>
+              <label>First name</label>
+              <input name="first_name" value={form.first_name} onChange={handleChange} required />
+            </div>
+            <div>
+              <label>Last name</label>
+              <input name="last_name" value={form.last_name} onChange={handleChange} required />
+            </div>
           </div>
 
-          <div className="mb-3">
+          <label>Username</label>
+          <input name="username" value={form.username} onChange={handleChange} required />
 
-            <label className="form-label">
+          <label>Email</label>
+          <input type="email" name="email" value={form.email} onChange={handleChange} required />
 
-              Email
-
-            </label>
-
-            <input
-              type="email"
-              className="form-control"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-
+          <div className="auth-grid-2">
+            <div>
+              <label>Password</label>
+              <input type="password" name="password" value={form.password} onChange={handleChange} required />
+            </div>
+            <div>
+              <label>Confirm password</label>
+              <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required />
+            </div>
           </div>
 
-          <div className="mb-3">
+          <label>Institution</label>
+          <select name="institution_id" value={form.institution_id} onChange={handleChange} required>
+            <option value="">Select institution</option>
+            {institutions.map((i) => (
+              <option key={i.id} value={i.id}>{i.institution_name}</option>
+            ))}
+          </select>
 
-            <label className="form-label">
-
-              Password
-
-            </label>
-
-            <input
-              type="password"
-              className="form-control"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-
-          </div>
-
-          <div className="mb-4">
-
-            <label className="form-label">
-
-              Confirm Password
-
-            </label>
-
-            <input
-              type="password"
-              className="form-control"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-
-          </div>
-
-          <button
-            className="btn btn-primary w-100 py-2"
-            disabled={loading}
+          <label>Department</label>
+          <select
+            name="department_id"
+            value={form.department_id}
+            onChange={handleChange}
+            required
+            disabled={!form.institution_id}
           >
+            <option value="">
+              {form.institution_id ? "Select department" : "Select an institution first"}
+            </option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>{d.department_name}</option>
+            ))}
+          </select>
 
-            {loading ? (
+          <p className="auth-hint">Passwords need 8+ characters, uppercase, lowercase, a number, and a symbol.</p>
 
-              <>
-                <span className="spinner-border spinner-border-sm me-2"></span>
-
-                Creating Account...
-
-              </>
-
-            ) : (
-
-              "Register"
-
-            )}
-
+          <button type="submit" className="btn-primary btn-block" disabled={loading}>
+            {loading ? "Creating account..." : "Create account"}
           </button>
-
         </form>
-
-        <hr />
-
-        <div className="text-center">
-
-          Already have an account?
-
-          <Link
-            to="/login"
-            className="ms-2"
-          >
-
-            Login
-
-          </Link>
-
-        </div>
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default RegisterPage;

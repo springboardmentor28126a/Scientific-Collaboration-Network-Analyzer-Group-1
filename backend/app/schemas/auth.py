@@ -12,3 +12,5 @@ class TokenResponse(BaseModel):
     user_id: int
     username: str
     role: str
+    status: str
+    must_reset_password: bool

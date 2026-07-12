@@ -38,10 +38,6 @@ function DepartmentPage() {
     loadInitialData();
   }, []);
 
-  //-----------------------------------------
-  // LOAD DEPARTMENTS & INSTITUTIONS
-  //-----------------------------------------
-
   const loadInitialData = async () => {
 
     try {
@@ -75,10 +71,6 @@ function DepartmentPage() {
     }
 
   };
-
-  //-----------------------------------------
-  // CREATE / UPDATE
-  //-----------------------------------------
 
   const handleSubmitDepartment = async (
     department
@@ -123,10 +115,6 @@ function DepartmentPage() {
 
   };
 
-  //-----------------------------------------
-  // DELETE
-  //-----------------------------------------
-
   const handleDeleteDepartment = async (
     id
   ) => {
@@ -166,10 +154,6 @@ function DepartmentPage() {
 
   };
 
-  //-----------------------------------------
-  // EDIT
-  //-----------------------------------------
-
   const handleEditDepartment = (
     department
   ) => {
@@ -182,10 +166,6 @@ function DepartmentPage() {
     });
 
   };
-
-  //-----------------------------------------
-  // CANCEL EDIT
-  //-----------------------------------------
 
   const handleCancelEdit = () => {
 

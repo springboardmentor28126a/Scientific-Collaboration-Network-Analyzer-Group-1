@@ -1,8 +1,11 @@
 import AppRoutes from "./routes/AppRoutes";
 import { ToastContainer } from "react-toastify";
+
 function App() {
-  return <AppRoutes />;
-  return <ToastContainer
+  return (
+    <>
+      <AppRoutes />
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -11,7 +14,9 @@ function App() {
         pauseOnHover
         draggable
         theme="light"
-    />;
+      />
+    </>
+  );
 }
 
 export default App;
