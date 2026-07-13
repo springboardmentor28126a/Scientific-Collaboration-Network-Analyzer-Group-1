@@ -1,0 +1,36 @@
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+}
+
+body {
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+}
+
+.container-fluid {
+  padding: 0 !important;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.alert-info {
+  background-color: #e7f3ff;
+  border-color: #b3d9ff;
+  color: #004085;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  margin-right: 5px;
+  margin-bottom: 5px;
+}

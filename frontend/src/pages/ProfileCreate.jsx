@@ -1,0 +1,137 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../config/api';
+import '../styles/forms.css';
+
+const ProfileCreate = () => {
+  
+  const [formData, setFormData] = useState({
+    department: '',
+    designation: '',
+    bio: '',
+    skills: '',
+    research_interests: '',
+
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  
+
+  
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await api.post('/researchers/profile', formData);
+      alert('Profile created successfully!');
+      navigate('/profile');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="form-container">
+      <div className="form-card" style={{ maxWidth: '600px' }}>
+        <h2 className="form-title"><i className="bi bi-person-plus"></i> Create Researcher Profile</h2>
+        {error && <div className="alert alert-danger">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-building"></i> Department *</label>
+            <input
+              type="text"
+              className="form-control"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              placeholder="e.g., Computer Science"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-briefcase"></i> Designation *</label>
+            <input
+              type="text"
+              className="form-control"
+              name="designation"
+              value={formData.designation}
+              onChange={handleChange}
+              placeholder="e.g., Assistant Professor"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-file-text"></i> Bio</label>
+            <textarea
+              className="form-control"
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              rows="4"
+              placeholder="Write a short bio..."
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-gear"></i> Skills (comma-separated) *</label>
+            <input
+              type="text"
+              className="form-control"
+              name="skills"
+              value={formData.skills}
+              onChange={handleChange}
+              placeholder="e.g., Python, Machine Learning"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-lightbulb"></i> Research Interests (comma-separated) *</label>
+            <input
+              type="text"
+              className="form-control"
+              name="research_interests"
+              value={formData.research_interests}
+              onChange={handleChange}
+              placeholder="e.g., AI, Quantum Computing"
+              required
+              disabled={loading}
+            />
+          </div>
+
+         
+
+          <div className="d-flex gap-2">
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Creating...' : 'Create Profile'}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard')} disabled={loading}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileCreate;

@@ -1,28 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .models import User
-from .routes import auth
-
-# Create tables
+from .models import User, Institution, ResearcherProfile
+from .routes import auth, researchers
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Scientific Collaboration Network API",
+    description="Research collaboration management platform",
     version="1.0.0"
 )
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://localhost:5000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Routes
 app.include_router(auth.router)
+app.include_router(researchers.router)
+
 
 @app.get("/")
 def read_root():

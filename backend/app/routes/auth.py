@@ -11,7 +11,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
-   
     db_user = db.query(User).filter(
         (User.email == user.email) | (User.username == user.username)
     ).first()
@@ -22,7 +21,6 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email or username already registered"
         )
     
-   
     hashed_password = hash_password(user.password)
     db_user = User(
         email=user.email,
