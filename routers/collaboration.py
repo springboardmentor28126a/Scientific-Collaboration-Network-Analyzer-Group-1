@@ -208,3 +208,130 @@ def reject_request(
         "message": "Request Rejected"
 
     }
+
+@router.get("/list/{user_id}")
+def my_collaborations(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+
+    collaborations = db.query(
+        Collaboration
+    ).filter(
+
+        (Collaboration.user1_id == user_id) |
+        (Collaboration.user2_id == user_id)
+
+    ).all()
+
+    result = []
+
+    for collaboration in collaborations:
+
+        other_user_id = (
+
+            collaboration.user2_id
+
+            if collaboration.user1_id == user_id
+
+            else collaboration.user1_id
+
+        )
+
+        user = db.query(User).filter(
+            User.id == other_user_id
+        ).first()
+
+        profile = db.query(
+            ResearcherProfile
+        ).filter(
+            ResearcherProfile.user_id == other_user_id
+        ).first()
+
+        result.append({
+
+            "id": collaboration.id,
+
+            "user_id": user.id,
+
+            "name": user.name,
+
+            "email": user.email,
+
+            "role": user.role,
+
+            "institution":
+                profile.institution if profile else "",
+
+            "department":
+                profile.department if profile else "",
+
+            "research_interest":
+                profile.research_interest if profile else "",
+
+            "skills":
+                profile.skills if profile else "",
+
+            "country":
+                profile.country if profile else ""
+
+        })
+
+    return result
+
+@router.get("/workspace/{collaboration_id}")
+def workspace_details(
+    collaboration_id: int,
+    db: Session = Depends(get_db)
+):
+
+    collaboration = db.query(
+        Collaboration
+    ).filter(
+        Collaboration.id == collaboration_id
+    ).first()
+
+    if not collaboration:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Workspace not found"
+        )
+
+    user1 = db.query(User).filter(
+        User.id == collaboration.user1_id
+    ).first()
+
+    user2 = db.query(User).filter(
+        User.id == collaboration.user2_id
+    ).first()
+
+    return {
+
+        "workspace_id": collaboration.id,
+
+        "members":[
+
+            {
+
+                "id": user1.id,
+
+                "name": user1.name,
+
+                "email": user1.email
+
+            },
+
+            {
+
+                "id": user2.id,
+
+                "name": user2.name,
+
+                "email": user2.email
+
+            }
+
+        ]
+
+    }

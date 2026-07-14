@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from sqlalchemy import DateTime
+from sqlalchemy import Text, DateTime
 from datetime import datetime
 from database.database import Base
 
@@ -73,9 +73,14 @@ class Publication(Base):
 
     keywords = Column(String)
 
+    status = Column(String, default="Draft")
     pdf_file = Column(String)
 
-    status = Column(String, default="Draft")
+    abstract = Column(String)
+
+    uploaded_at = Column(
+    DateTime,
+    default=datetime.utcnow)
 
     user = relationship("User")
 
@@ -153,4 +158,42 @@ class Collaboration(Base):
     user2 = relationship(
         "User",
         foreign_keys=[user2_id]
+    )
+
+class ChatMessage(Base):
+
+    __tablename__ = "chat_messages"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    collaboration_id = Column(
+        Integer,
+        ForeignKey("collaborations.id")
+    )
+
+    sender_id = Column(
+        Integer,
+        ForeignKey("users.id")
+    )
+
+    message = Column(
+        Text,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    sender = relationship(
+        "User"
+    )
+
+    collaboration = relationship(
+        "Collaboration"
     )

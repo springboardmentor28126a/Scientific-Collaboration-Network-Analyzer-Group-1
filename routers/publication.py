@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from database.models import Publication
 from schemas.publication import PublicationCreate
+from fastapi import UploadFile, File
+import shutil
+import os
 
 router = APIRouter(
     prefix="/publications",
@@ -162,4 +165,76 @@ def delete_publication(
 
     return {
         "message": "Publication Deleted Successfully"
+    }
+@router.post("/upload")
+
+def upload_pdf(
+
+    file: UploadFile = File(...)
+
+):
+
+    folder = "uploads/papers"
+
+    os.makedirs(folder, exist_ok=True)
+
+    file_path = os.path.join(
+
+        folder,
+
+        file.filename
+
+    )
+
+    with open(file_path, "wb") as buffer:
+
+        shutil.copyfileobj(
+
+            file.file,
+
+            buffer
+
+        )
+
+    return {
+
+        "filename": file.filename,
+
+        "path": file_path
+
+    }
+@router.post("/upload")
+def upload_publication_pdf(
+    file: UploadFile = File(...)
+):
+
+    if not file.filename.lower().endswith(".pdf"):
+
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed."
+        )
+
+    folder = "uploads/papers"
+
+    os.makedirs(folder, exist_ok=True)
+
+    file_path = os.path.join(
+        folder,
+        file.filename
+    )
+
+    with open(file_path, "wb") as buffer:
+
+        shutil.copyfileobj(
+            file.file,
+            buffer
+        )
+
+    return {
+
+        "filename": file.filename,
+
+        "pdf_url": f"/uploads/papers/{file.filename}"
+
     }

@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import API from "../services/api";
+import { FaTrash } from "react-icons/fa";
 
 function Publications() {
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
-
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     id: null,
     title: "",
@@ -13,6 +15,8 @@ function Publications() {
     publication_year: "",
     doi: "",
     keywords: "",
+    abstract: "",
+    pdf_file: "",
     status: "Draft",
     researcher_id: null,
   });
@@ -53,31 +57,105 @@ function Publications() {
       [e.target.name]: e.target.value,
     });
   };
+  const uploadPDF = async () => {
+
+    if (!selectedFile) return "";
+
+    const data = new FormData();
+
+    data.append("file", selectedFile);
+
+    try {
+
+        const response = await API.post(
+
+            "/publications/upload",
+
+            data,
+
+            {
+
+                headers: {
+
+                    "Content-Type": "multipart/form-data"
+
+                }
+
+            }
+
+        );
+
+        return response.data.pdf_url;
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+        alert("PDF Upload Failed");
+
+        return "";
+
+    }
+
+};
 
   const addPublication = async () => {
+
     try {
-      await API.post("/publications/", form);
 
-      alert("Publication Added Successfully");
+        const pdfURL = await uploadPDF();
 
-      loadPublications();
+        await API.post("/publications/", {
 
-      setForm({
-        id: null,
-        title: "",
-        authors: "",
-        journal: "",
-        publication_year: "",
-        doi: "",
-        keywords: "",
-        status: "Draft",
-        researcher_id: null,
-      });
+            ...form,
 
-    } catch (error) {
-      console.log(error);
+            pdf_file: pdfURL
+
+        });
+
+        alert("Publication Added Successfully");
+
+        loadPublications();
+
+        setSelectedFile(null);
+
+        setForm({
+
+            id: null,
+
+            title: "",
+
+            authors: "",
+
+            journal: "",
+
+            publication_year: "",
+
+            doi: "",
+
+            keywords: "",
+
+            abstract: "",
+
+            pdf_file: "",
+
+            status: "Draft",
+
+            researcher_id: null,
+
+        });
+
     }
-  };
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+};
 
   const deletePublication = async (id) => {
     try {
@@ -188,6 +266,103 @@ function Publications() {
           value={form.keywords}
           onChange={handleChange}
         />
+        <textarea
+
+    name="abstract"
+
+    placeholder="Research Abstract"
+
+    value={form.abstract}
+
+    onChange={handleChange}
+
+    rows={4}
+
+    style={{
+
+        width: "100%",
+
+        marginTop: "10px"
+
+    }}
+
+/>
+{/* <input
+
+    type="file"
+
+    accept=".pdf"
+
+    onChange={(e)=>
+
+        setSelectedFile(
+
+            e.target.files[0]
+
+        )
+
+    }
+
+    style={{
+
+        marginTop:"10px"
+
+    }}
+
+/> */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "10px",
+  }}
+>
+<input
+  ref={fileInputRef}
+  type="file"
+  accept=".pdf"
+  onChange={(e) => setSelectedFile(e.target.files[0])}
+/>
+
+  {selectedFile && (
+    <>
+      {/* <span
+        style={{
+          color: "#555",
+          fontSize: "14px",
+        }}
+      >
+        {selectedFile.name}
+      </span> */}
+
+      <button
+        type="button"
+onClick={() => {
+    setSelectedFile(null);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+}}        style={{
+          background: "#ef4444",
+          color: "white",
+          border: "none",
+          borderRadius: "50%",
+          width: "35px",
+          height: "35px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <FaTrash />
+      </button>
+    </>
+  )}
+</div>
+
 
         <select
           name="status"

@@ -10,6 +10,9 @@ import Profile from "./pages/Profile";
 import Publications from "./pages/Publications";
 import PublicProfile from "./pages/PublicProfile";
 import Notifications from "./pages/Notifications";
+import Collaborations from "./pages/Collaborations";
+import Workspace from "./pages/Workspace";
+import Chat from "./pages/Chat";
 function App() {
 
     return (
@@ -66,7 +69,24 @@ function App() {
 />
 
                 </Route>
+                <Route
+    path="/collaborations"
+    element={<Collaborations />}
+/>
+<Route
 
+    path="/workspace/:id"
+
+    element={<Workspace />}
+
+/>
+<Route
+
+    path="/chat/:id"
+
+    element={<Chat />}
+
+/>
             </Routes>
 
         </BrowserRouter>
