@@ -13,7 +13,9 @@ import ProfileCreate from './pages/ProfileCreate';
 import ProfileEdit from './pages/ProfileEdit';
 import ResearchersList from './pages/ResearchersList';
 import ResearcherDetail from './pages/ResearcherDetail';
-
+import InstitutionsList from './pages/InstitutionsList';
+import InstitutionDetail from './pages/InstitutionDetail';
+import InstitutionCreate from './pages/InstitutionCreate';
 import './App.css';
 
 function App() {
@@ -99,7 +101,31 @@ function App() {
               </PrivateRoute>
             }
           />
-
+           
+          <Route
+  path="/institutions"
+  element={
+    <PrivateRoute>
+      <InstitutionsList />
+    </PrivateRoute>
+  }
+/>
+<Route
+  path="/institutions/:id"
+  element={
+    <PrivateRoute>
+      <InstitutionDetail />
+    </PrivateRoute>
+  }
+/>
+<Route
+  path="/institutions/create"
+  element={
+    <PrivateRoute>
+      <InstitutionCreate />
+    </PrivateRoute>
+  }
+/>
           <Route
             path="/access-denied"
             element={

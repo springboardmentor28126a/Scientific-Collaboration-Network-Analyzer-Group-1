@@ -41,6 +41,11 @@ const Navbar = () => {
                   </Link>
                 </li>
                 
+                <li className="nav-item">
+  <Link className="nav-link" to="/institutions">
+    <i className="bi bi-building"></i> Institutions
+  </Link>
+</li>
                 <li className="nav-item dropdown">
                   <a className="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                     <i className="bi bi-person-circle"></i> {user?.full_name || user?.email || 'User'}
