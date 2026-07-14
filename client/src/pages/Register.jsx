@@ -7,379 +7,624 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+import {
+    FaMicroscope,
+    FaUserGraduate,
+    FaBook,
+    FaShieldAlt,
+    FaUser,
+    FaEye,
+    FaEyeSlash
+} from "react-icons/fa";
+
+import { MdEmail } from "react-icons/md";
+import { RiLockPasswordFill } from "react-icons/ri";
+
+import "./Register.css";
+
 export default function Register() {
-  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+    const navigate = useNavigate();
+
+    const [formData, setFormData] = useState({
+
     name: "",
+
     email: "",
+
     password: "",
+
     confirmPassword: "",
+
     role: "Researcher",
-  });
 
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+    institution: "",
 
+    department: "",
 
+    research_interest: "",
 
-const validate = () => {
+    country: ""
 
-    const e = {};
+});
 
-    // Name
-    if (!formData.name.trim()) {
-        e.name = "Full name is required";
-    } else if (formData.name.trim().length < 3) {
-        e.name = "Name must contain at least 3 characters";
-    } else if (!/^[A-Za-z ]+$/.test(formData.name)) {
-        e.name = "Only letters and spaces are allowed";
-    }
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
-    // Email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validate = () => {
 
-    if (!formData.email.trim()) {
-        e.email = "Email is required";
-    } else if (!emailRegex.test(formData.email.trim())) {
-        e.email = "Please enter a valid email address";
-    }
+        const e = {};
 
-    // Password
-    if (!formData.password) {
-    e.password = "Password is required";
-}
-
-    // Confirm Password
-    if (!formData.confirmPassword) {
-        e.confirmPassword = "Confirm password is required";
-    } else if (formData.password !== formData.confirmPassword) {
-        e.confirmPassword = "Passwords do not match";
-    }
-
-    setErrors(e);
-
-    return Object.keys(e).length === 0;
-};
-
-  const handleChange = (e) => {
-
-    const { name, value } = e.target;
-
-    const updatedForm = {
-        ...formData,
-        [name]: value
-    };
-
-    setFormData(updatedForm);
-
-    let newErrors = { ...errors };
-
-    if (name === "email") {
+        if (!formData.name.trim()) {
+            e.name = "Full name is required";
+        }
+        else if (formData.name.trim().length < 3) {
+            e.name = "Name must contain at least 3 characters";
+        }
+        else if (!/^[A-Za-z ]+$/.test(formData.name)) {
+            e.name = "Only letters and spaces are allowed";
+        }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!value.trim()) {
-            newErrors.email = "Email is required";
-        } else if (!emailRegex.test(value.trim())) {
-            newErrors.email = "Enter a valid email address";
-        } else {
-            newErrors.email = "";
+        if (!formData.email.trim()) {
+            e.email = "Email is required";
+        }
+        else if (!emailRegex.test(formData.email.trim())) {
+            e.email = "Please enter a valid email";
         }
 
-    }
-
-    if (updatedForm.confirmPassword) {
-
-        if (updatedForm.password !== updatedForm.confirmPassword) {
-            newErrors.confirmPassword = "Passwords do not match";
-        } else {
-            newErrors.confirmPassword = "";
+        if (!formData.password) {
+            e.password = "Password is required";
         }
 
-    }
+        if (!formData.confirmPassword) {
+            e.confirmPassword = "Confirm password is required";
+        }
+        else if (formData.password !== formData.confirmPassword) {
+            e.confirmPassword = "Passwords do not match";
+        }
 
-    setErrors(newErrors);
-    setServerError("");
+        setErrors(e);
 
-};
-    const generatePassword = () => {
+        return Object.keys(e).length === 0;
 
-    const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&";
+    };
 
-    let password = "";
+    const handleChange = (e) => {
 
-    for (let i = 0; i < 12; i++) {
-        password += chars.charAt(
-            Math.floor(Math.random() * chars.length)
-        );
-    }
+        const { name, value } = e.target;
 
-    setFormData({
-        ...formData,
-        password: password,
-        confirmPassword: password
-    });
+        const updatedForm = {
+            ...formData,
+            [name]: value
+        };
 
-};
-  const handleSubmit = async () => {
-    if (!validate()) return;
+        setFormData(updatedForm);
 
-    try {
-      setLoading(true);
+        let newErrors = { ...errors };
 
-      await api.post("/auth/register", {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-      });
+        if (name === "email") {
 
-      setSuccessMessage("🎉 Registration Successful! Redirecting to Login...");
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-setTimeout(() => {
-    navigate("/");
-}, 2000);
-    } catch (err) {
+            if (!value.trim()) {
+                newErrors.email = "Email is required";
+            }
+            else if (!emailRegex.test(value.trim())) {
+                newErrors.email = "Please enter a valid email";
+            }
+            else {
+                newErrors.email = "";
+            }
 
-    if (err.response?.status === 400) {
-        setServerError(err.response.data.detail);
-    } else {
-        setServerError("Something went wrong. Please try again.");
-    }
+        }
 
-} finally {
+        if (updatedForm.confirmPassword) {
 
-    setLoading(false);
+            if (updatedForm.password !== updatedForm.confirmPassword) {
+                newErrors.confirmPassword = "Passwords do not match";
+            }
+            else {
+                newErrors.confirmPassword = "";
+            }
 
-}
-  };
+        }
 
-  return (
-    <div style={{
-      minHeight:"100vh",
-      display:"flex",
-      justifyContent:"center",
-      alignItems:"center",
-      background:"linear-gradient(135deg,#2563eb,#60a5fa)"
-    }}>
-      <div style={{
-        width:430,
-        background:"#fff",
-        padding:30,
-        borderRadius:14,
-        boxShadow:"0 15px 40px rgba(0,0,0,.2)"
-      }}>
-        <h2 style={{textAlign:"center"}}>Create Account</h2>
+        setErrors(newErrors);
+        setServerError("");
 
-        <input
-    name="name"
-    placeholder="Full Name"
-    value={formData.name}
-    onChange={handleChange}
+    };
+
+    const handleSubmit = async () => {
+
+        if (!validate()) return;
+
+        try {
+
+            setLoading(true);
+
+            await api.post("/auth/register", {
+
+    name: formData.name,
+
+    email: formData.email,
+
+    password: formData.password,
+
+    role: formData.role,
+
+    institution: formData.institution,
+
+    department: formData.department,
+
+    research_interest: formData.research_interest,
+
+    country: formData.country
+
+});
+
+            setSuccessMessage(
+                "Registration Successful! Redirecting..."
+            );
+
+            setTimeout(() => {
+
+                navigate("/");
+
+            }, 2000);
+
+        }
+
+        catch (err) {
+
+            if (err.response?.status === 400) {
+
+                setServerError(err.response.data.detail);
+
+            }
+
+            else {
+
+                setServerError(
+                    "Something went wrong. Please try again."
+                );
+
+            }
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    return (
+
+        <div className="register-container">
+
+            {/* LEFT PANEL */}
+
+            <div className="register-left">
+
+                <div className="logo-circle">
+                    <FaMicroscope />
+                </div>
+
+                <h1 className="project-title">
+                    Scientific Collaboration
+                    <br />
+                    Network Analyzer
+                </h1>
+
+                <p className="project-subtitle">
+                    Collaborate. Publish. Innovate.
+                </p>
+
+                <div className="feature-list">
+
+                    <div className="feature-item">
+                        <FaShieldAlt />
+                        <span>Secure Authentication</span>
+                    </div>
+
+                    <div className="feature-item">
+                        <FaBook />
+                        <span>Publication Management</span>
+                    </div>
+
+                    <div className="feature-item">
+                        <FaUserGraduate />
+                        <span>Research Collaboration</span>
+                    </div>
+
+                    <div className="feature-item">
+                        <FaShieldAlt />
+                        <span>Reviewer Dashboard</span>
+                    </div>
+
+                </div>
+
+                <p className="footer-text">
+                    Empowering Researchers Worldwide
+                </p>
+
+            </div>
+
+            {/* RIGHT PANEL */}
+
+            <div className="register-right">
+
+                <div className="register-card">
+
+                    <h2 className="register-heading">
+                        Create Account
+                    </h2>
+
+                    <p className="register-subheading">
+                        Join the Scientific Collaboration Platform
+                    </p>
+
+                    {/* NAME */}
+
+                    <div className="form-group">
+
+                        <label>Full Name</label>
+
+                        <div className="input-wrapper">
+
+                            <FaUser className="input-icon" />
+
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Enter your full name"
+                                value={formData.name}
+                                onChange={handleChange}
+                            />
+
+                        </div>
+
+                        {errors.name &&
+                            <small className="error-text">
+                                {errors.name}
+                            </small>
+                        }
+
+                    </div>
+
+                    {/* EMAIL */}
+
+                    <div className="form-group">
+
+                        <label>Email</label>
+
+                        <div className="input-wrapper">
+
+                            <MdEmail className="input-icon" />
+
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+
+                        </div>
+
+                        {errors.email &&
+                            <small className="error-text">
+                                {errors.email}
+                            </small>
+                        }
+
+                    </div>
+
+                    {/* PASSWORD */}
+
+                    <div className="form-group">
+
+                        <label>Password</label>
+
+                        <div className="input-wrapper">
+
+                            <RiLockPasswordFill className="input-icon" />
+
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder="Create password"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
+
+                            <button
+                                className="eye-btn"
+                                type="button"
+                                onClick={() =>
+                                    setShowPassword(!showPassword)
+                                }
+                            >
+
+                                {
+                                    showPassword
+                                        ? <FaEyeSlash />
+                                        : <FaEye />
+                                }
+
+                            </button>
+
+                        </div>
+
+                        {errors.password &&
+                            <small className="error-text">
+                                {errors.password}
+                            </small>
+                        }
+
+                    </div>
+
+                    {/* CONFIRM PASSWORD */}
+
+                    <div className="form-group">
+
+                        <label>Confirm Password</label>
+
+                        <div className="input-wrapper">
+
+                            <RiLockPasswordFill className="input-icon" />
+
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="confirmPassword"
+                                placeholder="Confirm password"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                            />
+
+                        </div>
+
+                        {errors.confirmPassword
+                            ?
+
+                            <small className="error-text">
+
+                                {errors.confirmPassword}
+
+                            </small>
+
+                            :
+
+                            formData.confirmPassword &&
+                                formData.password === formData.confirmPassword
+
+                                ?
+
+                                <small className="success-text">
+
+                                    Passwords Match
+
+                                </small>
+
+                                :
+
+                                null}
+
+                    </div>
+                    {/* ROLE */}
+                    <div className="form-group">
+
+                        <label>Role</label>
+
+                        <div className="input-wrapper role-wrapper">
+
+                            <FaUserGraduate className="input-icon" />
+
+                            <select
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                className="role-select"
+                            >
+                                <option value="Researcher">Researcher</option>
+                                <option value="Student">Student</option>
+                                <option value="Faculty">Faculty</option>
+                                <option value="Industry Researcher">Industry Researcher</option>
+                                <option value="System Admin">System Admin</option>
+                            </select>
+
+                        </div>
+
+                    </div>
+                    {/* PROFESSIONAL INFORMATION */}
+
+<h3
     style={{
-        width:"100%",
-        padding:10,
-        marginTop:10,
-        border:
-            errors.name
-                ? "2px solid red"
-                : formData.name
-                ? "2px solid green"
-                : "1px solid #ccc",
-        borderRadius:"6px"
-    }}
-/>
-        <small style={{color:"red"}}>{errors.name}</small>
-
-        <input name="email" type="email" placeholder="Email"
-          value={formData.email}
-          onChange={handleChange} style={{
-    width:"100%",
-    padding:10,
-    marginTop:10,
-    border:
-        errors.email
-            ? "2px solid red"
-            : formData.email
-            ? "2px solid green"
-            : "1px solid #ccc",
-    borderRadius:"6px"
-}}/>
-        <small style={{color:"red"}}>{errors.email}</small>
-
-        <input
-          type={showPassword?"text":"password"}
-          name="password"
-          placeholder="Enter Password"
-          value={formData.password}
-          onChange={handleChange}
-          style={{
-    width:"100%",
-    padding:10,
-    marginTop:10,
-    border:
-        errors.password
-            ? "2px solid red"
-            : formData.password
-            ? "2px solid green"
-            : "1px solid #ccc",
-    borderRadius:"6px"
-}}
-        />
-
-        <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    style={{
-        marginLeft: "10px",
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        fontSize: "20px",
+        marginTop: "25px",
+        marginBottom: "15px",
         color: "#2563eb"
     }}
 >
-    {showPassword ? "🙈" : "👁"}
-</button>
+    Professional Information
+</h3>
 
+{/* Institution */}
 
+<div className="form-group">
 
-        {
-errors.confirmPassword ?
+    <label>Institution</label>
 
-<small style={{color:"red"}}>
-❌ {errors.confirmPassword}
-</small>
-
-:
-
-formData.confirmPassword &&
-formData.password===formData.confirmPassword ?
-
-<small
-style={{
-color:"green",
-fontWeight:"bold"
-}}
->
-✅ Passwords Match
-</small>
-
-:
-
-null
-}
+    <div className="input-wrapper">
 
         <input
-          type={showPassword?"text":"password"}
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          style={{
-    width:"100%",
-    padding:10,
-    marginTop:10,
-    border:
-        errors.confirmPassword
-            ? "2px solid red"
-            : formData.confirmPassword &&
-              formData.password === formData.confirmPassword
-            ? "2px solid green"
-            : "1px solid #ccc",
-    borderRadius:"6px"
-}}
+            type="text"
+            name="institution"
+            placeholder="Enter Institution"
+            value={formData.institution}
+            onChange={handleChange}
         />
-        <small style={{color:"red"}}>{errors.confirmPassword}</small>
 
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          style={{width:"100%",padding:10,marginTop:10}}>
-          <option>Researcher</option>
-          <option>Institution Admin</option>
-          <option>Reviewer</option>
-          <option>System Admin</option>
-        </select>
-        {successMessage && (
-
-<div
-    style={{
-        background: "#dcfce7",
-        color: "#166534",
-        border: "1px solid #22c55e",
-        padding: "12px",
-        borderRadius: "8px",
-        marginTop: "15px",
-        textAlign: "center",
-        fontWeight: "bold"
-    }}
->
-    {successMessage}
-</div>
-
-)}
-        <button
-  disabled={
-    loading ||
-    !formData.name.trim() ||
-    !formData.email.trim() ||
-    !formData.password ||
-    !formData.confirmPassword ||
-    Object.keys(errors).some((key) => errors[key])
-  }
-  onClick={handleSubmit}
-          style={{
-    width:"100%",
-    marginTop:20,
-    padding:"12px",
-    background:
-        loading ||
-        !formData.name.trim() ||
-        !formData.email.trim() ||
-        !formData.password ||
-        !formData.confirmPassword ||
-        Object.keys(errors).some((key) => errors[key])
-            ? "#94a3b8"
-            : "#2563eb",
-    color:"#fff",
-    border:"none",
-    borderRadius:"8px",
-    cursor:
-        loading ||
-        Object.keys(errors).some((key) => errors[key])
-            ? "not-allowed"
-            : "pointer",
-    transition:"0.3s"
-}}>
-          {loading?"Registering...":"Register"}
-        </button>
-
-       {serverError && (
-
-<div
-    style={{
-        background: "#fee2e2",
-        color: "#b91c1c",
-        border: "1px solid #ef4444",
-        padding: "12px",
-        borderRadius: "8px",
-        marginTop: "15px",
-        textAlign: "center"
-    }}
->
-    {serverError}
-</div>
-
-)}
-
-      </div>
     </div>
-  );
+
+</div>
+
+{/* Department */}
+
+<div className="form-group">
+
+    <label>Department</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="department"
+            placeholder="Enter Department"
+            value={formData.department}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+
+{/* Research Interest */}
+
+<div className="form-group">
+
+    <label>Research Interest</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="research_interest"
+            placeholder="Machine Learning, AI..."
+            value={formData.research_interest}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+
+{/* Country */}
+
+<div className="form-group">
+
+    <label>Country</label>
+
+    <div className="input-wrapper">
+
+        <input
+            type="text"
+            name="country"
+            placeholder="India"
+            value={formData.country}
+            onChange={handleChange}
+        />
+
+    </div>
+
+</div>
+                    {/* SUCCESS */}
+
+                    {
+                        successMessage &&
+
+                        <div className="message success">
+
+                            {successMessage}
+
+                        </div>
+
+                    }
+
+                    {/* REGISTER BUTTON */}
+
+                    <button
+
+                        className="register-btn"
+
+                        onClick={handleSubmit}
+
+                        disabled={
+    loading ||
+
+    !formData.name.trim() ||
+
+    !formData.email.trim() ||
+
+    !formData.password ||
+
+    !formData.confirmPassword ||
+
+    !formData.institution.trim() ||
+
+    !formData.department.trim() ||
+
+    !formData.research_interest.trim() ||
+
+    !formData.country.trim() ||
+
+    Object.keys(errors).some(
+        key => errors[key]
+    )
+}
+
+                    >
+
+                        {
+                            loading
+                                ? "Creating Account..."
+                                : "Create Account"
+                        }
+
+                    </button>
+
+                    {/* SERVER ERROR */}
+
+                    {
+
+                        serverError &&
+
+                        <div className="message error">
+
+                            {serverError}
+
+                        </div>
+
+                    }
+
+                    {/* LOGIN */}
+
+                    <p className="login-link">
+
+                        Already have an account?
+
+                        <span
+                            onClick={() => navigate("/")}
+                        >
+
+                            {" "}Sign In
+
+                        </span>
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
 }

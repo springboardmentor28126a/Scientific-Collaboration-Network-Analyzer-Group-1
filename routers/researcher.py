@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database.database import get_db
-from database.models import ResearcherProfile
+from database.models import ResearcherProfile, User
 from schemas.researcher import ResearcherCreate, ResearcherResponse
 
 router = APIRouter(
@@ -10,6 +10,53 @@ router = APIRouter(
     tags=["Researcher"]
 )
 
+@router.get("/all")
+def get_all_researchers(
+    db: Session = Depends(get_db)
+):
+
+    users = db.query(User).all()
+
+    result = []
+
+    for user in users:
+
+        profile = (
+            db.query(ResearcherProfile)
+            .filter(
+                ResearcherProfile.user_id == user.id
+            )
+            .first()
+        )
+
+        result.append({
+
+            "id": user.id,
+
+            "name": user.name,
+
+            "email": user.email,
+
+            "role": user.role,
+
+            "institution":
+                profile.institution if profile else "",
+
+            "department":
+                profile.department if profile else "",
+
+            "research_interest":
+                profile.research_interest if profile else "",
+
+            "skills":
+                profile.skills if profile else "",
+
+            "country":
+                profile.country if profile else ""
+
+        })
+
+    return result
 
 # CREATE PROFILE
 @router.post("/create", response_model=ResearcherResponse)
@@ -50,24 +97,78 @@ def create_profile(
 
 
 # READ PROFILE
-@router.get("/{user_id}", response_model=ResearcherResponse)
+# @router.get("/{user_id}", response_model=ResearcherResponse)
+# def get_profile(
+#     user_id: int,
+#     db: Session = Depends(get_db)
+# ):
+
+#     researcher = db.query(ResearcherProfile).filter(
+#         ResearcherProfile.user_id == user_id
+#     ).first()
+
+#     if not researcher:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="Profile Not Found"
+#         )
+
+#     return researcher
+@router.get("/{user_id}")
 def get_profile(
     user_id: int,
     db: Session = Depends(get_db)
 ):
 
-    researcher = db.query(ResearcherProfile).filter(
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User Not Found"
+        )
+
+    profile = db.query(ResearcherProfile).filter(
         ResearcherProfile.user_id == user_id
     ).first()
 
-    if not researcher:
-        raise HTTPException(
-            status_code=404,
-            detail="Profile Not Found"
-        )
+    return {
 
-    return researcher
+        "id": user.id,
 
+        "name": user.name,
+
+        "email": user.email,
+
+        "role": user.role,
+
+        "phone": profile.phone if profile else "",
+
+        "institution": profile.institution if profile else "",
+
+        "department": profile.department if profile else "",
+
+        "designation": profile.designation if profile else "",
+
+        "research_interest": profile.research_interest if profile else "",
+
+        "skills": profile.skills if profile else "",
+
+        "bio": profile.bio if profile else "",
+
+        "country": profile.country if profile else "",
+
+        "linkedin": profile.linkedin if profile else "",
+
+        "orcid": profile.orcid if profile else "",
+
+        "google_scholar": profile.google_scholar if profile else "",
+
+        "profile_photo": profile.profile_photo if profile else ""
+
+    }
 
 # UPDATE PROFILE
 @router.put("/{user_id}", response_model=ResearcherResponse)
@@ -127,3 +228,4 @@ def delete_profile(
     return {
         "message": "Profile Deleted Successfully"
     }
+

@@ -2,93 +2,124 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+import {
+    FaMicroscope,
+    FaEye,
+    FaEyeSlash,
+    FaCheckCircle,
+    FaUserGraduate,
+    FaBook,
+    FaShieldAlt
+} from "react-icons/fa";
+
+import {
+    MdEmail
+} from "react-icons/md";
+
+import {
+    RiLockPasswordFill
+} from "react-icons/ri";
+
+import "./Login.css";
+
 function Login() {
 
     const navigate = useNavigate();
 
     const [loginData, setLoginData] = useState({
-    email: "",
-    password: ""
-});
+        email: "",
+        password: ""
+    });
 
-const [errors, setErrors] = useState({});
-const [loading, setLoading] = useState(false);
-const [showPassword, setShowPassword] = useState(false);
-const [rememberMe, setRememberMe] = useState(false);
-const [serverError, setServerError] = useState("");
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [serverError, setServerError] = useState("");
 
     const handleChange = (e) => {
 
-    const { name, value } = e.target;
+        const { name, value } = e.target;
 
-    setLoginData({
-        ...loginData,
-        [name]: value
-    });
+        setLoginData({
+            ...loginData,
+            [name]: value
+        });
 
-    let newErrors = { ...errors };
+        let newErrors = { ...errors };
 
-    if (name === "email") {
+        if (name === "email") {
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!value.trim()) {
+
+                newErrors.email = "Email is required";
+
+            } else if (!emailRegex.test(value.trim())) {
+
+                newErrors.email = "Please enter a valid email";
+
+            } else {
+
+                newErrors.email = "";
+
+            }
+
+        }
+
+        if (name === "password") {
+
+            if (!value) {
+
+                newErrors.password = "Password is required";
+
+            } else {
+
+                newErrors.password = "";
+
+            }
+
+        }
+
+        setErrors(newErrors);
+        setServerError("");
+
+    };
+
+    const validate = () => {
+
+        let newErrors = {};
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!value.trim()) {
+        if (!loginData.email.trim()) {
+
             newErrors.email = "Email is required";
-        } else if (!emailRegex.test(value.trim())) {
-            newErrors.email = "Enter a valid email";
-        } else {
-            newErrors.email = "";
+
+        } else if (!emailRegex.test(loginData.email.trim())) {
+
+            newErrors.email = "Please enter a valid email";
+
         }
 
-    }
+        if (!loginData.password) {
 
-    if (name === "password") {
-
-        if (!value) {
             newErrors.password = "Password is required";
-        } else {
-            newErrors.password = "";
+
         }
 
-    }
+        setErrors(newErrors);
 
-    setErrors(newErrors);
-    setServerError("");
+        return Object.keys(newErrors).length === 0;
 
-};
-    const validate = () => {
-
-    let newErrors = {};
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!loginData.email.trim()) {
-
-        newErrors.email = "Email is required";
-
-    } else if (!emailRegex.test(loginData.email.trim())) {
-
-        newErrors.email = "Enter a valid email";
-
-    }
-
-    if (!loginData.password) {
-
-        newErrors.password = "Password is required";
-
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
-
-};
-    
+    };
 
     const handleLogin = async () => {
+
         if (!validate()) return;
 
-setLoading(true);
+        setLoading(true);
 
         try {
 
@@ -111,369 +142,231 @@ setLoading(true);
 
         } catch (error) {
 
-    if (error.response) {
+            if (error.response) {
 
-        setServerError(error.response.data.detail);
+                setServerError(error.response.data.detail);
 
-    } else {
+            } else {
 
-        setServerError("Login Failed");
+                setServerError("Login Failed");
 
-    }
+            }
 
-} finally {
+        } finally {
 
-    setLoading(false);
+            setLoading(false);
 
-}
+        }
 
     };
 
-   return (
+    return (
 
-<div
-    style={{
-        display: "flex",
-        height: "100vh",
-        background: "#f4f7fb",
-        fontFamily: "Arial, sans-serif"
-    }}
->
+        <div className="login-container">
 
-    {/* LEFT SIDE */}
+            {/* LEFT PANEL */}
 
-    <div
-        style={{
-            flex: 1,
-           background:
-"linear-gradient(135deg,#1e3a8a,#2563eb,#60a5fa)" ,
-            color: "white",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "70px"
-        }}
-    >
-        <div
-    style={{
-        width: "70px",
-        height: "70px",
-        borderRadius: "50%",
-        background: "rgba(255,255,255,.2)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontSize: "35px",
-        marginBottom: "25px"
-    }}
->
+            <div className="login-left">
 
-🔬
+                <div className="logo-circle">
+                    <FaMicroscope />
+                </div>
 
-</div>
-        <h1
-            style={{
-                fontSize: "45px",
-                marginBottom: "10px"
-            }}
-        >
-            🔬 Scientific Collaboration
-        </h1>
+                <h1 className="project-title">
+                    Scientific Collaboration
+                    <br />
+                    Network Analyzer
+                </h1>
 
-        <h2>Network Analyzer</h2>
+                <p className="project-subtitle">
+                    Collaborate. Publish. Innovate.
+                </p>
 
-        <br />
+                <div className="feature-list">
 
-        <h3>Collaborate.</h3>
-        <h3>Publish.</h3>
-        <h3>Innovate.</h3>
+                    <div className="feature-item">
+                        <FaCheckCircle className="feature-icon" />
+                        <span>Secure Authentication</span>
+                    </div>
 
-        <br />
+                    <div className="feature-item">
+                        <FaBook className="feature-icon" />
+                        <span>Publication Management</span>
+                    </div>
 
-        <p>✔ Secure Authentication</p>
-        <p>✔ Publication Management</p>
-        <p>✔ Collaboration Platform</p>
-        <p>✔ Reviewer Dashboard</p>
-<div
-    style={{
-        marginTop: "60px",
-        fontSize: "15px",
-        opacity: 0.9
-    }}
->
+                    <div className="feature-item">
+                        <FaUserGraduate className="feature-icon" />
+                        <span>Collaboration Platform</span>
+                    </div>
 
-    Empowering Researchers Worldwide 🌍
+                    <div className="feature-item">
+                        <FaShieldAlt className="feature-icon" />
+                        <span>Reviewer Dashboard</span>
+                    </div>
 
-</div>
-    </div>
+                </div>
 
-    {/* RIGHT SIDE */}
+                <div className="left-footer">
+                    Empowering Researchers Worldwide
+                </div>
 
-    <div
-        style={{
-            flex: 1,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-        }}
-    >
+            </div>
 
-       <div
-    style={{
-        width: "420px",
-        background: "rgba(255,255,255,0.95)",
-        backdropFilter: "blur(10px)",
-        padding: "40px",
-        borderRadius: "25px",
-        boxShadow: "0 20px 50px rgba(37,99,235,.20)",
-        border: "1px solid rgba(255,255,255,.5)",
-        transition: "0.3s"
-    }}
->
-        
+            {/* RIGHT PANEL */}
 
-            <h1
-                style={{
-                    textAlign: "center",
-                    color: "#2563eb"
-                }}
-            >
-                Welcome Back 👋
-            </h1>
+            <div className="login-right">
 
-            <p
-                style={{
-                    textAlign: "center",
-                    color: "#777",
-                    marginBottom: "30px"
-                }}
-            >
-                Login to continue
-            </p>
+                <div className="login-card">
 
-            <label
-    style={{
-        fontWeight: "bold",
-        color: "#333"
-    }}
->
-    Email
-</label>
+                    <h2 className="login-heading">
+                        Welcome Back
+                    </h2>
 
-<input
-    type="email"
-    name="email"
-    value={loginData.email}
-    placeholder="Enter your email"
-    onChange={handleChange}
-    style={inputStyle}
-/>
+                    <p className="login-subheading">
+                        Login to continue your research journey
+                    </p>
 
-<small style={errorStyle}>
-    {errors.email}
-</small>
+                    <div className="form-group">
 
-<label
-    style={{
-        fontWeight: "bold",
-        color: "#333"
-    }}
->
-    Password
-</label>
+                        <label>Email</label>
 
-<div
-    style={{
-        display: "flex",
-        alignItems: "center"
-    }}
->
+                        <div className="input-wrapper">
 
-<input
-    type={showPassword ? "text" : "password"}
-    name="password"
-    value={loginData.password}
-    placeholder="Enter your password"
-    onChange={handleChange}
-    style={{
-        ...inputStyle,
-        marginBottom: 0
-    }}
-/>
+                            <MdEmail className="input-icon" />
 
-<button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    style={{
-        marginLeft: "10px",
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        fontSize: "22px"
-    }}
->
-    {showPassword ? "🙈" : "👁"}
-</button>
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                value={loginData.email}
+                                onChange={handleChange}
+                            />
 
-</div>
+                        </div>
 
-<small style={errorStyle}>
-    {errors.password}
-</small>
+                        {errors.email &&
+                            <small className="error-text">
+                                {errors.email}
+                            </small>
+                        }
 
-<div
-    style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: "15px",
-        marginBottom: "25px"
-    }}
->
+                    </div>
 
-<label
-    style={{
-        cursor: "pointer"
-    }}
->
+                    <div className="form-group">
 
-<input
-    type="checkbox"
-    checked={rememberMe}
-    onChange={() => setRememberMe(!rememberMe)}
-/>
+                        <label>Password</label>
 
-{" "}Remember Me
+                        <div className="input-wrapper">
 
-</label>
+                            <RiLockPasswordFill className="input-icon" />
 
-<span
-    onClick={() => navigate("/forgot-password")}
-    style={{
-        color: "#2563eb",
-        cursor: "pointer",
-        fontWeight: "bold"
-    }}
->
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder="Enter your password"
+                                value={loginData.password}
+                                onChange={handleChange}
+                            />
 
-Forgot Password?
+                            <button
+                                className="eye-btn"
+                                type="button"
+                                onClick={() =>
+                                    setShowPassword(!showPassword)
+                                }
+                            >
 
-</span>
+                                {
+                                    showPassword
+                                        ? <FaEyeSlash />
+                                        : <FaEye />
+                                }
 
-</div>
+                            </button>
 
-<button
+                        </div>
 
-    onClick={handleLogin}
+                        {errors.password &&
+                            <small className="error-text">
+                                {errors.password}
+                            </small>
+                        }
 
-    disabled={loading}
+                    </div>
 
-    style={{
-    width: "100%",
-    background: "linear-gradient(135deg,#2563eb,#3b82f6)",
-    color: "white",
-    border: "none",
-    padding: "15px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontSize: "17px",
-    fontWeight: "bold",
-    transition: "0.3s",
-    boxShadow: "0 8px 20px rgba(37,99,235,.35)"
-}}
+                    <div className="remember-row">
 
->
+                        <label className="remember-label">
 
-{loading ? "Signing In..." : "Login"}
+                            <input
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={() =>
+                                    setRememberMe(!rememberMe)
+                                }
+                            />
 
-</button>
+                            <span>Remember Me</span>
 
-<p
-    style={{
-        textAlign: "center",
-        marginTop: "25px"
-    }}
->
+                        </label>
 
-Don't have an account?
+                        <span
+                            className="forgot-link"
+                            onClick={() => navigate("/forgot-password")}
+                        >
+                            Forgot Password?
+                        </span>
 
-<span
+                    </div>
 
-    onClick={() => navigate("/register")}
+                    <button
+                        className="login-btn"
+                        onClick={handleLogin}
+                        disabled={loading}
+                    >
 
-    style={{
+                        {
+                            loading
+                                ? "Signing In..."
+                                : "Login"
+                        }
 
-        color: "#2563eb",
+                    </button>
 
-        cursor: "pointer",
+                    {
+                        serverError &&
 
-        fontWeight: "bold"
+                        <p className="server-error">
 
-    }}
+                            {serverError}
 
->
+                        </p>
 
-{" "}Create Account
+                    }
 
-</span>
+                    <p className="register-text">
 
-</p>
+                        Don't have an account?
 
-<p
-    style={{
-        color: "red",
-        textAlign: "center"
-    }}
->
+                        <span
+                            className="register-link"
+                            onClick={() => navigate("/register")}
+                        >
 
-{serverError}
+                            Create Account
 
-</p>
+                        </span>
+
+                    </p>
+
+                </div>
+
+            </div>
 
         </div>
 
-    </div>
+    );
 
-</div>
-
-);
 }
-const inputStyle = {
-
-    width: "100%",
-
-    padding: "14px",
-
-    marginTop: "8px",
-
-    marginBottom: "8px",
-
-    borderRadius: "12px",
-
-    border: "1px solid #d1d5db",
-
-    background: "#f9fafb",
-
-    fontSize: "15px",
-
-    transition: "0.3s",
-
-    outline: "none",
-
-    boxSizing: "border-box"
-
-};
-
-const errorStyle = {
-
-    color: "#ef4444",
-
-    fontSize: "12px",
-
-    display: "block",
-
-    marginBottom: "15px"
-
-};
 
 export default Login;
