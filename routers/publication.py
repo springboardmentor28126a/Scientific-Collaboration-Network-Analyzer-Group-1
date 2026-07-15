@@ -7,6 +7,8 @@ from schemas.publication import PublicationCreate
 from fastapi import UploadFile, File
 import shutil
 import os
+from fastapi import Query
+from sqlalchemy import or_
 
 router = APIRouter(
     prefix="/publications",
@@ -64,6 +66,97 @@ def get_publication(publication_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Publication not found")
 
     return publication
+
+@router.get("/search")
+def search_publications(
+
+    title: str = Query(None),
+
+    author: str = Query(None),
+
+    journal: str = Query(None),
+
+    publication_type: str = Query(None),
+
+    keyword: str = Query(None),
+
+    year: int = Query(None),
+
+    status: str = Query(None),
+
+    doi: str = Query(None),
+
+    db: Session = Depends(get_db)
+
+):
+
+    query = db.query(Publication)
+
+    if title:
+
+        query = query.filter(
+
+            Publication.title.ilike(f"%{title}%")
+
+        )
+
+    if author:
+
+        query = query.filter(
+
+            Publication.authors.ilike(f"%{author}%")
+
+        )
+
+    if journal:
+
+        query = query.filter(
+
+            Publication.journal.ilike(f"%{journal}%")
+
+        )
+
+    if publication_type:
+
+        query = query.filter(
+
+            Publication.publication_type == publication_type
+
+        )
+
+    if keyword:
+
+        query = query.filter(
+
+            Publication.keywords.ilike(f"%{keyword}%")
+
+        )
+
+    if year:
+
+        query = query.filter(
+
+            Publication.publication_year == year
+
+        )
+
+    if status:
+
+        query = query.filter(
+
+            Publication.status == status
+
+        )
+
+    if doi:
+
+        query = query.filter(
+
+            Publication.doi.ilike(f"%{doi}%")
+
+        )
+
+    return query.all()
 
 # ---------------- SEARCH BY TITLE ----------------
 @router.get("/search/{title}")

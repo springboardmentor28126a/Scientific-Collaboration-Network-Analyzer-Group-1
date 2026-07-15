@@ -6,6 +6,7 @@ function Publications() {
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [customType, setCustomType] = useState("");
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     id: null,
@@ -101,25 +102,37 @@ function Publications() {
 
 };
 
-  const addPublication = async () => {
+const addPublication = async () => {
 
     try {
 
         const pdfURL = await uploadPDF();
 
-        await API.post("/publications/", {
+        const publicationData = {
 
             ...form,
 
+            publication_type:
+
+                form.publication_type === "Others"
+                    ? customType
+                    : form.publication_type,
+
             pdf_file: pdfURL
 
-        });
+        };
+
+        await API.post(
+
+            "/publications/",
+
+            publicationData
+
+        );
 
         alert("Publication Added Successfully");
 
         loadPublications();
-
-        setSelectedFile(null);
 
         setForm({
 
@@ -130,6 +143,91 @@ function Publications() {
             authors: "",
 
             journal: "",
+
+            publication_type: "Journal Article",
+
+            publication_year: "",
+
+            doi: "",
+
+            keywords: "",
+
+            status: "Draft",
+
+            researcher_id: null
+
+        });
+
+        setCustomType("");
+
+        setSelectedFile(null);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
+const updatePublication = async () => {
+
+    try {
+
+        let pdfURL = form.pdf_file;
+
+        if (selectedFile) {
+
+            pdfURL = await uploadPDF();
+
+        }
+
+        const publicationData = {
+
+            ...form,
+
+            publication_type:
+
+                form.publication_type === "Others"
+
+                    ? customType
+
+                    : form.publication_type,
+
+            pdf_file: pdfURL
+
+        };
+
+        await API.put(
+
+            `/publications/${form.id}`,
+
+            publicationData
+
+        );
+
+        alert("Publication Updated Successfully");
+
+        loadPublications();
+
+        setForm({
+
+            id: null,
+
+            title: "",
+
+            authors: "",
+
+            journal: "",
+
+            publication_type: "Journal Article",
 
             publication_year: "",
 
@@ -143,19 +241,30 @@ function Publications() {
 
             status: "Draft",
 
-            researcher_id: null,
+            researcher_id: null
 
         });
 
+        setCustomType("");
+
+        setSelectedFile(null);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
     }
 
-    catch(error){
+    catch (error) {
 
         console.log(error);
 
     }
 
 };
+        
 
   const deletePublication = async (id) => {
     try {
@@ -168,6 +277,149 @@ function Publications() {
       console.log(error);
     }
   };
+  const searchPublications = async () => {
+
+    try {
+
+        const params = {};
+
+        switch (filterType) {
+
+            case "Title":
+
+                params.title = filterValue;
+
+                break;
+
+            case "Author":
+
+                params.author = filterValue;
+
+                break;
+
+            case "Journal":
+
+                params.journal = filterValue;
+
+                break;
+
+            case "Publication Type":
+
+                params.publication_type = filterValue;
+
+                break;
+
+            case "Keyword":
+
+                params.keyword = filterValue;
+
+                break;
+
+            case "Year":
+
+                params.year = filterValue;
+
+                break;
+
+            case "Status":
+
+                params.status = filterValue;
+
+                break;
+
+            case "DOI":
+
+                params.doi = filterValue;
+
+                break;
+
+            default:
+
+                break;
+
+        }
+
+        const response = await API.get(
+
+            "/publications/search",
+
+            {
+
+                params
+
+            }
+
+        );
+
+        setPublications(response.data);
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+};
+  const editPublication = (publication) => {
+    console.log("Edit clicked", publication);
+
+    setForm({
+
+        id: publication.id,
+
+        title: publication.title,
+
+        authors: publication.authors,
+
+        journal: publication.journal,
+
+        publication_type:
+            publication.publication_type || "Journal Article",
+
+        publication_year: publication.publication_year,
+
+        doi: publication.doi,
+
+        keywords: publication.keywords,
+
+        abstract: publication.abstract || "",
+
+        pdf_file: publication.pdf_file || "",
+
+        status: publication.status,
+
+        researcher_id: publication.researcher_id
+
+    });
+
+    if (
+        publication.publication_type &&
+        ![
+            "Journal Article",
+            "Conference Paper",
+            "Book Chapter",
+            "Thesis",
+            "Patent",
+            "Technical Report"
+        ].includes(publication.publication_type)
+    ) {
+
+        setForm((prev) => ({
+            ...prev,
+            publication_type: "Others"
+        }));
+
+        setCustomType(publication.publication_type);
+
+    } else {
+
+        setCustomType("");
+
+    }
+
+};
     const statsCard = {
 
     background: "white",
@@ -287,29 +539,6 @@ function Publications() {
     }}
 
 />
-{/* <input
-
-    type="file"
-
-    accept=".pdf"
-
-    onChange={(e)=>
-
-        setSelectedFile(
-
-            e.target.files[0]
-
-        )
-
-    }
-
-    style={{
-
-        marginTop:"10px"
-
-    }}
-
-/> */}
 <div
   style={{
     display: "flex",
@@ -327,15 +556,7 @@ function Publications() {
 
   {selectedFile && (
     <>
-      {/* <span
-        style={{
-          color: "#555",
-          fontSize: "14px",
-        }}
-      >
-        {selectedFile.name}
-      </span> */}
-
+     
       <button
         type="button"
 onClick={() => {
@@ -362,6 +583,48 @@ onClick={() => {
     </>
   )}
 </div>
+<select
+    name="publication_type"
+    value={form.publication_type}
+    onChange={handleChange}
+>
+
+    <option>Journal Article</option>
+
+    <option>Conference Paper</option>
+
+    <option>Book Chapter</option>
+
+    <option>Thesis</option>
+
+    <option>Patent</option>
+
+    <option>Technical Report</option>
+
+    <option>Others</option>
+
+</select>
+{
+    form.publication_type === "Others" && (
+
+        <input
+
+            type="text"
+
+            placeholder="Enter Publication Type"
+
+            value={customType}
+
+            onChange={(e)=>
+
+                setCustomType(e.target.value)
+
+            }
+
+        />
+
+    )
+}
 
 
         <select
@@ -375,9 +638,31 @@ onClick={() => {
           <option>Archived</option>
         </select>
 
-        <button onClick={addPublication}>
-          Add Publication
-        </button>
+        <button
+
+    onClick={
+
+        form.id
+
+            ? updatePublication
+
+            : addPublication
+
+    }
+
+>
+
+    {
+
+        form.id
+
+            ? "Update Publication"
+
+            : "Add Publication"
+
+    }
+
+</button>
 
       </div>
     <div
@@ -497,17 +782,25 @@ onClick={() => {
         </button>
 
         <button
-          style={{
-            background: "#22c55e",
-            color: "white",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-        >
-          ✏ Edit
-        </button>
+
+    onClick={() =>
+        editPublication(publication)
+    }
+
+    style={{
+        background: "#22c55e",
+        color: "white",
+        border: "none",
+        padding: "8px 14px",
+        borderRadius: "8px",
+        cursor: "pointer"
+    }}
+
+>
+
+    ✏ Edit
+
+</button>
 
         <button
           onClick={() => deletePublication(publication.id)}

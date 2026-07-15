@@ -6,6 +6,7 @@ import {
     FaUsers,
     FaBell
 } from "react-icons/fa";
+import {FaSearch } from "react-icons/fa";
 
 function Sidebar() {
 
@@ -54,11 +55,18 @@ function Sidebar() {
             />
 
             <MenuItem
-                icon={<FaBook />}
-                text="Publications"
-                active={location.pathname === "/publications"}
-                onClick={() => navigate("/publications")}
-            />
+    icon={<FaBook />}
+    text="My Publications"
+    active={location.pathname === "/my-publications"}
+    onClick={() => navigate("/my-publications")}
+/>
+
+<MenuItem
+    icon={<FaSearch />}
+    text="Search Publications"
+    active={location.pathname === "/search-publications"}
+    onClick={() => navigate("/search-publications")}
+/>
 
             <MenuItem
                 icon={<FaBell />}

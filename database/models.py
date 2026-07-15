@@ -66,6 +66,10 @@ class Publication(Base):
     abstract = Column(String)
 
     journal = Column(String)
+    publication_type = Column(
+    String,
+    default="Journal Article"
+)
 
     publication_year = Column(Integer)
 

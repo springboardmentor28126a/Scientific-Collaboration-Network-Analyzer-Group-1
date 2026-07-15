@@ -7,7 +7,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardHome from "./pages/DashboardHome";
 import Profile from "./pages/Profile";
-import Publications from "./pages/Publications";
+import MyPublications from "./pages/MyPublications";
+import SearchPublications from "./pages/SearchPublications";
 import PublicProfile from "./pages/PublicProfile";
 import Notifications from "./pages/Notifications";
 import Collaborations from "./pages/Collaborations";
@@ -59,10 +60,21 @@ function App() {
                         element={<Profile />}
                     />
 
-                    <Route
-                        path="/publications"
-                        element={<Publications />}
-                    />
+                   <Route
+
+    path="/my-publications"
+
+    element={<MyPublications />}
+
+/>
+
+<Route
+
+    path="/search-publications"
+
+    element={<SearchPublications />}
+
+/>
                     <Route
     path="/notifications"
     element={<Notifications />}
