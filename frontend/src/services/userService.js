@@ -24,3 +24,8 @@ export const createReviewer = async (payload) => {
   const response = await api.post("/users/reviewer", payload);
   return response.data;
 };
+
+export const fetchAllUsers = async () => {
+  const response = await api.get("/users/");
+  return response.data;
+};

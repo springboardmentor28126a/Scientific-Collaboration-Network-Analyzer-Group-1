@@ -137,6 +137,13 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
     return db_user
 
+def list_all_users(db: Session):
+    return (
+        db.query(User)
+        .filter(User.status != UserStatus.PENDING)
+        .order_by(User.created_at.desc())
+        .all()
+    )
 
 def list_pending_researchers(db: Session, institution_id: int):
 

@@ -19,6 +19,7 @@ from app.services.user_service import (
     list_pending_researchers,
     approve_user,
     reject_user,
+    list_all_users,
 )
 from app.core.dependencies import get_current_user, require_roles
 from app.models.user import User
@@ -105,3 +106,11 @@ def reject_researcher(
 )
 def admin_create_user(user: UserCreate, db: Session = Depends(get_db)):
     return create_user(db, user)
+
+@router.get(
+    "/",
+    response_model=List[UserResponse],
+    dependencies=[Depends(require_roles(UserRole.SYSTEM_ADMIN.value))],
+)
+def get_all_users(db: Session = Depends(get_db)):
+    return list_all_users(db)

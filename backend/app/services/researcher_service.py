@@ -3,6 +3,8 @@ from fastapi import HTTPException
 from app.models.researcher import Researcher
 from app.schemas.researcher import ResearcherCreate
 from app.schemas.researcher import ResearcherUpdate
+from app.models.user import User
+from app.utils.constants import UserStatus
 
 def create_researcher(
     db: Session,
@@ -28,7 +30,12 @@ def create_researcher(
 
     return db_researcher
 def get_all_researchers(db: Session):
-    return db.query(Researcher).all()
+    return (
+        db.query(Researcher)
+        .join(User, User.id == Researcher.user_id)
+        .filter(User.status == UserStatus.APPROVED)
+        .all()
+    )
 def get_researcher_by_id(
     db: Session,
     researcher_id: int,
