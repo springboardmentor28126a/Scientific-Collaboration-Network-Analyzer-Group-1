@@ -61,13 +61,6 @@ function Sidebar() {
             />
 
             <MenuItem
-                icon={<FaUsers />}
-                text="Collaborations"
-                active={location.pathname === "/collaborations"}
-                onClick={() => navigate("/collaborations")}
-            />
-
-            <MenuItem
                 icon={<FaBell />}
                 text="Notifications"
                 active={location.pathname === "/notifications"}
