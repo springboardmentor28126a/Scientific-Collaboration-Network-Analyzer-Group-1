@@ -1,13 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import API from "../services/api";
 import { FaTrash } from "react-icons/fa";
-
+import PublicationCard from "../components/publications/PublicationCard";
+import PublicationDetailsModal from "../components/publications/PublicationDetailsModal";
+import EditPublicationModal from "../components/publications/EditPublicationModal";
+import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
 function Publications() {
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [customType, setCustomType] = useState("");
   const fileInputRef = useRef(null);
+  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [editingPublication, setEditingPublication] = useState(null);
+  const [deletePublicationData, setDeletePublicationData] = useState(null);
+  const [institutions,setInstitutions]=useState([]);
+  const [conferences, setConferences] = useState([]);
   const [form, setForm] = useState({
     id: null,
     title: "",
@@ -20,10 +28,14 @@ function Publications() {
     pdf_file: "",
     status: "Draft",
     researcher_id: null,
+    institution_id: null,
+    conference_id: null
   });
 
   useEffect(() => {
     loadPublications();
+    loadInstitutions();
+    loadConferences();
   }, []);
 
   const loadPublications = async () => {
@@ -34,6 +46,52 @@ function Publications() {
       console.log(error);
     }
   };
+  const loadInstitutions = async()=>{
+
+    try{
+
+        const response=await API.get(
+
+            "/institution/"
+
+        );
+
+        setInstitutions(
+
+            response.data
+
+        );
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+};
+const loadConferences = async () => {
+
+    try {
+
+        const response = await API.get(
+            "/conference/"
+        );
+
+        setConferences(
+            response.data
+        );
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+};
 
   const searchPublication = async () => {
     try {
@@ -154,8 +212,10 @@ const addPublication = async () => {
 
             status: "Draft",
 
-            researcher_id: null
+            researcher_id: null,
+            institution_id: null,
 
+    conference_id: null
         });
 
         setCustomType("");
@@ -266,17 +326,35 @@ const updatePublication = async () => {
 };
         
 
-  const deletePublication = async (id) => {
+ const deletePublication = async (id) => {
+
     try {
-      await API.delete(`/publications/${id}`);
 
-      alert("Publication Deleted Successfully");
+        await API.delete(
 
-      loadPublications();
-    } catch (error) {
-      console.log(error);
+            `/publications/${id}`
+
+        );
+
+        alert(
+
+            "Publication Deleted Successfully"
+
+        );
+
+        loadPublications();
+
+        setDeletePublicationData(null);
+
     }
-  };
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
   const searchPublications = async () => {
 
     try {
@@ -431,6 +509,54 @@ const updatePublication = async () => {
     textAlign: "center",
 
     boxShadow: "0 5px 15px rgba(0,0,0,.1)"
+
+};
+const loadPublication = async (id) => {
+
+    try {
+
+        const response = await API.get(
+
+            `/publications/${id}`
+
+        );
+
+        setSelectedPublication(response.data);
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
+const savePublication = async (updatedPublication) => {
+
+    try {
+
+        await API.put(
+
+            `/publications/${updatedPublication.id}`,
+
+            updatedPublication
+
+        );
+
+        alert("Publication Updated Successfully");
+
+        loadPublications();
+
+        setEditingPublication(null);
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+    }
 
 };
   return (
@@ -626,6 +752,85 @@ onClick={() => {
     )
 }
 
+<label>
+
+Institution
+
+</label>
+<label>
+
+Conference
+
+</label>
+
+<select
+
+name="conference_id"
+
+value={form.conference_id || ""}
+
+onChange={handleChange}
+
+>
+
+<option value="">
+
+Select Conference
+
+</option>
+
+{
+
+conferences.map((conference)=>(
+
+<option
+
+key={conference.id}
+
+value={conference.id}
+
+>
+
+{conference.name}
+
+</option>
+
+))
+
+}
+
+</select>
+
+<select
+    name="institution_id"
+    value={form.institution_id || ""}
+    onChange={handleChange}
+>
+
+    <option value="">
+
+        Select Institution
+
+    </option>
+
+    {
+
+        institutions.map((institution)=>(
+
+            <option
+                key={institution.id}
+                value={institution.id}
+            >
+
+                {institution.name}
+
+            </option>
+
+        ))
+
+    }
+
+</select>
 
         <select
           name="status"
@@ -721,107 +926,193 @@ onClick={() => {
   }}
 >
   {publications.map((publication) => (
+
     <div
-      key={publication.id}
-      style={{
-        background: "white",
-        borderRadius: "15px",
-        padding: "20px",
-        boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h2 style={{ color: "#2563eb" }}>
-        📄 {publication.title}
-      </h2>
-
-      <p><b>👨‍🔬 Authors:</b> {publication.authors}</p>
-
-      <p><b>📚 Journal:</b> {publication.journal}</p>
-
-      <p><b>📅 Year:</b> {publication.publication_year}</p>
-
-      <p>
-        <b>Status:</b>{" "}
-        <span
-          style={{
-            color:
-              publication.status === "Published"
-                ? "green"
-                : publication.status === "Draft"
-                ? "orange"
-                : "blue",
-            fontWeight: "bold",
-          }}
-        >
-          {publication.status}
-        </span>
-      </p>
-
-      <p><b>🔗 DOI:</b> {publication.doi || "N/A"}</p>
-
-      <p><b>🏷 Keywords:</b> {publication.keywords || "N/A"}</p>
-
-      <div
+        key={publication.id}
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: "20px",
+            background: "white",
+            borderRadius: "15px",
+            padding: "20px",
+            boxShadow: "0 5px 15px rgba(0,0,0,.1)",
         }}
-      >
-        <button
-          style={{
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
+    >
+
+        <h2 style={{ color: "#2563eb" }}>
+            📄 {publication.title}
+        </h2>
+
+        <p>
+            <b>👨‍🔬 Authors:</b> {publication.authors}
+        </p>
+
+        <p>
+            <b>📑 Publication Type:</b>{" "}
+            {publication.publication_type}
+        </p>
+
+        <p>
+            <b>📚 Journal:</b> {publication.journal}
+        </p>
+
+        <p>
+            <b>📅 Year:</b> {publication.publication_year}
+        </p>
+
+        <p>
+            <b>Status:</b>{" "}
+            <span
+                style={{
+                    color:
+                        publication.status === "Published"
+                            ? "green"
+                            : publication.status === "Draft"
+                            ? "orange"
+                            : "blue",
+                    fontWeight: "bold",
+                }}
+            >
+                {publication.status}
+            </span>
+        </p>
+
+        <p>
+            <b>🔗 DOI:</b>{" "}
+            {publication.doi || "N/A"}
+        </p>
+
+        <p>
+            <b>🏷 Keywords:</b>{" "}
+            {publication.keywords || "N/A"}
+        </p>
+
+        <div
+            style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "20px",
+            }}
         >
-          👁 View
-        </button>
 
-        <button
+            <button
+                onClick={() =>
+                    loadPublication(publication.id)
+                }
+                style={{
+                    background: "#2563eb",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                }}
+            >
+                👁 View
+            </button>
 
-    onClick={() =>
-        editPublication(publication)
-    }
+            <button
+                onClick={() =>
+                    setEditingPublication(publication)
+                }
+                style={{
+                    background: "#22c55e",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                }}
+            >
+                ✏ Edit
+            </button>
 
-    style={{
-        background: "#22c55e",
-        color: "white",
-        border: "none",
-        padding: "8px 14px",
-        borderRadius: "8px",
-        cursor: "pointer"
-    }}
+            <button
+                onClick={() =>
 
->
+    setDeletePublicationData(
 
-    ✏ Edit
+        publication
 
-</button>
+    )
 
-        <button
-          onClick={() => deletePublication(publication.id)}
-          style={{
-            background: "#ef4444",
-            color: "white",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-        >
-          🗑 Delete
-        </button>
-      </div>
+}
+                style={{
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                }}
+            >
+                🗑 Delete
+            </button>
+
+        </div>
+
     </div>
-  ))}
-</div>
 
+))}
+</div>
+{
+    selectedPublication && (
+
+        <PublicationDetailsModal
+
+            publication={selectedPublication}
+
+            onClose={() =>
+
+                setSelectedPublication(null)
+
+            }
+
+        />
+
+    )
+}
+{
+    editingPublication && (
+
+        <EditPublicationModal
+
+            publication={editingPublication}
+
+            onClose={() =>
+
+                setEditingPublication(null)
+
+            }
+
+            onSave={savePublication}
+
+        />
+
+    )
+}
+{
+
+    deletePublicationData && (
+
+        <DeleteConfirmationModal
+
+            publication={deletePublicationData}
+
+            onClose={() =>
+
+                setDeletePublicationData(null)
+
+            }
+
+            onDelete={deletePublication}
+
+        />
+
+    )
+
+}
     </div>
   );
 }
+
 
 export default Publications;

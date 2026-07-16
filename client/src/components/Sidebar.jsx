@@ -7,6 +7,8 @@ import {
     FaBell
 } from "react-icons/fa";
 import {FaSearch } from "react-icons/fa";
+import { FaUniversity } from "react-icons/fa";
+import { FaSchool } from "react-icons/fa";
 
 function Sidebar() {
 
@@ -84,6 +86,39 @@ function Sidebar() {
         navigate("/collaborations")
     }
 />
+<MenuItem
+
+icon={<FaUniversity/>}
+
+text="Conference Organization"
+
+active={location.pathname==="/conference"}
+
+onClick={()=>navigate("/conference")}
+
+/>
+<MenuItem
+
+icon={<FaSchool/>}
+
+text="Institution Management"
+
+active={location.pathname==="/institution"}
+
+onClick={()=>navigate("/institution")}
+
+/>
+<MenuItem
+
+icon={<FaSearch/>}
+
+text="Research Search"
+
+active={location.pathname==="/search"}
+
+onClick={()=>navigate("/search")}
+
+/>
 
         </div>
 
@@ -114,6 +149,7 @@ function MenuItem({ icon, text, active, onClick }) {
             <span>{text}</span>
 
         </div>
+        
 
     );
 

@@ -6,7 +6,18 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: str
+    institution_id: int | None = None
+    department: str | None = None
 
+designation: str | None = None
+
+research_interests: str | None = None
+
+orcid: str | None = None
+
+google_scholar: str | None = None
+
+linkedin: str | None = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -25,6 +36,7 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: str
+    institution_id: int | None = None
 
     class Config:
         from_attributes = True

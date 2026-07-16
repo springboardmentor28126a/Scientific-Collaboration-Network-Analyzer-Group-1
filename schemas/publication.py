@@ -15,7 +15,8 @@ class PublicationCreate(BaseModel):
     abstract: str | None = None
 
     pdf_file: str | None = None
-
+    institution_id: int | None = None
+    conference_id: int | None = None
 
 class PublicationResponse(PublicationCreate):
     id: int
@@ -23,6 +24,7 @@ class PublicationResponse(PublicationCreate):
 
     pdf_file: str | None = None
     uploaded_at: datetime | None = None
-
+    institution_id: int | None = None
+    conference_id: int | None = None
     class Config:
         from_attributes = True

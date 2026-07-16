@@ -14,6 +14,10 @@ import Notifications from "./pages/Notifications";
 import Collaborations from "./pages/Collaborations";
 import Workspace from "./pages/Workspace";
 import Chat from "./pages/Chat";
+import ConferenceOrganization from "./pages/ConferenceOrganization";
+import InstitutionManagement from "./pages/InstitutionManagement";
+import SearchResearch from "./pages/SearchResearch";
+import InstitutionDetails from "./pages/InstitutionDetails";
 function App() {
 
     return (
@@ -98,6 +102,31 @@ function App() {
 
     element={<Chat />}
 
+/>
+<Route
+
+path="/conference"
+
+element={<ConferenceOrganization/>}
+
+/>
+<Route
+
+path="/institution"
+
+element={<InstitutionManagement/>}
+
+/>
+<Route
+
+path="/search"
+
+element={<SearchResearch/>}
+
+/>
+<Route
+    path="/institution/:id"
+    element={<InstitutionDetails />}
 />
             </Routes>
 

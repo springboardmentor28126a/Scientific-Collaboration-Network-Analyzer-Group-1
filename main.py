@@ -12,6 +12,8 @@ from routers import chat
 from fastapi.staticfiles import StaticFiles
 import os
 from routers import dashboard
+from routers import conference
+from routers import institution
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer",
     description="Research Collaboration Management Platform",
@@ -46,6 +48,17 @@ app.include_router(publication_router)
 app.include_router(collaboration.router)
 app.include_router(chat.router)
 app.include_router(dashboard.router)
+
+app.include_router(
+    conference.router,
+    prefix="/conference",
+    tags=["Conference"]
+)
+app.include_router(
+    institution.router,
+    prefix="/institution",
+    tags=["Institution"]
+)
 # Home
 @app.get("/")
 def home():

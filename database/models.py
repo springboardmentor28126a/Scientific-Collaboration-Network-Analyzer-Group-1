@@ -1,21 +1,50 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from sqlalchemy import Text, DateTime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Date,
+    DateTime,
+    Text
+)
+
 from datetime import datetime
 from database.database import Base
-
-
 class User(Base):
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+
     name = Column(String, nullable=False)
+
     email = Column(String, unique=True, nullable=False)
+
     password = Column(String, nullable=False)
+
     role = Column(String, nullable=False)
 
+    institution_id = Column(
+        Integer,
+        ForeignKey("institutions.id"),
+        nullable=True
+    )
 
+    department = Column(String)
+
+    designation = Column(String)
+
+    research_interests = Column(String)
+
+    orcid = Column(String)
+
+    google_scholar = Column(String)
+
+    linkedin = Column(String)
+
+    institution = relationship("Institution")
 class ResearcherProfile(Base):
     __tablename__ = "researcher_profiles"
 
@@ -58,7 +87,16 @@ class Publication(Base):
         Integer,
         ForeignKey("users.id")
     )
-
+    institution_id = Column(
+    Integer,
+    ForeignKey("institutions.id"),
+    nullable=True
+)
+    conference_id = Column(
+    Integer,
+    ForeignKey("conferences.id"),
+    nullable=True
+)
     title = Column(String, nullable=False)
 
     authors = Column(String, nullable=False)
@@ -87,9 +125,76 @@ class Publication(Base):
     default=datetime.utcnow)
 
     user = relationship("User")
+    institution = relationship("Institution")
+    conference = relationship("Conference")
 
+class Conference(Base):
 
+    __tablename__ = "conferences"
 
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    name = Column(
+        String,
+        nullable=False
+    )
+
+    organizer = Column(String)
+
+    location = Column(String)
+
+    start_date = Column(Date)
+
+    end_date = Column(Date)
+
+    website = Column(String)
+
+    description = Column(Text)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+class Institution(Base):
+
+    __tablename__ = "institutions"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    name = Column(
+        String,
+        nullable=False,
+        unique=True
+    )
+
+    address = Column(String)
+
+    city = Column(String)
+
+    state = Column(String)
+
+    country = Column(String)
+
+    website = Column(String)
+
+    email = Column(String)
+
+    phone = Column(String)
+
+    description = Column(Text)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
 class CollaborationRequest(Base):
     __tablename__ = "collaboration_requests"
 
@@ -201,3 +306,4 @@ class ChatMessage(Base):
     collaboration = relationship(
         "Collaboration"
     )
+
