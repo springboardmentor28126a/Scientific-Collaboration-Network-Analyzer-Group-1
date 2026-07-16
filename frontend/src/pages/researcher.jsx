@@ -1,3 +1,4 @@
+import "../css/researcher.css";
 import { useState } from "react";
 import API from "../services/api";
 
@@ -27,7 +28,6 @@ function Researcher() {
       );
 
       alert(response.data.message);
-      console.log(response.data);
 
     } catch (error) {
       console.log(error.response?.data);
@@ -36,43 +36,43 @@ function Researcher() {
   };
 
   return (
-    <div>
-      <h2>Researcher Profile</h2>
+    <div className="researcher-container">
+      <div className="researcher-card">
 
-      <input
-        type="text"
-        placeholder="Institution"
-        onChange={(e) => setInstitution(e.target.value)}
-      />
+        <h2>Researcher Profile</h2>
 
-      <br /><br />
+        <input
+          type="text"
+          placeholder="Institution"
+          value={institution}
+          onChange={(e) => setInstitution(e.target.value)}
+        />
 
-      <input
-        type="text"
-        placeholder="Department"
-        onChange={(e) => setDepartment(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Department"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+        />
 
-      <br /><br />
+        <input
+          type="text"
+          placeholder="Research Interest"
+          value={research_interest}
+          onChange={(e) => setResearchInterest(e.target.value)}
+        />
 
-      <input
-        type="text"
-        placeholder="Research Interest"
-        onChange={(e) => setResearchInterest(e.target.value)}
-      />
+        <textarea
+          placeholder="Bio"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+        ></textarea>
 
-      <br /><br />
+        <button onClick={createResearcher}>
+          Save Profile
+        </button>
 
-      <textarea
-        placeholder="Bio"
-        onChange={(e) => setBio(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={createResearcher}>
-        Save Profile
-      </button>
+      </div>
     </div>
   );
 }

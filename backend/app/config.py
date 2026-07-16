@@ -1,5 +1,5 @@
-DB_HOST = "localhost"
+DB_HOST = "db.rviqwougcfrutdcglfng.supabase.co"
 DB_PORT = "5432"
-DB_NAME = "infosys_db"
+DB_NAME = "postgres"
 DB_USER = "postgres"
-DB_PASSWORD = "Hari@2008"
+DB_PASSWORD = "Harinisupabase"

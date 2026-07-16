@@ -1,63 +1,73 @@
+import "../css/login.css";
 import { useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
   const loginUser = async () => {
-  try {
-    const formData = new URLSearchParams();
+    try {
+      const formData = new URLSearchParams();
 
-    formData.append("username", email); // OAuth2 uses username
-    formData.append("password", password);
+      formData.append("username", email);
+      formData.append("password", password);
 
-    const response = await API.post("/login", formData, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
+      const response = await API.post("/login", formData, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-    localStorage.setItem("token", response.data.access_token);
-    navigate("/researcher");
+      console.log("Full Response:", response.data);
+      console.log("Access Token:", response.data.access_token);
 
-    alert("Login Successful!");
-    console.log(response.data);
+      localStorage.setItem("token", response.data.access_token);
 
-  } catch (error) {
-    console.log(error.response);
-    console.log(error.response.data);
-    alert(JSON.stringify(error.response.data));
-}
-};
+      console.log("Stored Token:", localStorage.getItem("token"));
+
+      alert("Login Successful!");
+
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.log("Error Response:", error.response);
+      console.log("Error Data:", error.response?.data);
+      alert(JSON.stringify(error.response?.data));
+    }
+  };
 
   return (
-    <div>
-      <h2>User Login</h2>
+    <div className="login-container">
+      <div className="login-card">
 
-      <input
-        type="email"
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <h2>User Login</h2>
 
-      <br /><br />
+        <input
+          type="email"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          type="password"
+          placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-      <br /><br />
+        <button onClick={loginUser}>
+          Login
+        </button>
 
-      <button onClick={loginUser}>
-        Login
-      </button>
-      <p>
-        Don't have an account? <Link to="/register">Register here</Link>
-      </p>
+        <p>
+          Don't have an account?{" "}
+          <Link to="/register">Register here</Link>
+        </p>
+
+      </div>
     </div>
   );
 }

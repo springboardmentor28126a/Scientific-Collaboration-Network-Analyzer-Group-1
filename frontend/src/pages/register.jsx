@@ -1,3 +1,4 @@
+import "../css/register.css";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import API from "../services/api";
@@ -26,8 +27,10 @@ function Register() {
     }
   };
 
-  return (
-    <div>
+ return (
+  <div className="register-container">
+    <div className="register-card">
+
       <h2>User Registration</h2>
 
       <input
@@ -36,15 +39,11 @@ function Register() {
         onChange={(e) => setName(e.target.value)}
       />
 
-      <br /><br />
-
       <input
         type="email"
         placeholder="Email"
         onChange={(e) => setEmail(e.target.value)}
       />
-
-      <br /><br />
 
       <input
         type="password"
@@ -52,16 +51,18 @@ function Register() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <br /><br />
-
       <button onClick={registerUser}>
         Register
       </button>
+
       <p>
-        Already have an account? <Link to="/login">Login here</Link>
+        Already have an account?{" "}
+        <Link to="/login">Login here</Link>
       </p>
+
     </div>
-  );
+  </div>
+);
 }
 
 export default Register;

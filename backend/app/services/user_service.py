@@ -23,18 +23,26 @@ def create_user(db: Session, name: str, email: str, password: str):
         raise e
 
     
+from fastapi import HTTPException, status
+
 def login_user(user, db):
     db_user = db.query(User).filter(User.email == user.username).first()
 
     if not db_user:
-        return {"message": "Invalid email"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Email"
+        )
 
     if not verify_password(user.password, db_user.password):
-        return {"message": "Invalid Email or Password"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Email or Password"
+        )
 
     access_token = create_access_token(
         data={"sub": db_user.email}
-)
+    )
 
     return {
         "message": "Login Successful",
@@ -44,6 +52,6 @@ def login_user(user, db):
             "id": db_user.id,
             "name": db_user.name,
             "email": db_user.email
+        }
     }
-}
     
