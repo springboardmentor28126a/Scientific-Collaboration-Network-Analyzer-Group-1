@@ -3,13 +3,19 @@ import { useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const loginUser = async () => {
+  const loginUser = async (e) => {
+    if (e) e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please fill in all mandatory fields");
+      return;
+    }
     try {
       const formData = new URLSearchParams();
 
@@ -29,14 +35,14 @@ function Login() {
 
       console.log("Stored Token:", localStorage.getItem("token"));
 
-      alert("Login Successful!");
+      toast.success("Login Successful!");
 
       navigate("/dashboard");
 
     } catch (error) {
       console.log("Error Response:", error.response);
       console.log("Error Data:", error.response?.data);
-      alert(JSON.stringify(error.response?.data));
+      toast.error(error.response?.data?.detail || "Login failed");
     }
   };
 
@@ -46,17 +52,23 @@ function Login() {
 
         <h2>User Login</h2>
 
-        <input
-          type="email"
-          placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="input-group">
+          <label>Email <span className="mandatory">*</span></label>
+          <input
+            type="email"
+            placeholder="Email"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="input-group">
+          <label>Password <span className="mandatory">*</span></label>
+          <input
+            type="password"
+            placeholder="Password"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
 
         <button onClick={loginUser}>
           Login

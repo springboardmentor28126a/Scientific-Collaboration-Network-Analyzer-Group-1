@@ -7,15 +7,17 @@ from app.models.researcher_model import Researcher
 def create_researcher(
     db: Session,
     user_id: int,
-    institution: str,
+    institution_id: int,
     department: str,
+    academic_position: str,
     research_interest: str,
     bio: str
 ):
     researcher = Researcher(
         user_id=user_id,
-        institution=institution,
+        institution_id=institution_id,
         department=department,
+        academic_position=academic_position,
         research_interest=research_interest,
         bio=bio
     )

@@ -19,6 +19,10 @@ SessionLocal = sessionmaker(
 
 from app.models.user_model import Base
 from app.models import researcher_model
+from app.models import publication_model
+from app.models import conference_model
+from app.models import institution_model
+from app.models import file_model
 
 Base.metadata.create_all(bind=engine)
 

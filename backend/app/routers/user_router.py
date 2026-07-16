@@ -45,3 +45,36 @@ def get_profile(current_user: User = Depends(get_current_user)):
             "email": current_user.email
         }
     }
+
+@router.get("/dashboard-stats")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from app.models.researcher_model import Researcher
+    from app.models.institution_model import Institution
+    from app.models.publication_model import Publication
+    from app.models.conference_model import Conference
+    
+    total_institutions = db.query(Institution).count()
+    total_researchers = db.query(Researcher).count()
+    
+    my_publications = db.query(Publication).filter(Publication.user_id == current_user.id).order_by(Publication.id.desc()).all()
+    my_conferences = db.query(Conference).filter(Conference.user_id == current_user.id).order_by(Conference.id.desc()).all()
+    
+    my_profile = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
+    my_institution = None
+    if my_profile and my_profile.institution_id:
+        inst = db.query(Institution).filter(Institution.id == my_profile.institution_id).first()
+        if inst:
+            my_institution = inst.institution_name
+            
+    return {
+        "total_institutions": total_institutions,
+        "total_researchers": total_researchers,
+        "total_publications": len(my_publications),
+        "total_conferences": len(my_conferences),
+        "recent_publications": [{"title": p.title, "year": p.publication_year} for p in my_publications[:5]],
+        "recent_conferences": [{"name": c.conference_name, "date": c.start_date} for c in my_conferences[:5]],
+        "my_institution": my_institution or "No Institution Assigned"
+    }
