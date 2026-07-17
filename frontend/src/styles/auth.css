@@ -1,0 +1,104 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-ink);
+  padding: var(--space-md);
+}
+
+.auth-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-raised);
+}
+
+.auth-card-wide {
+  max-width: 560px;
+}
+
+.auth-card-center {
+  text-align: center;
+}
+
+.auth-card h1 {
+  font-size: var(--fs-h2);
+  margin-bottom: var(--space-xs);
+}
+
+.auth-sub {
+  color: var(--color-slate-light);
+  font-size: var(--fs-small);
+  margin-bottom: var(--space-md);
+}
+
+.auth-sub a {
+  color: var(--color-teal-dim);
+  font-weight: 600;
+}
+
+.auth-card label {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--color-slate);
+  margin: var(--space-sm) 0 0.35rem;
+}
+
+.auth-card input,
+.auth-card select {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #D8D6CE;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  background: var(--color-white);
+  color: #0F1B2E;
+  transition: border-color var(--transition);
+}
+
+.auth-card input::placeholder {
+  color: #9CA3AF;
+}
+
+.auth-card input:focus,
+.auth-card select:focus {
+  border-color: var(--color-teal);
+  outline: none;
+}
+
+.auth-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.auth-hint {
+  font-size: var(--fs-tiny);
+  color: var(--color-slate-light);
+  margin-top: var(--space-sm);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--space-md);
+  text-align: center;
+  border: none;
+}
+
+.auth-status-badge {
+  display: inline-block;
+  background: rgba(232, 163, 61, 0.15);
+  color: var(--color-amber);
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  margin-bottom: var(--space-sm);
+}

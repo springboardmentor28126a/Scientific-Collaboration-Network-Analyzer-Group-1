@@ -1,29 +1,33 @@
-from fastapi.middleware.cors import CORSMiddleware
-from app.routers.researcher_profile_router import router as researcher_router
 from fastapi import FastAPI
-from app.routers.user_router import router
-from app.database import Base, engine
-from app.models.user_model import User
-from app.models.institution_model import Institution
-from app.models.department_model import Department
-from app.models.researcher_profile_model import ResearcherProfile
-
-Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.user import router as user_router
+from app.api.auth import router as auth_router
+from app.api.researcher import router as researcher_router
+from app.api.institution import router as institution_router
+from app.api.department import router as department_router
+from app.api.publication import router as publication_router
+app = FastAPI(
+    title="Scientific Collaboration Network Analyzer API",
+    description="Backend API for managing researchers, publications, collaborations, conferences, and institutions.",
+    version="1.0.0"
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(router)
+app.include_router(user_router)
+app.include_router(auth_router)
+app.include_router(institution_router)
+app.include_router(department_router)
 app.include_router(researcher_router)
-
+app.include_router(publication_router)
 @app.get("/")
-def home():
+def root():
     return {
-        "message": "Welcome to Scientific Collaboration Network Analyzer"
+        "message": "Welcome to Scientific Collaboration Network Analyzer API"
     }

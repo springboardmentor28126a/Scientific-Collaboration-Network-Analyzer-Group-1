@@ -1,0 +1,41 @@
+import api from "./api";
+
+export const createPublication = async (payload) => {
+  const response = await api.post("/publications/", payload);
+  return response.data;
+};
+
+export const fetchMyPublications = async () => {
+  const response = await api.get("/publications/mine");
+  return response.data;
+};
+
+export const updatePublication = async (id, payload) => {
+  const response = await api.put(`/publications/${id}`, payload);
+  return response.data;
+};
+
+export const submitPublication = async (id) => {
+  const response = await api.patch(`/publications/${id}/submit`);
+  return response.data;
+};
+
+export const deletePublication = async (id) => {
+  const response = await api.delete(`/publications/${id}`);
+  return response.data;
+};
+
+export const fetchReviewQueue = async () => {
+  const response = await api.get("/publications/review-queue");
+  return response.data;
+};
+
+export const claimPublication = async (id) => {
+  const response = await api.patch(`/publications/${id}/claim`);
+  return response.data;
+};
+
+export const decideReview = async (id, payload) => {
+  const response = await api.patch(`/publications/${id}/decide`, payload);
+  return response.data;
+};

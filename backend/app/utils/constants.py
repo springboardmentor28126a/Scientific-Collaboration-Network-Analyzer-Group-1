@@ -1,0 +1,22 @@
+from enum import Enum
+
+
+class UserRole(str, Enum):
+    SYSTEM_ADMIN = "SYSTEM_ADMIN"
+    INSTITUTION_ADMIN = "INSTITUTION_ADMIN"
+    RESEARCHER = "RESEARCHER"
+    REVIEWER = "REVIEWER"
+
+
+class UserStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    SUSPENDED = "SUSPENDED"
+
+class PublicationStatus(str, Enum):
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    PUBLISHED = "PUBLISHED"
+    REJECTED = "REJECTED"
