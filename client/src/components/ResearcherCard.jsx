@@ -43,7 +43,7 @@ function ResearcherCard({ researcher }) {
 
         <div
             style={{
-                background: "white",
+                background: "rgba(255,255,255,0.06)",
                 borderRadius: "15px",
                 padding: "25px",
                 boxShadow: "0 5px 18px rgba(0,0,0,.08)",

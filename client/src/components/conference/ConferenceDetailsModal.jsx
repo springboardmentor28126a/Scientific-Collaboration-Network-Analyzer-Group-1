@@ -24,9 +24,11 @@ function ConferenceDetailsModal({
             <div
                 style={{
                     width: "700px",
-                    background: "white",
+                    background: "var(--surface-alt)",
+                    color: "var(--text)",
                     padding: "30px",
-                    borderRadius: "15px"
+                    borderRadius: "15px",
+                    border: "1px solid var(--border)"
                 }}
             >
 
@@ -98,9 +100,11 @@ function ConferenceDetailsModal({
 
                 <div
                     style={{
-                        background: "#f5f5f5",
+                        background: "var(--surface)",
+                        color: "var(--text)",
                         padding: "15px",
-                        borderRadius: "10px"
+                        borderRadius: "10px",
+                        border: "1px solid var(--border)"
                     }}
                 >
 

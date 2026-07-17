@@ -22,7 +22,8 @@ function PublicationDetailsModal({ publication, onClose }) {
             <div
                 style={{
                     width: "700px",
-                    background: "white",
+                    background: "var(--surface-alt)",
+                    color: "var(--text)",
                     borderRadius: "15px",
                     padding: "30px",
                     maxHeight: "90vh",
@@ -63,12 +64,12 @@ function PublicationDetailsModal({ publication, onClose }) {
 
                 <p>
                     <b>🔗 DOI:</b>{" "}
-                    {publication.doi || "N/A"}
+                    <span style={{ color: "var(--text)" }}>{publication.doi || "N/A"}</span>
                 </p>
 
                 <p>
                     <b>🏷 Keywords:</b>{" "}
-                    {publication.keywords || "N/A"}
+                    <span style={{ color: "var(--text)" }}>{publication.keywords || "N/A"}</span>
                 </p>
 
                 <p>
@@ -77,9 +78,11 @@ function PublicationDetailsModal({ publication, onClose }) {
 
                 <div
                     style={{
-                        background: "#f8f9fa",
+                        background: "var(--surface-alt)",
+                        color: "var(--text)",
                         padding: "15px",
                         borderRadius: "10px",
+                        border: "1px solid var(--border)",
                         marginBottom: "20px",
                     }}
                 >
@@ -126,10 +129,9 @@ function PublicationDetailsModal({ publication, onClose }) {
                 <button
 
                     onClick={onClose}
-
                     style={{
-                        background: "#ef4444",
-                        color: "white",
+                        background: "var(--danger)",
+                        color: "var(--on-danger)",
                         border: "none",
                         padding: "10px 18px",
                         borderRadius: "8px",

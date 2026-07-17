@@ -1,0 +1,180 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bg: #07101d;
+  --page-bg: radial-gradient(circle at top, rgba(34, 211, 238, 0.14), transparent 24%), linear-gradient(180deg, #07101d 0%, #050b12 100%);
+  --surface: rgba(12, 25, 42, 0.96);
+  --surface-alt: rgba(16, 34, 58, 0.95);
+  --sidebar: linear-gradient(180deg, #01182b 0%, #04223b 100%);
+  --sidebar-text: white;
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --button-bg: rgba(34, 211, 238, 0.16);
+  --button-bg-hover: rgba(34, 211, 238, 0.28);
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #22d3ee;
+  --accent-2: #8b5cf6;
+  --shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8fafc;
+  --page-bg: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  --surface: rgba(255, 255, 255, 0.96);
+  --surface-alt: rgba(248, 250, 252, 0.95);
+  --sidebar: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  --sidebar-text: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(15, 23, 42, 0.08);
+  --button-bg: rgba(37, 99, 235, 0.14);
+  --button-bg-hover: rgba(37, 99, 235, 0.22);
+  --border: rgba(15, 23, 42, 0.08);
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-2: #7c3aed;
+  --shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  border-radius: 14px;
+  border: none;
+  background: var(--button-bg);
+  color: var(--text);
+  padding: 12px 18px;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  background: var(--button-bg-hover);
+}
+
+input, textarea, select {
+  font: inherit;
+  border: 1px solid var(--border);
+  outline: none;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  padding: 14px 16px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(34, 211, 238, 0.75);
+  background: rgba(255,255,255,0.08);
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+  color: var(--text);
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.page-container {
+  padding: 30px;
+}
+
+.section-heading {
+  margin-bottom: 18px;
+}
+
+.card-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.card-surface-light {
+  background: rgba(255,255,255,0.04);
+}
+
+.page-container,
+.section,
+.section-inner {
+  color: var(--text);
+}
+
+.section-heading {
+  color: #e2e8f0;
+}
+
+.grid-gap {
+  gap: 20px;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.35);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.55);
+}
+
+@media (max-width: 900px) {
+  .page-container {
+    padding: 20px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

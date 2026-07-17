@@ -39,91 +39,38 @@ function Collaborations() {
     return (
 
         <div>
+            <h1 style={{ color: "var(--text)" }}>My Collaborations</h1>
 
-            <h1>
-
-                My Collaborations
-
-            </h1>
-
-            {
-
-                collaborations.length === 0 ?
-
-                (
-
-                    <h3>
-
-                        No Collaborations Yet
-
-                    </h3>
-
-                )
-
-                :
-
+            {collaborations.length === 0 ? (
+                <h3 style={{ color: "var(--muted)" }}>No Collaborations Yet</h3>
+            ) : (
                 collaborations.map((person) => (
-
                     <div
                         key={person.id}
                         style={{
-                            background: "white",
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
                             padding: "20px",
                             borderRadius: "12px",
                             marginBottom: "20px",
-                            boxShadow: "0 2px 10px rgba(0,0,0,.1)"
+                            boxShadow: "var(--shadow)",
+                            color: "var(--text)",
                         }}
                     >
-
-                        <h2>
-
-                            {person.name}
-
-                        </h2>
-
-                        <p>
-
-                            🏫 {person.institution}
-
-                        </p>
-
-                        <p>
-
-                            💻 {person.department}
-
-                        </p>
-
-                        <p>
-
-                            🔬 {person.research_interest}
-
-                        </p>
-<button
-
-    onClick={() =>
-
-        navigate(
-
-            `/workspace/${person.id}`
-
-        )
-
-    }
-
->
-
-    Open Workspace
-
-</button>
-
+                        <h2 style={{ color: "var(--text)" }}>{person.name}</h2>
+                        <p style={{ color: "var(--muted)" }}>🏫 {person.institution}</p>
+                        <p style={{ color: "var(--muted)" }}>💻 {person.department}</p>
+                        <p style={{ color: "var(--muted)" }}>🔬 {person.research_interest}</p>
+                        <button
+                            onClick={() => navigate(`/workspace/${person.id}`)}
+                            style={{ marginTop: "12px" }}
+                        >
+                            Open Workspace
+                        </button>
                     </div>
-
                 ))
-
-            }
-
+            )}
         </div>
-
     );
 
 }

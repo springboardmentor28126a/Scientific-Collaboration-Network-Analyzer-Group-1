@@ -12,6 +12,7 @@ function SearchPublications() {
     const [filterType, setFilterType] = useState("Title");
 
     const [filterValue, setFilterValue] = useState("");
+    const [sortOption, setSortOption] = useState("Title (A-Z)");
     const [selectedPublication, setSelectedPublication] = useState(null);
 
     useEffect(() => {
@@ -110,6 +111,28 @@ function SearchPublications() {
 
     });
 
+    const sortedPublications = [...filteredPublications].sort((a, b) => {
+        const yearA = a.publication_year || 0;
+        const yearB = b.publication_year || 0;
+        const updatedA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
+        const updatedB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+
+        switch (sortOption) {
+            case "Title (Z-A)":
+                return b.title?.localeCompare(a.title || "") || 0;
+            case "Year (Newest)":
+                return yearB - yearA;
+            case "Year (Oldest)":
+                return yearA - yearB;
+            case "Last Modified (Newest)":
+                return updatedB - updatedA;
+            case "Last Modified (Oldest)":
+                return updatedA - updatedB;
+            default:
+                return a.title?.localeCompare(b.title || "") || 0;
+        }
+    });
+
     return (
 
         <div style={{ padding: "30px" }}>
@@ -131,7 +154,9 @@ function SearchPublications() {
                     display: "flex",
                     gap: "15px",
                     marginTop: "30px",
-                    marginBottom: "20px"
+                    marginBottom: "20px",
+                    flexWrap: "wrap",
+                    alignItems: "center"
                 }}
             >
 
@@ -151,6 +176,7 @@ function SearchPublications() {
 
                     style={{
                         flex: 1,
+                        minWidth: "240px",
                         padding: "12px",
                         borderRadius: "8px"
                     }}
@@ -171,6 +197,23 @@ function SearchPublications() {
 
                 </button>
 
+                <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                    style={{
+                        padding: "12px",
+                        borderRadius: "8px",
+                        minWidth: "220px"
+                    }}
+                >
+                    <option>Title (A-Z)</option>
+                    <option>Title (Z-A)</option>
+                    <option>Year (Newest)</option>
+                    <option>Year (Oldest)</option>
+                    <option>Last Modified (Newest)</option>
+                    <option>Last Modified (Oldest)</option>
+                </select>
+
             </div>
 
             {
@@ -179,9 +222,11 @@ function SearchPublications() {
 
                     <div
                         style={{
-                            background: "#f5f5f5",
+                            background: "var(--surface-alt)",
+                            color: "var(--text)",
                             padding: "20px",
                             borderRadius: "10px",
+                            border: "1px solid var(--border)",
                             marginBottom: "25px"
                         }}
                     >
@@ -344,7 +389,7 @@ function SearchPublications() {
 
                 {
 
-                    filteredPublications.map((publication) => (
+                    sortedPublications.map((publication) => (
 
                         <div
 
@@ -352,13 +397,13 @@ function SearchPublications() {
 
                             style={{
 
-                                background: "white",
+                                background: "rgba(255,255,255,0.06)",
 
                                 padding: "20px",
 
                                 borderRadius: "12px",
 
-                                boxShadow: "0 5px 15px rgba(0,0,0,.1)"
+                                boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
                             }}
 
@@ -424,11 +469,11 @@ function SearchPublications() {
 
     style={{
 
-        marginTop:"15px",
+                    marginTop:"15px",
 
-        background:"#2563eb",
+        background:"var(--primary)",
 
-        color:"white",
+        color:"var(--on-primary)",
 
         border:"none",
 
@@ -469,20 +514,22 @@ function SearchPublications() {
                 alignItems: "center",
                 zIndex: 999
             }}
-        >
+            >
 
             <div
                 style={{
                     width: "700px",
-                    background: "white",
+                    background: "var(--surface-alt)",
+                    color: "var(--text)",
                     borderRadius: "12px",
+                    border: "1px solid var(--border)",
                     padding: "30px",
                     maxHeight: "90vh",
                     overflowY: "auto"
                 }}
             >
 
-                <h2>
+                            <h2 style={{ color: "var(--text)" }}>
 
                     📄 {selectedPublication.title}
 
