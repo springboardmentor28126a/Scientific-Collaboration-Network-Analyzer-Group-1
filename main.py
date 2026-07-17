@@ -9,6 +9,8 @@ from routers.researcher import router as researcher_router
 from routers.publication import router as publication_router
 from routers import collaboration
 from routers import chat
+from routers import analytics
+from routers import search
 from fastapi.staticfiles import StaticFiles
 import os
 from routers import dashboard
@@ -48,6 +50,8 @@ app.include_router(publication_router)
 app.include_router(collaboration.router)
 app.include_router(chat.router)
 app.include_router(dashboard.router)
+app.include_router(analytics.router)
+app.include_router(search.router)
 
 app.include_router(
     conference.router,

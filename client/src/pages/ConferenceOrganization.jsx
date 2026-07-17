@@ -9,6 +9,7 @@ function ConferenceOrganization() {
     const [editingConference, setEditingConference] = useState(null);
 
     const [searchConference, setSearchConference] = useState("");
+    const [typeFilter, setTypeFilter] = useState("All");
 
     const [form, setForm] = useState({
 
@@ -26,7 +27,23 @@ function ConferenceOrganization() {
 
         website: "",
 
-        description: ""
+        description: "",
+
+        conference_type: "Physical",
+
+        meeting_platform: "Google Meet",
+
+        meeting_link: "",
+
+        meeting_id: "",
+
+        passcode: "",
+
+        host_name: "",
+
+        time_zone: "",
+
+        joining_instructions: ""
 
     });
 
@@ -70,11 +87,34 @@ function ConferenceOrganization() {
 
         try {
 
+            const payload = {
+                name: form.name,
+                organizer: form.organizer,
+                location: form.location,
+                start_date: form.start_date,
+                end_date: form.end_date,
+                website: form.website,
+                description: form.description,
+                meeting_details:
+                    form.conference_type === "Physical"
+                        ? null
+                        : {
+                              conference_type: form.conference_type,
+                              meeting_platform: form.meeting_platform,
+                              meeting_link: form.meeting_link,
+                              meeting_id: form.meeting_id,
+                              passcode: form.passcode,
+                              host_name: form.host_name,
+                              time_zone: form.time_zone,
+                              joining_instructions: form.joining_instructions,
+                          },
+            };
+
             await API.post(
 
                 "/conference/",
 
-                form
+                payload
 
             );
 
@@ -98,7 +138,23 @@ function ConferenceOrganization() {
 
                 website: "",
 
-                description: ""
+                description: "",
+
+                conference_type: "Physical",
+
+                meeting_platform: "Google Meet",
+
+                meeting_link: "",
+
+                meeting_id: "",
+
+                passcode: "",
+
+                host_name: "",
+
+                time_zone: "",
+
+                joining_instructions: ""
 
             });
 
@@ -189,24 +245,18 @@ function ConferenceOrganization() {
     ).length;
 
     const filteredConferences = conferences.filter(
-
-        conference =>
-
-            conference.name
-
-                .toLowerCase()
-
-                .includes(
-
-                    searchConference.toLowerCase()
-
-                )
-
+        (conference) => {
+            const conferenceType = conference.conference_type || conference.meeting_details?.conference_type || "Physical";
+            return (
+                conference.name.toLowerCase().includes(searchConference.toLowerCase()) &&
+                (typeFilter === "All" || conferenceType === typeFilter)
+            );
+        }
     );
 
     const statsCard = {
 
-        background: "white",
+        background: "rgba(255,255,255,0.06)",
 
         padding: "25px",
 
@@ -214,7 +264,7 @@ function ConferenceOrganization() {
 
         textAlign: "center",
 
-        boxShadow: "0 5px 15px rgba(0,0,0,.1)"
+        boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
     };
 
@@ -280,46 +330,37 @@ function ConferenceOrganization() {
 
             </div>
 
-            <input
-
-                type="text"
-
-                placeholder="Search Conference..."
-
-                value={searchConference}
-
-                onChange={(e) =>
-
-                    setSearchConference(
-
-                        e.target.value
-
-                    )
-
-                }
-
-                style={{
-
-                    width: "350px",
-
-                    padding: "12px",
-
-                    marginBottom: "25px"
-
-                }}
-
-            />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", marginBottom: "25px", alignItems: "center" }}>
+                <input
+                    type="text"
+                    placeholder="Search Conference..."
+                    value={searchConference}
+                    onChange={(e) => setSearchConference(e.target.value)}
+                    style={{
+                        minWidth: "260px",
+                        padding: "12px",
+                    }}
+                />
+                <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    style={{
+                        minWidth: "180px",
+                        padding: "12px",
+                    }}
+                >
+                    <option value="All">All Types</option>
+                    <option value="Physical">Physical</option>
+                    <option value="Online">Online</option>
+                    <option value="Hybrid">Hybrid</option>
+                </select>
+            </div>
 
             <div
-
                 style={{
-
                     display: "grid",
-
                     gap: "15px",
-
                     marginBottom: "40px"
-
                 }}
 
             >
@@ -347,6 +388,16 @@ function ConferenceOrganization() {
                     onChange={handleChange}
                 />
 
+                <select
+                    name="conference_type"
+                    value={form.conference_type}
+                    onChange={handleChange}
+                >
+                    <option value="Physical">Physical</option>
+                    <option value="Online">Online</option>
+                    <option value="Hybrid">Hybrid</option>
+                </select>
+
                 <input
                     type="date"
                     name="start_date"
@@ -360,6 +411,70 @@ function ConferenceOrganization() {
                     value={form.end_date}
                     onChange={handleChange}
                 />
+
+                {(form.conference_type === "Online" || form.conference_type === "Hybrid") && (
+                    <>
+                        <select
+                            name="meeting_platform"
+                            value={form.meeting_platform}
+                            onChange={handleChange}
+                        >
+                            <option value="Google Meet">Google Meet</option>
+                            <option value="Zoom">Zoom</option>
+                            <option value="Microsoft Teams">Microsoft Teams</option>
+                            <option value="Webex">Webex</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+
+                        <input
+                            type="text"
+                            name="meeting_link"
+                            placeholder="Meeting Link"
+                            value={form.meeting_link}
+                            onChange={handleChange}
+                        />
+
+                        <input
+                            type="text"
+                            name="meeting_id"
+                            placeholder="Meeting ID"
+                            value={form.meeting_id}
+                            onChange={handleChange}
+                        />
+
+                        <input
+                            type="text"
+                            name="passcode"
+                            placeholder="Passcode"
+                            value={form.passcode}
+                            onChange={handleChange}
+                        />
+
+                        <input
+                            type="text"
+                            name="host_name"
+                            placeholder="Host Name"
+                            value={form.host_name}
+                            onChange={handleChange}
+                        />
+
+                        <input
+                            type="text"
+                            name="time_zone"
+                            placeholder="Time Zone"
+                            value={form.time_zone}
+                            onChange={handleChange}
+                        />
+
+                        <textarea
+                            name="joining_instructions"
+                            placeholder="Joining Instructions"
+                            value={form.joining_instructions}
+                            onChange={handleChange}
+                            rows="3"
+                        />
+                    </>
+                )}
 
                 <input
                     type="text"
@@ -429,13 +544,13 @@ function ConferenceOrganization() {
 
                             style={{
 
-                                background:"white",
+                                background: "rgba(255,255,255,0.06)",
 
                                 borderRadius:"15px",
 
                                 padding:"20px",
 
-                                boxShadow:"0 5px 15px rgba(0,0,0,.1)"
+                                boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
                             }}
 
@@ -482,31 +597,36 @@ function ConferenceOrganization() {
                             </p>
 
                             <p>
+                                <b>Conference Type:</b>
+                                {" "}
+                                {conference.conference_type || conference.meeting_details?.conference_type || "Physical"}
+                            </p>
 
+                            {((conference.conference_type || conference.meeting_details?.conference_type) === "Online" || (conference.conference_type || conference.meeting_details?.conference_type) === "Hybrid") && (
+                                <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "12px", marginBottom: "14px" }}>
+                                    <p style={{ margin: "6px 0" }}><b>Platform:</b> {conference.meeting_platform || conference.meeting_details?.meeting_platform || "N/A"}</p>
+                                    <p style={{ margin: "6px 0" }}><b>Host:</b> {conference.host_name || conference.meeting_details?.host_name || "N/A"}</p>
+                                    <p style={{ margin: "6px 0" }}><b>Time Zone:</b> {conference.time_zone || conference.meeting_details?.time_zone || "N/A"}</p>
+                                    {conference.meeting_details?.meeting_link && (
+                                        <p style={{ margin: "6px 0" }}><b>Join:</b> <a href={conference.meeting_details.meeting_link} target="_blank" rel="noreferrer">Link</a></p>
+                                    )}
+                                </div>
+                            )}
+
+                            <p>
                                 <b>Website:</b>
-
                                 <br/>
-
                                 <a
-
                                     href={conference.website}
-
                                     target="_blank"
-
                                     rel="noreferrer"
-
                                 >
-
                                     {conference.website}
-
                                 </a>
-
                             </p>
 
                             <p>
-
                                 <b>Description:</b>
-
                             </p>
 
                             <p

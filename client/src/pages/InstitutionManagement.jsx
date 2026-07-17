@@ -161,7 +161,7 @@ function InstitutionManagement() {
 
     const statsCard={
 
-        background:"white",
+        background: "rgba(255,255,255,0.06)",
 
         padding:"25px",
 
@@ -169,7 +169,7 @@ function InstitutionManagement() {
 
         textAlign:"center",
 
-        boxShadow:"0 5px 15px rgba(0,0,0,.1)"
+        boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
     };
 
@@ -493,13 +493,13 @@ key={institution.id}
 
 style={{
 
-background:"white",
+background: "rgba(255,255,255,0.06)",
 
 padding:"20px",
 
 borderRadius:"15px",
 
-boxShadow:"0 5px 15px rgba(0,0,0,.1)"
+boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
 }}
 

@@ -52,7 +52,7 @@ function EditPublicationModal({
             <div
                 style={{
                     width: "700px",
-                    background: "white",
+                    background: "rgba(255,255,255,0.06)",
                     padding: "30px",
                     borderRadius: "15px",
                     maxHeight: "90vh",

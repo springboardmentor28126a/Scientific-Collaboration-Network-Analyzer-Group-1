@@ -8,6 +8,7 @@ import DeleteConfirmationModal from "../components/publications/DeleteConfirmati
 function Publications() {
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
+  const [sortOption, setSortOption] = useState("Title (A-Z)");
   const [selectedFile, setSelectedFile] = useState(null);
   const [customType, setCustomType] = useState("");
   const fileInputRef = useRef(null);
@@ -109,6 +110,28 @@ const loadConferences = async () => {
       alert("No publications found");
     }
   };
+
+  const sortedPublications = [...publications].sort((a, b) => {
+    const yearA = a.publication_year || 0;
+    const yearB = b.publication_year || 0;
+    const updatedA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
+    const updatedB = b.uploaded_at ? new Date(b.uploaded_at) : new Date(0);
+
+    switch (sortOption) {
+      case "Title (Z-A)":
+        return b.title?.localeCompare(a.title || "") || 0;
+      case "Year (Newest)":
+        return yearB - yearA;
+      case "Year (Oldest)":
+        return yearA - yearB;
+      case "Last Modified (Newest)":
+        return updatedB - updatedA;
+      case "Last Modified (Oldest)":
+        return updatedA - updatedB;
+      default:
+        return a.title?.localeCompare(b.title || "") || 0;
+    }
+  });
 
   const handleChange = (e) => {
     setForm({
@@ -500,7 +523,7 @@ const updatePublication = async () => {
 };
     const statsCard = {
 
-    background: "white",
+    background: "rgba(255,255,255,0.06)",
 
     padding: "25px",
 
@@ -508,7 +531,7 @@ const updatePublication = async () => {
 
     textAlign: "center",
 
-    boxShadow: "0 5px 15px rgba(0,0,0,.1)"
+    boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
 };
 const loadPublication = async (id) => {
@@ -590,6 +613,19 @@ const savePublication = async (updatedPublication) => {
         >
           Show All
         </button>
+
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          style={{ marginLeft: "10px", padding: "10px", borderRadius: "8px" }}
+        >
+          <option>Title (A-Z)</option>
+          <option>Title (Z-A)</option>
+          <option>Year (Newest)</option>
+          <option>Year (Oldest)</option>
+          <option>Last Modified (Newest)</option>
+          <option>Last Modified (Oldest)</option>
+        </select>
 
       </div>
 
@@ -925,15 +961,15 @@ value={conference.id}
     marginTop: "30px",
   }}
 >
-  {publications.map((publication) => (
+  {sortedPublications.map((publication) => (
 
     <div
         key={publication.id}
         style={{
-            background: "white",
+            background: "rgba(255,255,255,0.06)",
             borderRadius: "15px",
             padding: "20px",
-            boxShadow: "0 5px 15px rgba(0,0,0,.1)",
+            boxShadow: "0 18px 60px rgba(0,0,0,0.18)",
         }}
     >
 

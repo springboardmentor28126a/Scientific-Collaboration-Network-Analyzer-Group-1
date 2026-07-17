@@ -1,14 +1,16 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     FaHome,
-    FaUser,
-    FaBook,
     FaUsers,
-    FaBell
+    FaBookOpen,
+    FaSearch,
+    FaChartBar,
+    FaProjectDiagram,
+    FaPeopleArrows,
+    FaUniversity,
+    FaSchool,
+    FaCalendarAlt
 } from "react-icons/fa";
-import {FaSearch } from "react-icons/fa";
-import { FaUniversity } from "react-icons/fa";
-import { FaSchool } from "react-icons/fa";
 
 function Sidebar() {
 
@@ -19,21 +21,28 @@ function Sidebar() {
 
         <div
             style={{
-                width: "250px",
-                background: "#2563eb",
-                color: "white",
+                width: "260px",
+                background: "var(--sidebar)",
+                color: "var(--sidebar-text)",
                 minHeight: "100vh",
-                padding: "25px"
+                height: "100vh",
+                padding: "30px",
+                borderRight: "1px solid var(--border)",
+                overflowY: "auto"
             }}
         >
 
-            <h2>🔬 SCNA</h2>
+            <div style={{ marginBottom: "32px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                    <span style={{ display: "inline-flex", width: "40px", height: "40px", alignItems: "center", justifyContent: "center", borderRadius: "14px", background: "rgba(34, 211, 238, 0.14)", color: "var(--accent)" }}>⚡</span>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: "22px", letterSpacing: "0.02em" }}>SCNA</h2>
+                        <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>Connected research hub</p>
+                    </div>
+                </div>
+            </div>
 
-            <p style={{ marginTop: "-10px", opacity: 0.8 }}>
-                Research Platform
-            </p>
-
-            <hr />
+            <div style={{ display: "grid", gap: "10px" }}>
 
             <MenuItem
                 icon={<FaHome />}
@@ -43,84 +52,70 @@ function Sidebar() {
             />
 
             <MenuItem
-    icon={<FaUsers />}
-    text="Researchers"
-    active={location.pathname === "/researchers"}
-    onClick={() => navigate("/researchers")}
-/>
-
-            <MenuItem
-                icon={<FaUser />}
-                text="Profile"
-                active={location.pathname === "/profile"}
-                onClick={() => navigate("/profile")}
+                icon={<FaUsers />}
+                text="Researchers"
+                active={location.pathname === "/researchers"}
+                onClick={() => navigate("/researchers")}
             />
 
             <MenuItem
-    icon={<FaBook />}
-    text="My Publications"
-    active={location.pathname === "/my-publications"}
-    onClick={() => navigate("/my-publications")}
-/>
-
-<MenuItem
-    icon={<FaSearch />}
-    text="Search Publications"
-    active={location.pathname === "/search-publications"}
-    onClick={() => navigate("/search-publications")}
-/>
-
-            <MenuItem
-                icon={<FaBell />}
-                text="Notifications"
-                active={location.pathname === "/notifications"}
-                onClick={() => navigate("/notifications")}
+                icon={<FaBookOpen />}
+                text="Publications"
+                active={
+                    location.pathname === "/publications" ||
+                    location.pathname === "/my-publications"
+                }
+                onClick={() => navigate("/publications")}
             />
+
             <MenuItem
-    icon={<FaUsers />}
-    text="Collaborations"
-    active={
-        location.pathname === "/collaborations"
-    }
-    onClick={() =>
-        navigate("/collaborations")
-    }
-/>
-<MenuItem
+                icon={<FaSearch />}
+                text="Search Research"
+                active={
+                    location.pathname === "/search" ||
+                    location.pathname === "/search-publications"
+                }
+                onClick={() => navigate("/search")}
+            />
 
-icon={<FaUniversity/>}
+            <MenuItem
+                icon={<FaChartBar />}
+                text="Analytics"
+                active={location.pathname === "/analytics"}
+                onClick={() => navigate("/analytics")}
+            />
 
-text="Conference Organization"
+            <MenuItem
+                icon={<FaProjectDiagram />}
+                text="Network Graph"
+                active={location.pathname === "/network"}
+                onClick={() => navigate("/network")}
+            />
 
-active={location.pathname==="/conference"}
+            <MenuItem
+                icon={<FaPeopleArrows />}
+                text="Collaborations"
+                active={location.pathname === "/collaborations"}
+                onClick={() => navigate("/collaborations")}
+            />
 
-onClick={()=>navigate("/conference")}
+            <MenuItem
+                icon={<FaCalendarAlt />}
+                text="Conference Organization"
+                active={location.pathname === "/conference"}
+                onClick={() => navigate("/conference")}
+            />
 
-/>
-<MenuItem
-
-icon={<FaSchool/>}
-
-text="Institution Management"
-
-active={location.pathname==="/institution"}
-
-onClick={()=>navigate("/institution")}
-
-/>
-<MenuItem
-
-icon={<FaSearch/>}
-
-text="Research Search"
-
-active={location.pathname==="/search"}
-
-onClick={()=>navigate("/search")}
-
-/>
+            <MenuItem
+                icon={<FaSchool />}
+                text="Institution Management"
+                active={location.pathname === "/institution"}
+                onClick={() => navigate("/institution")}
+            />
 
         </div>
+
+    </div>
 
     );
 
@@ -135,18 +130,22 @@ function MenuItem({ icon, text, active, onClick }) {
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "14px",
+                gap: "14px",
+                padding: "14px 16px",
                 marginBottom: "10px",
-                borderRadius: "10px",
+                borderRadius: "16px",
                 cursor: "pointer",
-                background: active ? "rgba(255,255,255,.18)" : "transparent"
+                background: active ? "rgba(34, 211, 238, 0.15)" : "transparent",
+                border: active ? "1px solid rgba(34, 211, 238, 0.3)" : "transparent",
+                transition: "background 0.2s ease, transform 0.2s ease",
             }}
         >
 
-            {icon}
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "12px", background: active ? "rgba(34, 211, 238, 0.22)" : "rgba(255,255,255,0.06)", color: active ? "var(--accent)" : "var(--muted)" }}>
+                {icon}
+            </span>
+            <span style={{ color: active ? "var(--text)" : "var(--muted)", fontWeight: active ? 600 : 500 }}>{text}</span>
 
-            <span>{text}</span>
 
         </div>
         

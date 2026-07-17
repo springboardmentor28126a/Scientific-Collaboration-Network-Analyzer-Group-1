@@ -92,11 +92,12 @@ function Chat() {
                 style={{
                     height: "450px",
                     overflowY: "auto",
-                    border: "1px solid #ddd",
+                    border: "1px solid var(--border)",
                     padding: "20px",
                     borderRadius: "12px",
-                    background: "#f5f7fb",
-                    marginBottom: "20px"
+                    background: "var(--surface)",
+                    marginBottom: "20px",
+                    color: "var(--text)"
                 }}
             >
 
@@ -123,24 +124,16 @@ function Chat() {
                             }}
                         >
 
-                            <div
+                                <div
                                 style={{
-
                                     background:
-
                                         msg.sender_id === user.id
-
-                                            ? "#2563eb"
-
-                                            : "#e5e7eb",
-
+                                            ? "var(--accent)"
+                                            : "rgba(255,255,255,0.08)",
                                     color:
-
                                         msg.sender_id === user.id
-
                                             ? "white"
-
-                                            : "black",
+                                            : "var(--text)",
 
                                     padding: "12px 15px",
 

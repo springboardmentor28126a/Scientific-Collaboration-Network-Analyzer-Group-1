@@ -32,7 +32,11 @@ def create_publication(
             doi=publication.doi,
             keywords=publication.keywords,
             status=publication.status,
-            researcher_id=publication.researcher_id
+            abstract=publication.abstract,
+            pdf_file=publication.pdf_file,
+            researcher_id=publication.researcher_id,
+            institution_id=publication.institution_id,
+            conference_id=publication.conference_id
         )
 
         db.add(new_publication)
@@ -228,14 +232,118 @@ def update_publication(
     db_publication.doi = publication.doi
     db_publication.keywords = publication.keywords
     db_publication.status = publication.status
+    db_publication.abstract = publication.abstract
+    db_publication.pdf_file = publication.pdf_file
     db_publication.researcher_id = publication.researcher_id
+    db_publication.institution_id = publication.institution_id
+    db_publication.conference_id = publication.conference_id
 
     db.commit()
     db.refresh(db_publication)
 
     return {
         "message": "Publication Updated Successfully",
-        "publication": db_publication
+        "publication": {
+            "id": db_publication.id,
+            "title": db_publication.title,
+            "authors": db_publication.authors,
+            "journal": db_publication.journal,
+            "publication_year": db_publication.publication_year,
+            "doi": db_publication.doi,
+            "keywords": db_publication.keywords,
+            "status": db_publication.status,
+            "abstract": db_publication.abstract,
+            "pdf_file": db_publication.pdf_file,
+            "researcher_id": db_publication.researcher_id,
+            "institution_id": db_publication.institution_id,
+            "conference_id": db_publication.conference_id,
+            "uploaded_at": db_publication.uploaded_at
+        }
+    }
+
+
+# ---------------- DETAILS ----------------
+@router.get("/details/{publication_id}")
+def get_publication_details(publication_id: int, db: Session = Depends(get_db)):
+    publication = db.query(Publication).filter(
+        Publication.id == publication_id
+    ).first()
+
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+
+    related_publications = db.query(Publication).filter(
+        Publication.id != publication_id,
+        Publication.keywords.ilike(f"%{publication.keywords}%")
+    ).limit(5).all() if publication.keywords else []
+
+    similar_research = db.query(Publication).filter(
+        Publication.id != publication_id,
+        Publication.authors.ilike(f"%{publication.authors.split(',')[0]}%")
+    ).limit(5).all() if publication.authors else []
+
+    conference = None
+    institution = None
+
+    if publication.conference_id:
+        from database.models import Conference
+        conference = db.query(Conference).filter(Conference.id == publication.conference_id).first()
+
+    if publication.institution_id:
+        from database.models import Institution
+        institution = db.query(Institution).filter(Institution.id == publication.institution_id).first()
+
+    return {
+        "publication": {
+            "id": publication.id,
+            "title": publication.title,
+            "authors": publication.authors,
+            "journal": publication.journal,
+            "publication_type": publication.publication_type,
+            "publication_year": publication.publication_year,
+            "doi": publication.doi,
+            "keywords": publication.keywords,
+            "status": publication.status,
+            "abstract": publication.abstract,
+            "pdf_file": publication.pdf_file,
+            "researcher_id": publication.researcher_id,
+            "institution_id": publication.institution_id,
+            "conference_id": publication.conference_id,
+            "uploaded_at": publication.uploaded_at
+        },
+        "institution": {
+            "id": institution.id,
+            "name": institution.name,
+            "city": institution.city,
+            "country": institution.country
+        } if institution else None,
+        "conference": {
+            "id": conference.id,
+            "name": conference.name,
+            "location": conference.location,
+            "start_date": conference.start_date,
+            "end_date": conference.end_date
+        } if conference else None,
+        "related_publications": [
+            {
+                "id": pub.id,
+                "title": pub.title,
+                "authors": pub.authors,
+                "journal": pub.journal,
+                "publication_year": pub.publication_year
+            }
+            for pub in related_publications
+        ],
+        "similar_research": [
+            {
+                "id": pub.id,
+                "title": pub.title,
+                "authors": pub.authors,
+                "journal": pub.journal,
+                "publication_year": pub.publication_year
+            }
+            for pub in similar_research
+        ]
     }
 
 

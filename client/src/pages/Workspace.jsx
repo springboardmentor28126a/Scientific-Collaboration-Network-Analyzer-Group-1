@@ -43,22 +43,25 @@ const loadWorkspace = async () => {
         <div className="workspace-container">
 
             <div className="workspace-header">
+
                 <div
     style={{
-        background:"white",
+        background: "var(--surface)",
         padding:"20px",
         borderRadius:"15px",
-        marginBottom:"30px"
+        marginBottom:"30px",
+        border:"1px solid var(--border)",
+        color:"var(--text)"
     }}
 >
 
-    <h2>Members</h2>
+    <h2 style={{ color: "var(--text)" }}>Members</h2>
 
     {
 
         members.map((member)=>(
 
-            <p key={member.id}>
+            <p key={member.id} style={{ color: "var(--muted)" }}>
 
                 👤 {member.name}
 
@@ -72,11 +75,12 @@ const loadWorkspace = async () => {
 
                 <h1>Research Collaboration Workspace</h1>
 
-                <p>Workspace ID : {id}</p>
+                <p style={{ color: "var(--muted)" }}>Workspace ID : {id}</p>
 
             </div>
 
             <div className="workspace-grid">
+
 
                 <div
 
@@ -90,13 +94,13 @@ const loadWorkspace = async () => {
 
 >
 
-    <h2>
+    <h2 style={{ color: "var(--text)" }}>
 
         💬 Chat
 
     </h2>
 
-    <p>
+    <p style={{ color: "var(--muted)" }}>
 
         Start discussing research.
 
@@ -104,20 +108,22 @@ const loadWorkspace = async () => {
 
 </div>
 
+
                 <div className="workspace-card">
-                    <h2>📁 Shared Files</h2>
-                    <p>Upload datasets and documents.</p>
+                    <h2 style={{ color: "var(--text)" }}>📁 Shared Files</h2>
+                    <p style={{ color: "var(--muted)" }}>Upload datasets and documents.</p>
                 </div>
 
                 <div className="workspace-card">
-                    <h2>📄 Publications</h2>
-                    <p>Manage research papers.</p>
+                    <h2 style={{ color: "var(--text)" }}>📄 Publications</h2>
+                    <p style={{ color: "var(--muted)" }}>Manage research papers.</p>
                 </div>
 
                 <div className="workspace-card">
-                    <h2>📅 Meetings</h2>
-                    <p>Schedule research meetings.</p>
+                    <h2 style={{ color: "var(--text)" }}>📅 Meetings</h2>
+                    <p style={{ color: "var(--muted)" }}>Schedule research meetings.</p>
                 </div>
+
 
             </div>
 

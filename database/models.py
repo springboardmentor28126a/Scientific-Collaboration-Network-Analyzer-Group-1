@@ -44,7 +44,10 @@ class User(Base):
 
     linkedin = Column(String)
 
-    institution = relationship("Institution")
+    institution = relationship("Institution", back_populates="researchers")
+    publications = relationship("Publication", back_populates="researcher")
+    researcher_profile = relationship("ResearcherProfile", back_populates="user", uselist=False)
+
 class ResearcherProfile(Base):
     __tablename__ = "researcher_profiles"
 
@@ -76,7 +79,7 @@ class ResearcherProfile(Base):
 
     profile_photo = Column(String)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="researcher_profile")
 
 class Publication(Base):
     __tablename__ = "publications"
@@ -88,15 +91,15 @@ class Publication(Base):
         ForeignKey("users.id")
     )
     institution_id = Column(
-    Integer,
-    ForeignKey("institutions.id"),
-    nullable=True
-)
+        Integer,
+        ForeignKey("institutions.id"),
+        nullable=True
+    )
     conference_id = Column(
-    Integer,
-    ForeignKey("conferences.id"),
-    nullable=True
-)
+        Integer,
+        ForeignKey("conferences.id"),
+        nullable=True
+    )
     title = Column(String, nullable=False)
 
     authors = Column(String, nullable=False)
@@ -105,9 +108,9 @@ class Publication(Base):
 
     journal = Column(String)
     publication_type = Column(
-    String,
-    default="Journal Article"
-)
+        String,
+        default="Journal Article"
+    )
 
     publication_year = Column(Integer)
 
@@ -118,15 +121,13 @@ class Publication(Base):
     status = Column(String, default="Draft")
     pdf_file = Column(String)
 
-    abstract = Column(String)
-
     uploaded_at = Column(
-    DateTime,
-    default=datetime.utcnow)
+        DateTime,
+        default=datetime.utcnow)
 
-    user = relationship("User")
-    institution = relationship("Institution")
-    conference = relationship("Conference")
+    researcher = relationship("User", back_populates="publications")
+    institution = relationship("Institution", back_populates="publications")
+    conference = relationship("Conference", back_populates="publications")
 
 class Conference(Base):
 
@@ -159,6 +160,28 @@ class Conference(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+    publications = relationship("Publication", back_populates="conference")
+    meeting_details = relationship("ConferenceMeetingDetails", back_populates="conference", uselist=False)
+
+
+class ConferenceMeetingDetails(Base):
+    __tablename__ = "conference_meeting_details"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"), nullable=False)
+    conference_type = Column(String, default="Physical")
+    meeting_platform = Column(String, nullable=True)
+    meeting_link = Column(String, nullable=True)
+    meeting_id = Column(String, nullable=True)
+    passcode = Column(String, nullable=True)
+    host_name = Column(String, nullable=True)
+    time_zone = Column(String, nullable=True)
+    joining_instructions = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    conference = relationship("Conference", back_populates="meeting_details")
+
 class Institution(Base):
 
     __tablename__ = "institutions"
@@ -195,6 +218,10 @@ class Institution(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+    researchers = relationship("User", back_populates="institution")
+    publications = relationship("Publication", back_populates="institution")
+
 class CollaborationRequest(Base):
     __tablename__ = "collaboration_requests"
 

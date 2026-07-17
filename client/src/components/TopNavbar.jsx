@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-function TopNavbar() {
+function TopNavbar({ theme, toggleTheme }) {
 
     const navigate = useNavigate();
 
@@ -52,19 +52,20 @@ function TopNavbar() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "20px 30px",
-                background: "white",
-                borderRadius: "12px",
-                boxShadow: "0 2px 10px rgba(0,0,0,.08)",
+                padding: "18px 24px",
+                background: "var(--surface-alt)",
+                borderRadius: "22px",
+                boxShadow: "var(--shadow)",
                 marginBottom: "25px",
-                position: "relative"
+                position: "relative",
+                border: "1px solid var(--border)"
             }}
         >
 
             <h2
                 style={{
                     margin: 0,
-                    color: "#2563eb"
+                    color: "var(--accent)"
                 }}
             >
                 Scientific Collaboration Network Analyzer
@@ -74,174 +75,120 @@ function TopNavbar() {
                 style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "20px"
+                    gap: "18px"
                 }}
             >
 
+
                 <div
-    style={{
-        position: "relative",
-        cursor: "pointer"
-    }}
->
+                    ref={menuRef}
+                    style={{
+                        position: "relative"
+                    }}
+                >
+                    <div
+                        onClick={() => setShowMenu(!showMenu)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, #22d3ee, #8b5cf6)",
+                                color: "white",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                fontWeight: "bold",
+                                fontSize: "20px",
+                                boxShadow: "0 16px 40px rgba(34, 211, 238, 0.18)"
+                            }}
+                        >
+                            {user?.name?.charAt(0).toUpperCase()}
+                        </div>
 
-    <span
-        style={{
-            fontSize: "23px"
-        }}
-    >
-        🔔
-    </span>
+                        <div>
+                            <b>{user?.name}</b>
+                            <br />
+                            <small>{user?.role}</small>
+                        </div>
+                    </div>
 
-    <div
-        style={{
-            position: "absolute",
-            top: -5,
-            right: -5,
-            width: "18px",
-            height: "18px",
-            borderRadius: "50%",
-            background: "red",
-            color: "white",
-            fontSize: "11px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-        }}
-    >
-        3
-    </div>
-
-</div>
-
-               <div
-    ref={menuRef}
-    style={{
-        position: "relative"
-    }}
->
-
-                   <div
-    onClick={() => setShowMenu(!showMenu)}
-    style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        cursor: "pointer"
-    }}
->
-
-    <div
-        style={{
-            width: "45px",
-            height: "45px",
-            borderRadius: "50%",
-            background: "#2563eb",
-            color: "white",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            fontWeight: "bold",
-            fontSize: "20px"
-        }}
-    >
-
-        {user?.name?.charAt(0).toUpperCase()}
-
-    </div>
-
-    <div>
-
-        <b>{user?.name}</b>
-
-        <br />
-
-        <small>{user?.role}</small>
-
-    </div>
-
-</div>
-
-                    {
-
-                        showMenu && (
-
+                    {showMenu && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: 0,
+                                top: 60,
+                background: "var(--surface)",
+                width: "220px",
+                borderRadius: "12px",
+                boxShadow: "var(--shadow)",
+                overflow: "hidden",
+                zIndex: 999,
+                border: "1px solid var(--border)",
+                color: "var(--text)"
+            }}
+                        >
                             <div
-
                                 style={{
-                                    position: "absolute",
-                                    right: 0,
-                                    top: 60,
-                                    background: "white",
-                                    width: "220px",
-                                    borderRadius: "12px",
-                                    boxShadow: "0 5px 20px rgba(0,0,0,.15)",
-                                    overflow: "hidden",
-                                    zIndex: 999
+                                    padding: "20px",
+                                    borderBottom: "1px solid var(--border)"
                                 }}
-
                             >
-
-                                <div
-                                    style={{
-                                        padding: "20px",
-                                        borderBottom: "1px solid #eee"
-                                    }}
-                                >
-
-                                    <b>{user?.name}</b>
-
-                                    <br />
-
-                                    <small>{user?.email}</small>
-
-                                </div>
-
-                                <div
-                                    onClick={() => navigate("/profile")}
-                                    style={itemStyle}
-                                >
-                                    👤 My Profile
-                                </div>
-
-                                <div
-                                    onClick={() => navigate("/settings")}
-                                    style={itemStyle}
-                                >
-                                    ⚙ Settings
-                                </div>
-
-                                <div
-                                    onClick={logout}
-                                    style={itemStyle}
-                                >
-                                    🚪 Logout
-                                </div>
-
+                                <b>{user?.name}</b>
+                                <br />
+                                <small>{user?.email}</small>
                             </div>
 
-                        )
+                            <div
+                                onClick={() => navigate("/profile")}
+                                style={itemStyle}
+                            >
+                                👤 My Profile
+                            </div>
 
-                    }
+                            <div
+                                onClick={() => navigate("/settings")}
+                                style={itemStyle}
+                            >
+                                ⚙ Settings
+                            </div>
 
+                            <div
+                                onClick={logout}
+                                style={itemStyle}
+                            >
+                                🚪 Logout
+                            </div>
+                        </div>
+                    )}
                 </div>
-
             </div>
-
         </div>
-
     );
-
 }
 
-const itemStyle = {
-
-    padding: "15px",
-
+const themeButtonStyle = {
+    border: "1px solid var(--border)",
+    borderRadius: "14px",
+    background: "var(--button-bg)",
+    color: "var(--text)",
+    padding: "10px 16px",
     cursor: "pointer",
+    fontWeight: 600,
+};
 
-    borderBottom: "1px solid #eee"
-
+const itemStyle = {
+    padding: "15px",
+    cursor: "pointer",
+    borderBottom: "1px solid var(--border)"
 };
 
 
