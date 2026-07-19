@@ -1,4 +1,5 @@
 from app.db.database import create_tables
+from app.models.conference import Conference
 
 # Import all models so SQLAlchemy registers them
 from app.models.user import User

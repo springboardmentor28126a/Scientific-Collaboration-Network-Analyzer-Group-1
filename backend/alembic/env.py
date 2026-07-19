@@ -14,6 +14,7 @@ from app.models.researcher import Researcher
 from app.models.institution import Institution
 from app.models.department import Department
 from app.models.publication import Publication
+from app.models.conference import Conference
 
 config = context.config
 

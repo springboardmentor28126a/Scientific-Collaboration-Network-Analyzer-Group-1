@@ -13,7 +13,9 @@ class PublicationCreate(BaseModel):
     publish_date: Optional[datetime] = None
     doi: Optional[str] = None
     external_link: Optional[str] = None
+    conference_id: Optional[int] = None
     coauthor_researcher_ids: Optional[List[int]] = []
+    
 
 
 class PublicationUpdate(BaseModel):
@@ -23,6 +25,7 @@ class PublicationUpdate(BaseModel):
     publish_date: Optional[datetime] = None
     doi: Optional[str] = None
     external_link: Optional[str] = None
+    conference_id: Optional[int] = None
     coauthor_researcher_ids: Optional[List[int]] = None
 
 
@@ -42,6 +45,7 @@ class CoauthorBrief(BaseModel):
 class PublicationResponse(BaseModel):
     id: int
     owner_researcher_id: int
+    conference_id: Optional[int]
     title: str
     abstract: Optional[str]
     authors_text: Optional[str]

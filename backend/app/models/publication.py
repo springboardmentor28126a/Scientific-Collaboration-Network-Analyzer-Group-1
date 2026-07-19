@@ -18,6 +18,7 @@ class Publication(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     owner_researcher_id = Column(Integer, ForeignKey("researchers.id"), nullable=False)
+    conference_id = Column(Integer, ForeignKey("conferences.id"), nullable=True)
 
     title = Column(String(500), nullable=False)
     abstract = Column(Text, nullable=True)
@@ -37,3 +38,4 @@ class Publication(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     coauthors = relationship("Researcher", secondary=publication_coauthors)
+    conference = relationship("Conference", back_populates="publications")

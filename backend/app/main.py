@@ -6,6 +6,7 @@ from app.api.researcher import router as researcher_router
 from app.api.institution import router as institution_router
 from app.api.department import router as department_router
 from app.api.publication import router as publication_router
+from app.api.conference import router as conference_router
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer API",
     description="Backend API for managing researchers, publications, collaborations, conferences, and institutions.",
@@ -26,6 +27,7 @@ app.include_router(institution_router)
 app.include_router(department_router)
 app.include_router(researcher_router)
 app.include_router(publication_router)
+app.include_router(conference_router)
 @app.get("/")
 def root():
     return {
