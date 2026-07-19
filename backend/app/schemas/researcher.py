@@ -41,3 +41,12 @@ class ResearcherResponse(BaseModel):
     profile_image: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ResearcherSearchResult(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    designation: Optional[str] = None
+    institution_id: int
+
+    model_config = ConfigDict(from_attributes=True)

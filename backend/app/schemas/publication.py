@@ -48,11 +48,29 @@ class PublicationResponse(BaseModel):
     publish_date: Optional[datetime]
     doi: Optional[str]
     external_link: Optional[str]
+    file_path: Optional[str] = None
     status: PublicationStatus
     reviewer_id: Optional[int]
     review_comments: Optional[str]
     reviewed_at: Optional[datetime]
     created_at: datetime
+    coauthors: List[CoauthorBrief] = []
+    is_owner: bool = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PublicationBrowseResponse(BaseModel):
+    id: int
+    title: str
+    abstract: Optional[str]
+    authors_text: Optional[str]
+    publish_date: Optional[datetime]
+    doi: Optional[str]
+    external_link: Optional[str]
+    file_path: Optional[str] = None
+    owner_first_name: str
+    owner_last_name: str
+    owner_institution_id: int
     coauthors: List[CoauthorBrief] = []
 
     model_config = ConfigDict(from_attributes=True)

@@ -21,3 +21,9 @@ class DepartmentResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+class DepartmentPublicResponse(BaseModel):
+    id: int
+    department_name: str
+    institution_id: int
+
+    model_config = ConfigDict(from_attributes=True)

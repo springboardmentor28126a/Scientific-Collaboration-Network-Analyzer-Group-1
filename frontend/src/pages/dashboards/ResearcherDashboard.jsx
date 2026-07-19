@@ -114,6 +114,7 @@ function ResearcherDashboard() {
           onEdit={setEditingPublication}
           onSubmit={handleSubmitForReview}
           onDelete={handleDelete}
+          onFileUploaded={loadPublications}
         />
       )}
     </DashboardShell>

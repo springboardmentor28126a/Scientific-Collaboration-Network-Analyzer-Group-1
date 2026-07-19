@@ -8,17 +8,21 @@ const NAV_BY_ROLE = {
     { label: "Departments", path: "/departments" },
     { label: "Researchers", path: "/researchers" },
     { label: "Users", path: "/users" },
+    { label: "Browse Publications", path: "/publications" },
   ],
   INSTITUTION_ADMIN: [
     { label: "Overview", path: "/institution-admin/dashboard" },
     { label: "Departments", path: "/departments" },
     { label: "Researchers", path: "/researchers" },
+    { label: "Browse Publications", path: "/publications" },
   ],
   RESEARCHER: [
     { label: "Overview", path: "/researcher/dashboard" },
+    { label: "Browse Publications", path: "/publications" },
   ],
   REVIEWER: [
     { label: "Overview", path: "/reviewer/dashboard" },
+    { label: "Browse Publications", path: "/publications" },
   ],
 };
 

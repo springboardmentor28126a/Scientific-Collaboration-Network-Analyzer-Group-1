@@ -39,3 +39,17 @@ export const decideReview = async (id, payload) => {
   const response = await api.patch(`/publications/${id}/decide`, payload);
   return response.data;
 };
+
+export const uploadPublicationFile = async (id, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post(`/publications/${id}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+export const fetchPublishedPublications = async (search = "") => {
+  const response = await api.get("/publications/published", { params: { search } });
+  return response.data;
+};

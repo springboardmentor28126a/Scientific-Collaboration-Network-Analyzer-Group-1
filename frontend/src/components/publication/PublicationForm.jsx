@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import CoauthorPicker from "./CoauthorPicker";
 
 const emptyForm = {
   title: "",
@@ -11,6 +12,7 @@ const emptyForm = {
 
 function PublicationForm({ editingPublication, onSave, onCancel }) {
   const [form, setForm] = useState(emptyForm);
+  const [coauthors, setCoauthors] = useState([]);
 
   useEffect(() => {
     if (editingPublication) {
@@ -24,8 +26,10 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
           ? editingPublication.publish_date.slice(0, 10)
           : "",
       });
+      setCoauthors(editingPublication.coauthors || []);
     } else {
       setForm(emptyForm);
+      setCoauthors([]);
     }
   }, [editingPublication]);
 
@@ -38,9 +42,11 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
     const payload = {
       ...form,
       publish_date: form.publish_date ? new Date(form.publish_date).toISOString() : null,
+      coauthor_researcher_ids: coauthors.map((c) => c.id),
     };
     await onSave(payload);
     setForm(emptyForm);
+    setCoauthors([]);
   };
 
   return (
@@ -54,7 +60,10 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
         <label>Abstract</label>
         <textarea name="abstract" rows="3" value={form.abstract} onChange={handleChange} />
 
-        <label>Co-authors (free text, e.g. "J. Smith, R. Patel")</label>
+        <label>Co-authors on this platform (search and select)</label>
+        <CoauthorPicker selectedCoauthors={coauthors} onChange={setCoauthors} />
+
+        <label>External co-authors (free text, e.g. authors not on this platform)</label>
         <input name="authors_text" value={form.authors_text} onChange={handleChange} />
 
         <div className="pub-form-grid">

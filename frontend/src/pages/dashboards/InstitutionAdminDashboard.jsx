@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
+import { useAuth } from "../../hooks/useAuth";
+import { createReviewer } from "../../services/userService";
 import DashboardShell from "../../components/dashboard/DashboardShell";
 import { getPendingResearchers, approveResearcher, rejectResearcher } from "../../services/userService";
 import "../../styles/approvals.css";
 
 function InstitutionAdminDashboard() {
+  const { auth } = useAuth();
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actingOnId, setActingOnId] = useState(null);
-
+  const [reviewerForm, setReviewerForm] = useState({ username: "", email: "", password: "" });
+  const [reviewerCredentials, setReviewerCredentials] = useState(null);
+  const [reviewerLoading, setReviewerLoading] = useState(false);
   useEffect(() => {
     loadPending();
   }, []);
@@ -38,7 +42,38 @@ function InstitutionAdminDashboard() {
       setActingOnId(null);
     }
   };
+  const handleReviewerChange = (e) => {
+    setReviewerForm({ ...reviewerForm, [e.target.name]: e.target.value });
+  };
+  const generateReviewerPassword = () => {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+  let pass = "";
+  for (let i = 0; i < 12; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+  setReviewerForm((prev) => ({ ...prev, password: pass }));
+};
 
+const handleReviewerSubmit = async (e) => {
+  e.preventDefault();
+  setReviewerLoading(true);
+  try {
+    const created = await createReviewer({
+      username: reviewerForm.username,
+      email: reviewerForm.email,
+      password: reviewerForm.password,
+      institution_id: auth.institution_id,
+    });
+    setReviewerCredentials({
+      username: created.username,
+      password: reviewerForm.password,
+      email: created.email,
+    });
+    setReviewerForm({ username: "", email: "", password: "" });
+  } catch (err) {
+    toast.error(err?.response?.data?.detail || "Could not create reviewer.");
+  } finally {
+    setReviewerLoading(false);
+  }
+};
   const handleReject = async (userId) => {
     const confirmed = window.confirm("Reject this researcher's application?");
     if (!confirmed) return;
@@ -122,6 +157,43 @@ function InstitutionAdminDashboard() {
           </div>
         )}
       </section>
+      <section className="admin-form-section">
+  <div className="admin-form-header">
+    <h2>Create a reviewer</h2>
+    <p className="admin-form-sub">For your institution. They'll set their own password on first login.</p>
+  </div>
+
+  <form onSubmit={handleReviewerSubmit} className="admin-form">
+    <div className="admin-form-grid">
+      <div>
+        <label>Username</label>
+        <input name="username" value={reviewerForm.username} onChange={handleReviewerChange} required />
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" name="email" value={reviewerForm.email} onChange={handleReviewerChange} required />
+      </div>
+    </div>
+
+    <label>Temporary password</label>
+    <div className="admin-password-row">
+      <input name="password" value={reviewerForm.password} onChange={handleReviewerChange} required />
+      <button type="button" className="btn-ghost-outline" onClick={generateReviewerPassword}>Generate</button>
+    </div>
+
+    <button type="submit" className="btn-primary" disabled={reviewerLoading}>
+      {reviewerLoading ? "Creating..." : "Create reviewer"}
+    </button>
+  </form>
+
+  {reviewerCredentials && (
+    <div className="credentials-box" style={{ marginTop: "1rem" }}>
+      <div><span>Username</span><code>{reviewerCredentials.username}</code></div>
+      <div><span>Email</span><code>{reviewerCredentials.email}</code></div>
+      <div><span>Temporary password</span><code>{reviewerCredentials.password}</code></div>
+    </div>
+  )}
+</section>
     </DashboardShell>
   );
 }

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { registerUser } from "../services/authService";
 import { fetchInstitutions } from "../services/institutionService";
 import { fetchDepartmentsByInstitution } from "../services/departmentService";
+import { fetchDepartmentsByInstitutionPublic } from "../services/departmentService";
 import "../styles/auth.css";
 
 function RegisterPage() {
@@ -32,14 +33,14 @@ function RegisterPage() {
   }, []);
 
   useEffect(() => {
-    if (!form.institution_id) {
-      setDepartments([]);
-      return;
-    }
-    fetchDepartmentsByInstitution(form.institution_id)
-      .then(setDepartments)
-      .catch(() => toast.error("Could not load departments."));
-  }, [form.institution_id]);
+  if (!form.institution_id) {
+    setDepartments([]);
+    return;
+  }
+  fetchDepartmentsByInstitutionPublic(form.institution_id)
+    .then(setDepartments)
+    .catch(() => toast.error("Could not load departments."));
+}, [form.institution_id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

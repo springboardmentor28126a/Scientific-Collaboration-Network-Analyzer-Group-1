@@ -16,7 +16,7 @@ import InstitutionPage from "../pages/InstitutionPage";
 import DepartmentPage from "../pages/DepartmentPage";
 import ResearcherPage from "../pages/ResearcherPage";
 import UserManagementPage from "../pages/UserManagementPage";
-
+import BrowsePublicationsPage from "../pages/BrowsePublicationsPage";
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -54,7 +54,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+  path="/publications"
+  element={
+    <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "RESEARCHER", "REVIEWER"]}>
+      <BrowsePublicationsPage />
+    </ProtectedRoute>
+  }
+/>
         <Route
           path="/researcher/dashboard"
           element={
