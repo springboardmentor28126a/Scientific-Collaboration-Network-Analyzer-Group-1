@@ -1,0 +1,11 @@
+venv/
+node_modules/
+frontend_old/
+__pycache__/
+*.pyc
+.env
+backend/uploads/
+frontend/src/App.test.js
+frontend/src/setupTests.js
+package.json
+package-lock.json
