@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db
-from database.models import (
+from backend.database.database import get_db
+from backend.database.models import (
     CollaborationRequest,
     User,
-    ResearcherProfile,Collaboration
+    Collaboration
 )
-from schemas.collaboration import (
+from backend.schemas.collaboration import (
     CollaborationCreate,
     CollaborationResponse
 )
@@ -79,18 +79,12 @@ def received_requests(
 
         db.query(
             CollaborationRequest,
-            User,
-            ResearcherProfile
+            User
         )
 
         .join(
             User,
             User.id == CollaborationRequest.sender_id
-        )
-
-        .outerjoin(
-            ResearcherProfile,
-            ResearcherProfile.user_id == User.id
         )
 
         .filter(
@@ -103,7 +97,7 @@ def received_requests(
 
     result = []
 
-    for request, user, profile in requests:
+    for request, user in requests:
 
         result.append({
 
@@ -122,16 +116,13 @@ def received_requests(
             "sender_email": user.email,
 
             "institution":
-
-                profile.institution if profile else "",
+                user.institution_name or "",
 
             "department":
-
-                profile.department if profile else "",
+                user.department or "",
 
             "research_interest":
-
-                profile.research_interest if profile else ""
+                user.research_interests or ""
 
         })
 
@@ -242,12 +233,6 @@ def my_collaborations(
             User.id == other_user_id
         ).first()
 
-        profile = db.query(
-            ResearcherProfile
-        ).filter(
-            ResearcherProfile.user_id == other_user_id
-        ).first()
-
         result.append({
 
             "id": collaboration.id,
@@ -261,19 +246,19 @@ def my_collaborations(
             "role": user.role,
 
             "institution":
-                profile.institution if profile else "",
+                user.institution_name or "",
 
             "department":
-                profile.department if profile else "",
+                user.department or "",
 
             "research_interest":
-                profile.research_interest if profile else "",
+                user.research_interests or "",
 
             "skills":
-                profile.skills if profile else "",
+                user.skills or "",
 
             "country":
-                profile.country if profile else ""
+                user.country or ""
 
         })
 

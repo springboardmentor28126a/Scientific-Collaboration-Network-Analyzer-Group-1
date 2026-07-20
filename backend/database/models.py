@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 
 from datetime import datetime
-from database.database import Base
+from backend.database.database import Base
 class User(Base):
 
     __tablename__ = "users"
@@ -29,10 +29,19 @@ class User(Base):
     institution_id = Column(
         Integer,
         ForeignKey("institutions.id"),
-        nullable=True
+       
     )
+    
+    institution_name  = Column(String, nullable=True)
+    aishe_code = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    pincode = Column(String, nullable=True)
+    institution_type = Column(String, nullable=True)
 
-    department = Column(String)
+    department = Column(String, nullable=True)
+    country = Column(String, nullable=True)
+    
 
     designation = Column(String)
 
@@ -43,43 +52,11 @@ class User(Base):
     google_scholar = Column(String)
 
     linkedin = Column(String)
-
+    phone = Column(String, nullable=True)
     institution = relationship("Institution", back_populates="researchers")
     publications = relationship("Publication", back_populates="researcher")
-    researcher_profile = relationship("ResearcherProfile", back_populates="user", uselist=False)
-
-class ResearcherProfile(Base):
-    __tablename__ = "researcher_profiles"
-
-    id = Column(Integer, primary_key=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    phone = Column(String)
-
-    department = Column(String)
-
-    institution = Column(String)
-
-    designation = Column(String)
-
-    research_interest = Column(String)
-
-    skills = Column(String)
-
-    bio = Column(String)
-
-    country = Column(String)
-
-    linkedin = Column(String)
-
-    orcid = Column(String)
-
-    google_scholar = Column(String)
-
-    profile_photo = Column(String)
-
-    user = relationship("User", back_populates="researcher_profile")
+    skills = Column(String, nullable=True)
+    bio = Column(String, nullable=True)
 
 class Publication(Base):
     __tablename__ = "publications"
@@ -183,28 +160,25 @@ class ConferenceMeetingDetails(Base):
     conference = relationship("Conference", back_populates="meeting_details")
 
 class Institution(Base):
-
     __tablename__ = "institutions"
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
+    id = Column(Integer, primary_key=True, index=True)
 
-    name = Column(
-        String,
-        nullable=False,
-        unique=True
-    )
+    aishe_code = Column(String, unique=True, nullable=True)
+
+    name = Column(String, nullable=False)
 
     address = Column(String)
 
     city = Column(String)
 
+    district = Column(String)
+
     state = Column(String)
 
-    country = Column(String)
+    country = Column(String, default="India")
+
+    institution_type = Column(String)
 
     website = Column(String)
 
@@ -221,7 +195,6 @@ class Institution(Base):
 
     researchers = relationship("User", back_populates="institution")
     publications = relationship("Publication", back_populates="institution")
-
 class CollaborationRequest(Base):
     __tablename__ = "collaboration_requests"
 
@@ -239,12 +212,12 @@ class CollaborationRequest(Base):
         nullable=False
     )
 
+    message = Column(Text, nullable=True)
+
     status = Column(
         String,
         default="Pending"
     )
-
-    message = Column(String)
 
     created_at = Column(
         DateTime,
@@ -260,7 +233,6 @@ class CollaborationRequest(Base):
         "User",
         foreign_keys=[receiver_id]
     )
-
 class Collaboration(Base):
 
     __tablename__ = "collaborations"

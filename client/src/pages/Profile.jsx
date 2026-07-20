@@ -1,50 +1,89 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-
+import InstitutionSearch from "../components/InstitutionSearch";
 function Profile() {
 
     const user = JSON.parse(localStorage.getItem("user"));
 
+    const normalizeInstitutionName = (value) => {
+        if (!value) return "";
+        return String(value).split(/,|\||\n/)[0].trim();
+    };
+
     const [profile, setProfile] = useState({
-        user_id: user?.id,
-        phone: "",
-        department: "",
-        institution: "",
-        designation: "",
-        research_interest: "",
-        skills: "",
-        bio: "",
-        linkedin: "",
-        orcid: "",
-        google_scholar: ""
-    });
+    user_id: user?.id,
+
+    phone: "",
+    department: "",
+    institution: "",
+
+    aishe_code: "",
+    state: "",
+    district: "",
+    pincode: "",
+    institution_type: "",
+
+    designation: "",
+    research_interests: "",
+    skills: "",
+    bio: "",
+
+    country: "",
+
+    linkedin: "",
+    orcid: "",
+    google_scholar: ""
+});
 
     const [editing, setEditing] = useState(false);
     const [profileExists, setProfileExists] = useState(false);
+    useEffect(() => {
+    console.log("Editing:", editing);
+}, [editing]);
     useEffect(() => {
 
         loadProfile();
 
     }, []);
 
-    const loadProfile = async () => {
-
+   const loadProfile = async () => {
     try {
+        const response = await API.get(`/researcher/${user.id}`);
 
-        const response = await API.get(
-            `/researcher/${user.id}`
-        );
+        console.log("GET Success:", response.data);
 
-        setProfile(response.data);
+        setProfile({
+            user_id: user.id,
+            phone: response.data.phone || "",
+            department: response.data.department || "",
+            institution: normalizeInstitutionName(
+                response.data.institution || response.data.institution_name || ""
+            ),
+            aishe_code: response.data.aishe_code || "",
+            state: response.data.state || "",
+            district: response.data.district || "",
+            pincode: response.data.pincode || "",
+            institution_type: response.data.institution_type || "",
+            designation: response.data.designation || "",
+            research_interests: response.data.research_interests || response.data.research_interest || "",
+            skills: response.data.skills || "",
+            bio: response.data.bio || "",
+            country: response.data.country || "",
+            linkedin: response.data.linkedin || "",
+            orcid: response.data.orcid || "",
+            google_scholar: response.data.google_scholar || "",
+            
+        });
 
         setProfileExists(true);
 
     } catch (error) {
 
+        console.log("GET Failed:", error.response?.status);
+        console.log("GET Response:", error.response?.data);
+
         setProfileExists(false);
-
     }
-
 };
 
     const handleChange = (e) => {
@@ -58,50 +97,82 @@ function Profile() {
 
     const saveProfile = async () => {
 
-        if (!user?.id) {
-            alert("Unable to save profile: missing user ID. Please login again.");
-            return;
-        }
+    console.log("profileExists:", profileExists);
+    console.log("user.id:", user.id);
+    console.log("profile:", profile);
 
-        try {
+    if (!user?.id) {
+        alert("Unable to save profile: missing user ID. Please login again.");
+        return;
+    }
 
-            if (profileExists) {
+    try {
 
-                await API.put(
-                    `/researcher/${user.id}`,
-                    profile
-                );
+        const payload = {
+            user_id: user.id,
+            phone: profile.phone,
+            department: profile.department,
+            institution: normalizeInstitutionName(profile.institution),
 
-                alert("Profile Updated Successfully");
+            aishe_code: profile.aishe_code,
+            state: profile.state,
+            district: profile.district,
+            pincode: profile.pincode,
+            institution_type: profile.institution_type,
 
-            } else {
+            designation: profile.designation,
 
-                await API.post(
-                    "/researcher/create",
-                    profile
-                );
+            research_interests: profile.research_interests,
 
-                alert("Profile Created Successfully");
+            skills: profile.skills,
+            bio: profile.bio,
 
-                setProfileExists(true);
+            country: profile.country,
 
-            }
+            linkedin: profile.linkedin,
+            orcid: profile.orcid,
+            google_scholar: profile.google_scholar
+        };
 
-            setEditing(false);
+if (profileExists) {
 
-        } catch (error) {
+    console.log("➡ Calling PUT /researcher/");
 
-            console.error("Profile save error:", error);
-            const message =
-                error.response?.data?.detail ||
-                error.response?.data?.message ||
-                error.message ||
-                "Unable to save profile";
-            alert(`Unable to save profile: ${message}`);
+    await API.put(
+        `/researcher/${user.id}`,
+        payload
+    );
 
-        }
+    alert("Profile Updated Successfully");
 
-    };
+} else {
+
+    console.log("➡ Calling POST /researcher/create");
+
+    await API.post(
+        "/researcher/create",
+        payload
+    );
+
+    alert("Profile Created Successfully");
+
+    setProfileExists(true);
+}
+
+        setEditing(false);
+
+    } catch (error) {
+
+        console.log("Status:", error.response?.status);
+        console.log("Response:", error.response?.data);
+
+        alert(
+            `Unable to save profile: ${
+                error.response?.data?.detail || error.message
+            }`
+        );
+    }
+};
     const deleteProfile = async () => {
 
     if (!window.confirm("Delete your profile?"))
@@ -121,7 +192,7 @@ function Profile() {
             department: "",
             institution: "",
             designation: "",
-            research_interest: "",
+            research_interests: "",
             skills: "",
             bio: "",
             linkedin: "",
@@ -255,9 +326,92 @@ function Profile() {
 
                 <h3>Institution</h3>
 
-                <input
-                    name="institution"
+                <InstitutionSearch
                     value={profile.institution}
+                    disabled={!editing}
+                    onSelect={(institution) => {
+    console.log("Selected Institution:", institution);
+
+  setProfile((prev) => ({
+    ...prev,
+    institution: normalizeInstitutionName(institution.name),
+    aishe_code: institution.aishe_code || "",
+    state: institution.state || "",
+    district: institution.district || "",
+    pincode: institution.pincode || "",
+    institution_type: institution.institution_type || "",
+    country: institution.country || "India",
+}));
+}}
+                    onSelect={(institution) => {
+                        setProfile({
+                            ...profile,
+                            institution: normalizeInstitutionName(institution.name),
+                            aishe_code: institution.aishe_code || "",
+                            state: institution.state || "",
+                            district: institution.district || "",
+                            pincode: institution.pincode || "",
+                            institution_type: institution.institution_type || "",
+                            country: institution.country || "India",
+                        });
+                    }}
+                />
+
+                <h3>AISHE Code</h3>
+
+                <input
+                    name="aishe_code"
+                    value={profile.aishe_code}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    style={inputStyle}
+                />
+
+                <h3>State</h3>
+
+                <input
+                    name="state"
+                    value={profile.state}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    style={inputStyle}
+                />
+
+                <h3>District</h3>
+
+                <input
+                    name="district"
+                    value={profile.district}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    style={inputStyle}
+                />
+
+                <h3>Pincode</h3>
+
+                <input
+                    name="pincode"
+                    value={profile.pincode}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    style={inputStyle}
+                />
+
+                <h3>Institution Type</h3>
+
+                <input
+                    name="institution_type"
+                    value={profile.institution_type}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    style={inputStyle}
+                />
+
+                <h3>Country</h3>
+
+                <input
+                    name="country"
+                    value={profile.country}
                     onChange={handleChange}
                     disabled={!editing}
                     style={inputStyle}
@@ -286,8 +440,8 @@ function Profile() {
                 <h3>Research Interest</h3>
 
                 <textarea
-                    name="research_interest"
-                    value={profile.research_interest}
+                    name="research_interests"
+                    value={profile.research_interests}
                     onChange={handleChange}
                     disabled={!editing}
                     style={textareaStyle}

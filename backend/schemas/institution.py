@@ -21,6 +21,14 @@ class InstitutionCreate(BaseModel):
 
     description: str
 
+    aishe_code: str | None = None
+
+    district: str | None = None
+
+    pincode: str | None = None
+
+    institution_type: str | None = None
+
 
 class InstitutionUpdate(InstitutionCreate):
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db
-from database.models import Publication
-from schemas.publication import PublicationCreate
+from backend.database.database import get_db
+from backend.database.models import Publication
+from backend.schemas.publication import PublicationCreate
 from fastapi import UploadFile, File
 import shutil
 import os
@@ -286,11 +286,11 @@ def get_publication_details(publication_id: int, db: Session = Depends(get_db)):
     institution = None
 
     if publication.conference_id:
-        from database.models import Conference
+        from backend.database.models import Conference
         conference = db.query(Conference).filter(Conference.id == publication.conference_id).first()
 
     if publication.institution_id:
-        from database.models import Institution
+        from backend.database.models import Institution
         institution = db.query(Institution).filter(Institution.id == publication.institution_id).first()
 
     return {

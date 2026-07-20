@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from database.database import get_db
-from database.models import User, Publication, Institution, Conference
+from backend.database.database import get_db
+from backend.database.models import User, Publication, Institution, Conference
 
 router = APIRouter(
     prefix="/search",
