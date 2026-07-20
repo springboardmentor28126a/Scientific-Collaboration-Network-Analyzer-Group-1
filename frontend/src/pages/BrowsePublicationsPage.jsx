@@ -64,7 +64,10 @@ function BrowsePublicationsPage() {
             return (
               <div className="pub-item" key={pub.id}>
                 <div className="pub-item-header">
-                  <h4>{pub.title}</h4>
+                  <div>
+  <span className="pub-type-label">{pub.publication_type?.replaceAll("_", " ")}</span>
+  <h4>{pub.title}</h4>
+</div>
                   <span className="pub-badge pub-badge-published">Published</span>
                 </div>
 

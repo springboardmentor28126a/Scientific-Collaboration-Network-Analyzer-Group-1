@@ -176,6 +176,16 @@
   margin-bottom: 0.5rem;
 }
 
+.pub-type-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  color: var(--color-teal-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+}
+
 .coauthor-picker input {
   width: 100%;
   padding: 0.6rem 0.8rem;
@@ -240,4 +250,23 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
+}
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 27, 46, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-box {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-raised);
 }

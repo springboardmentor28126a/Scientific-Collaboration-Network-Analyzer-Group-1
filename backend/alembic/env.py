@@ -14,7 +14,8 @@ from app.models.researcher import Researcher
 from app.models.institution import Institution
 from app.models.department import Department
 from app.models.publication import Publication
-
+from app.models.conference import Conference
+from app.models.conference_registration import ConferenceRegistration
 config = context.config
 
 if config.config_file_name is not None:

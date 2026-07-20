@@ -3,11 +3,13 @@ from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict
 
-from app.utils.constants import PublicationStatus
+from app.utils.constants import PublicationStatus, PublicationType
 
 
 class PublicationCreate(BaseModel):
     title: str
+    publication_type: PublicationType = PublicationType.JOURNAL_PAPER
+    conference_id: Optional[int] = None
     abstract: Optional[str] = None
     authors_text: Optional[str] = None
     publish_date: Optional[datetime] = None
@@ -18,6 +20,8 @@ class PublicationCreate(BaseModel):
 
 class PublicationUpdate(BaseModel):
     title: Optional[str] = None
+    publication_type: Optional[PublicationType] = None
+    conference_id: Optional[int] = None
     abstract: Optional[str] = None
     authors_text: Optional[str] = None
     publish_date: Optional[datetime] = None
@@ -43,6 +47,8 @@ class PublicationResponse(BaseModel):
     id: int
     owner_researcher_id: int
     title: str
+    publication_type: PublicationType
+    conference_id: Optional[int] = None
     abstract: Optional[str]
     authors_text: Optional[str]
     publish_date: Optional[datetime]
@@ -62,6 +68,8 @@ class PublicationResponse(BaseModel):
 class PublicationBrowseResponse(BaseModel):
     id: int
     title: str
+    publication_type: PublicationType
+    conference_id: Optional[int] = None
     abstract: Optional[str]
     authors_text: Optional[str]
     publish_date: Optional[datetime]

@@ -50,7 +50,10 @@ const canSubmitOrDelete = canModifyContent && pub.is_owner;
         return (
           <div className="pub-item" key={pub.id}>
             <div className="pub-item-header">
-              <h4>{pub.title}</h4>
+              <div>
+  <span className="pub-type-label">{pub.publication_type?.replaceAll("_", " ")}</span>
+  <h4>{pub.title}</h4>
+</div>
               <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
                 {!pub.is_owner && <span className="pub-badge pub-badge-draft">Co-authored</span>}
                 <span className={statusInfo.className}>{statusInfo.label}</span>

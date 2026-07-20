@@ -17,6 +17,8 @@ import DepartmentPage from "../pages/DepartmentPage";
 import ResearcherPage from "../pages/ResearcherPage";
 import UserManagementPage from "../pages/UserManagementPage";
 import BrowsePublicationsPage from "../pages/BrowsePublicationsPage";
+import ConferencesPage from "../pages/ConferencesPage";
+
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -59,6 +61,14 @@ function AppRoutes() {
   element={
     <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "RESEARCHER", "REVIEWER"]}>
       <BrowsePublicationsPage />
+    </ProtectedRoute>
+  }
+/>
+        <Route
+  path="/conferences"
+  element={
+    <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "INSTITUTION_ADMIN", "RESEARCHER", "REVIEWER"]}>
+      <ConferencesPage />
     </ProtectedRoute>
   }
 />

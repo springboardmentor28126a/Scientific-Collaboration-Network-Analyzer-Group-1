@@ -159,6 +159,8 @@ def browse_published(
         results.append({
             "id": pub.id,
             "title": pub.title,
+            "publication_type": pub.publication_type,
+            "conference_id": pub.conference_id,
             "abstract": pub.abstract,
             "authors_text": pub.authors_text,
             "publish_date": pub.publish_date,

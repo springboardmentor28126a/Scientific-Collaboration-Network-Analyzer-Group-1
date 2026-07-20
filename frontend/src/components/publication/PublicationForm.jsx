@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import CoauthorPicker from "./CoauthorPicker";
+import { fetchConferences } from "../../services/conferenceService";
 
 const emptyForm = {
   title: "",
+  publication_type: "JOURNAL_PAPER",
+  conference_id: "",
   abstract: "",
   authors_text: "",
   doi: "",
@@ -13,11 +16,20 @@ const emptyForm = {
 function PublicationForm({ editingPublication, onSave, onCancel }) {
   const [form, setForm] = useState(emptyForm);
   const [coauthors, setCoauthors] = useState([]);
+  const [conferences, setConferences] = useState([]);
+
+  useEffect(() => {
+    fetchConferences()
+      .then(setConferences)
+      .catch(() => setConferences([]));
+  }, []);
 
   useEffect(() => {
     if (editingPublication) {
       setForm({
         title: editingPublication.title || "",
+        publication_type: editingPublication.publication_type || "JOURNAL_PAPER",
+        conference_id: editingPublication.conference_id || "",
         abstract: editingPublication.abstract || "",
         authors_text: editingPublication.authors_text || "",
         doi: editingPublication.doi || "",
@@ -41,6 +53,7 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
     e.preventDefault();
     const payload = {
       ...form,
+      conference_id: form.conference_id ? Number(form.conference_id) : null,
       publish_date: form.publish_date ? new Date(form.publish_date).toISOString() : null,
       coauthor_researcher_ids: coauthors.map((c) => c.id),
     };
@@ -49,6 +62,8 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
     setCoauthors([]);
   };
 
+  const isConferencePaper = form.publication_type === "CONFERENCE_PAPER";
+
   return (
     <div className="pub-card">
       <h3>{editingPublication ? "Edit publication" : "Add a publication"}</h3>
@@ -56,6 +71,27 @@ function PublicationForm({ editingPublication, onSave, onCancel }) {
       <form onSubmit={handleSubmit}>
         <label>Title</label>
         <input name="title" value={form.title} onChange={handleChange} required />
+
+        <label>Publication type</label>
+        <select name="publication_type" value={form.publication_type} onChange={handleChange}>
+          <option value="JOURNAL_PAPER">Journal Paper</option>
+          <option value="CONFERENCE_PAPER">Conference Paper</option>
+          <option value="BOOK">Book</option>
+          <option value="PATENT">Patent</option>
+          <option value="TECHNICAL_REPORT">Technical Report</option>
+        </select>
+
+        {isConferencePaper && (
+          <>
+            <label>Conference</label>
+            <select name="conference_id" value={form.conference_id} onChange={handleChange}>
+              <option value="">Select conference (optional)</option>
+              {conferences.map((c) => (
+                <option key={c.id} value={c.id}>{c.title} {c.acronym ? `(${c.acronym})` : ""}</option>
+              ))}
+            </select>
+          </>
+        )}
 
         <label>Abstract</label>
         <textarea name="abstract" rows="3" value={form.abstract} onChange={handleChange} />
