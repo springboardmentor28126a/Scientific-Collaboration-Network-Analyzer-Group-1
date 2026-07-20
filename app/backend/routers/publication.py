@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,Query
 from sqlalchemy.orm import Session
 
 from app.backend.database.database import SessionLocal
@@ -44,6 +44,37 @@ def create_publication(
 @router.get("/", response_model=list[PublicationResponse])
 def list_publications(db: Session = Depends(get_db)):
     return db.query(Publication).all()
+@router.get("/search", response_model=list[PublicationResponse])
+def search_publications(
+    title: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    publications = (
+        db.query(Publication)
+        .filter(Publication.title.ilike(f"%{title}%"))
+        .all()
+    )
+
+    return publications
+@router.get("/filter", response_model=list[PublicationResponse])
+def filter_publications(
+    publication_type: str | None = Query(None),
+    status: str | None = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Publication)
+
+    if publication_type:
+        query = query.filter(
+            Publication.publication_type.ilike(publication_type)
+        )
+
+    if status:
+        query = query.filter(
+            Publication.status.ilike(status)
+        )
+
+    return query.all()
 
 @router.get("/{publication_id}", response_model=PublicationResponse)
 def get_publication(

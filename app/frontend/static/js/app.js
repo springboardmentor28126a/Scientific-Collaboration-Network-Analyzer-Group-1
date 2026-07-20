@@ -132,9 +132,89 @@ async function loadAll() {
     loadNetwork(),
   ]);
 }
+async function searchPublications() {
+  console.log("Search button clicked");
+
+  const title = document.getElementById("searchTitle").value.trim();
+
+  const publicationType = document.getElementById("filterType").value;
+  const status = document.getElementById("filterStatus").value;
+
+  try {
+    let publications = [];
+
+    // If title is entered, use Search API
+    if (title) {
+      publications = await api(
+        `/publications/search?title=${encodeURIComponent(title)}`
+      );
+    }
+    // Otherwise use Filter API
+    else {
+      const params = new URLSearchParams();
+
+      if (publicationType) {
+        params.append("publication_type", publicationType);
+      }
+
+      if (status) {
+        params.append("status", status);
+      }
+
+      publications = await api(
+        `/publications/filter?${params.toString()}`
+      );
+    }
+
+    const results = document.getElementById("searchResults");
+
+    if (publications.length === 0) {
+      results.innerHTML = "<p><strong>No publications found.</strong></p>";
+      return;
+    }
+
+    results.innerHTML = publications
+      .map(
+        (publication) => `
+        <div class="panel" style="margin-top:10px;">
+          <h3>${publication.title}</h3>
+          <p><strong>Type:</strong> ${publication.publication_type}</p>
+          <p><strong>Status:</strong> ${publication.status}</p>
+          <p><strong>Year:</strong> ${publication.publication_year}</p>
+          <p><strong>DOI:</strong> ${publication.doi}</p>
+        </div>
+      `
+      )
+      .join("");
+  } catch (error) {
+    showToast("Error", error.message);
+  }
+}
 
 bindForm("researcherForm", "/researchers/", "Researcher added.");
 bindForm("institutionForm", "/institutions/", "Institution added.");
+bindForm(
+  "publicationForm",
+  "/publications/",
+  "Publication added."
+);
+const searchBtn = document.getElementById("searchBtn");
+
+searchBtn?.addEventListener("click", searchPublications);
+const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+clearSearchBtn?.addEventListener("click", () => {
+  
+  console.log("Clear button clicked");
+   console.log(document.getElementById("searchTitle"));
+  console.log(document.getElementById("filterType"));
+  console.log(document.getElementById("filterStatus"));
+  console.log(document.getElementById("searchResults"));
+  document.getElementById("searchTitle").value = "";
+  document.getElementById("filterType").value = "";
+  document.getElementById("filterStatus").value = "";
+  document.getElementById("searchResults").innerHTML = "";
+});
 
 document.getElementById("refreshReports")?.addEventListener("click", loadReports);
 bindLogout();

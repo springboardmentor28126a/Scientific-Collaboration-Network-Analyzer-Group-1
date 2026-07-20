@@ -12,6 +12,47 @@
 
     <section class="panel-grid">
       <div class="panel wide">
+  <div class="panel-heading">
+    <div>
+      <h2>Search Publications</h2>
+      <p>Search and filter publication records.</p>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <input
+      type="text"
+      id="searchTitle"
+      placeholder="Search by title"
+    >
+
+    <select id="filterType">
+      <option value="">All Types</option>
+      <option value="Journal">Journal</option>
+      <option value="Conference">Conference</option>
+      <option value="Book">Book</option>
+      <option value="Patent">Patent</option>
+      <option value="Technical Report">Technical Report</option>
+    </select>
+
+    <select id="filterStatus">
+      <option value="">All Status</option>
+      <option value="Draft">Draft</option>
+      <option value="Submitted">Submitted</option>
+      <option value="Published">Published</option>
+      <option value="Archived">Archived</option>
+    </select>
+
+    <button
+      type="button"
+      id="searchBtn">
+      Search
+    </button>
+    <button type="button" id="clearSearchBtn">Clear</button>
+    <div id="searchResults" style="margin-top:20px;"></div>
+  </div>
+</div>
+      <div class="panel wide">
         <div class="panel-heading">
           <div>
             <h2>Publication Repository</h2>
