@@ -69,6 +69,7 @@ class PublicationBrowseResponse(BaseModel):
     id: int
     title: str
     publication_type: PublicationType
+    status: str
     conference_id: Optional[int] = None
     abstract: Optional[str]
     authors_text: Optional[str]

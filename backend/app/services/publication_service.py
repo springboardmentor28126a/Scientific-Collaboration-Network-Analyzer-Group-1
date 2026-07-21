@@ -52,7 +52,7 @@ def create_publication(db: Session, user_id: int, payload: PublicationCreate) ->
     return publication
 
 
-def list_my_publications(db: Session, user_id: int):
+def list_my_publications(db: Session, user_id: int, status_filter: str = None, sort: str = "newest"):
     researcher = _get_researcher_for_user(db, user_id)
 
     owned = (
@@ -73,8 +73,18 @@ def list_my_publications(db: Session, user_id: int):
     for pub in coauthored:
         if pub.id not in combined:
             combined[pub.id] = (pub, False)
+    if status_filter:
+        owned = [p for p in owned if p.status == status_filter]
+        coauthored = [p for p in coauthored if p.status == status_filter]
 
-    sorted_items = sorted(combined.values(), key=lambda item: item[0].created_at, reverse=True)
+        combined = {}
+        for pub in owned:
+            combined[pub.id] = (pub, True)
+        for pub in coauthored:
+            if pub.id not in combined:
+                combined[pub.id] = (pub, False)
+    reverse_sort = sort != "oldest"
+    sorted_items = sorted(combined.values(), key=lambda item: item[0].created_at, reverse=reverse_sort)
 
     results = []
     for pub, is_owner in sorted_items:
@@ -162,6 +172,21 @@ def delete_publication(db: Session, user_id: int, publication_id: int):
 
     db.delete(publication)
     db.commit()
+
+def archive_publication(db: Session, user_id: int, publication_id: int) -> Publication:
+    researcher = _get_researcher_for_user(db, user_id)
+    publication = get_publication(db, publication_id)
+
+    if publication.owner_researcher_id != researcher.id:
+        raise HTTPException(status_code=403, detail="You can only archive your own publications.")
+
+    if publication.status != PublicationStatus.PUBLISHED:
+        raise HTTPException(status_code=400, detail="Only published publications can be archived.")
+
+    publication.status = PublicationStatus.ARCHIVED
+    db.commit()
+    db.refresh(publication)
+    return publication
 
 
 def list_review_queue(db: Session):
@@ -253,14 +278,29 @@ def upload_publication_file(db: Session, user_id: int, publication_id: int, file
     db.commit()
     db.refresh(publication)
     return publication
-def list_published_publications(db: Session, search: str = None):
+def list_published_publications(db: Session, search: str = None, publication_type: str = None, sort: str = "newest"):
     query = (
         db.query(Publication)
         .join(Researcher, Researcher.id == Publication.owner_researcher_id)
-        .filter(Publication.status == PublicationStatus.PUBLISHED)
+        .filter(Publication.status.in_([PublicationStatus.PUBLISHED, PublicationStatus.ARCHIVED]))
     )
 
     if search:
         query = query.filter(Publication.title.ilike(f"%{search}%"))
 
-    return query.order_by(Publication.reviewed_at.desc()).all()
+    if publication_type:
+        query = query.filter(Publication.publication_type == publication_type)
+
+    if sort == "oldest":
+        query = query.order_by(Publication.reviewed_at.asc())
+    else:
+        query = query.order_by(Publication.reviewed_at.desc())
+
+    return query.all()
+def list_publications_by_researcher(db: Session, researcher_id: int):
+    return (
+        db.query(Publication)
+        .filter(Publication.owner_researcher_id == researcher_id)
+        .order_by(Publication.created_at.desc())
+        .all()
+    )

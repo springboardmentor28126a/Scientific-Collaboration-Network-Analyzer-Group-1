@@ -2,22 +2,20 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import DashboardLayout from "../layouts/DashboardLayout";
-import { fetchPublishedPublications } from "../services/publicationService";
+import { fetchPublishedPublications, downloadPublicationFile } from "../services/publicationService";
 import "../styles/publications.css";
 
 function BrowsePublicationsPage() {
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sort, setSort] = useState("newest");
 
-  useEffect(() => {
-    loadPublications();
-  }, []);
-
-  const loadPublications = async (query = "") => {
+  const loadPublications = async () => {
     try {
       setLoading(true);
-      const data = await fetchPublishedPublications(query);
+      const data = await fetchPublishedPublications(search, typeFilter, sort);
       setPublications(data);
     } catch (err) {
       toast.error("Could not load publications.");
@@ -26,9 +24,13 @@ function BrowsePublicationsPage() {
     }
   };
 
+  useEffect(() => {
+    loadPublications();
+  }, [typeFilter, sort]);
+
   const handleSearch = (e) => {
     e.preventDefault();
-    loadPublications(search);
+    loadPublications();
   };
 
   return (
@@ -47,6 +49,21 @@ function BrowsePublicationsPage() {
             />
             <button type="submit" className="btn btn-primary">Search</button>
           </form>
+
+          <div className="d-flex gap-2 mt-2">
+            <select className="form-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+              <option value="">All types</option>
+              <option value="JOURNAL_PAPER">Journal Paper</option>
+              <option value="CONFERENCE_PAPER">Conference Paper</option>
+              <option value="BOOK">Book</option>
+              <option value="PATENT">Patent</option>
+              <option value="TECHNICAL_REPORT">Technical Report</option>
+            </select>
+            <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -60,15 +77,18 @@ function BrowsePublicationsPage() {
             const fileUrl = pub.file_path
               ? `http://127.0.0.1:8000/${pub.file_path.replace(/\\/g, "/")}`
               : null;
+            const isArchived = pub.status === "ARCHIVED";
 
             return (
               <div className="pub-item" key={pub.id}>
                 <div className="pub-item-header">
                   <div>
-  <span className="pub-type-label">{pub.publication_type?.replaceAll("_", " ")}</span>
-  <h4>{pub.title}</h4>
-</div>
-                  <span className="pub-badge pub-badge-published">Published</span>
+                    <span className="pub-type-label">{pub.publication_type?.replaceAll("_", " ")}</span>
+                    <h4>{pub.title}</h4>
+                  </div>
+                  <span className={isArchived ? "pub-badge pub-badge-draft" : "pub-badge pub-badge-published"}>
+                    {isArchived ? "Archived" : "Published"}
+                  </span>
                 </div>
 
                 <p className="pub-meta" style={{ marginBottom: "0.5rem" }}>
@@ -88,6 +108,19 @@ function BrowsePublicationsPage() {
                     <a href={fileUrl} target="_blank" rel="noreferrer" className="pub-file-link">
                       View document
                     </a>
+                    <button
+                      type="button"
+                      className="btn-ghost-outline btn-sm"
+                      onClick={async () => {
+  try {
+    await downloadPublicationFile(pub.id);
+  } catch (err) {
+    toast.error("Could not download file.");
+  }
+}}
+                    >
+                      Download
+                    </button>
                   </div>
                 )}
               </div>
