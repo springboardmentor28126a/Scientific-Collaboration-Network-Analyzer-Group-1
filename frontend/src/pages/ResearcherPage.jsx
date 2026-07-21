@@ -8,10 +8,12 @@ import ResearcherManagePanel from "../components/researcher/ResearcherManagePane
 
 import { fetchResearchers, updateResearcher } from "../services/researcherService";
 import { fetchDepartments } from "../services/departmentService";
+import { fetchInstitutions } from "../services/institutionService";
 
 function ResearcherPage() {
   const [researchers, setResearchers] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [managingResearcher, setManagingResearcher] = useState(null);
 
@@ -22,12 +24,15 @@ function ResearcherPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [researcherData, departmentData] = await Promise.all([
+    
+      const [researcherData, departmentData, institutionData] = await Promise.all([
         fetchResearchers(),
         fetchDepartments(),
+        fetchInstitutions(),
       ]);
       setResearchers(researcherData);
       setDepartments(departmentData);
+      setInstitutions(institutionData);
     } catch (error) {
       console.error(error);
       toast.error("Unable to load researchers.");
@@ -69,6 +74,7 @@ function ResearcherPage() {
       <ResearcherTable
         researchers={researchers}
         departments={departments}
+        institutions={institutions}
         loading={loading}
         onManage={handleManage}
       />

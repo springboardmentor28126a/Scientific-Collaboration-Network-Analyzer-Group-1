@@ -12,14 +12,39 @@ import {
   submitPublication,
   deletePublication,
 } from "../../services/publicationService";
-
+import { fetchMyConferenceRegistrations, cancelConferenceRegistration } from "../../services/conferenceService";
 import "../../styles/publications.css";
 
 function ResearcherDashboard() {
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPublication, setEditingPublication] = useState(null);
+  const [myConferences, setMyConferences] = useState([]);
 
+useEffect(() => {
+  loadMyConferences();
+}, []);
+
+const loadMyConferences = async () => {
+  try {
+    const data = await fetchMyConferenceRegistrations();
+    setMyConferences(data);
+  } catch (err) {
+    // silent fail is fine here, non-critical section
+  }
+};
+
+const handleCancelRegistration = async (id) => {
+  const confirmed = window.confirm("Cancel this conference registration?");
+  if (!confirmed) return;
+  try {
+    await cancelConferenceRegistration(id);
+    toast.success("Registration cancelled.");
+    await loadMyConferences();
+  } catch (err) {
+    toast.error("Could not cancel registration.");
+  }
+};
   useEffect(() => {
     loadPublications();
   }, []);
@@ -99,6 +124,37 @@ function ResearcherDashboard() {
           <div className="stat-label">Drafts</div>
         </div>
       </div>
+      <div className="pub-card">
+  <h3>My Conferences</h3>
+  {myConferences.length === 0 ? (
+    <p className="text-muted">You haven't registered for any conferences yet.</p>
+  ) : (
+    <div className="pub-list">
+      {myConferences.map((reg) => (
+        <div className="pub-item" key={reg.id}>
+          <div className="pub-item-header">
+            <h4>{reg.conference.title} {reg.conference.acronym ? `(${reg.conference.acronym})` : ""}</h4>
+            <span className={`pub-badge ${reg.role === "PRESENTER" ? "pub-badge-published" : "pub-badge-draft"}`}>
+              {reg.role === "PRESENTER" ? "Presenter" : "Attendee"}
+            </span>
+          </div>
+          <div className="pub-meta">
+            <span>{reg.conference.venue}{reg.conference.city ? `, ${reg.conference.city}` : ""}</span>
+            <span>{new Date(reg.conference.start_date).toLocaleDateString()} – {new Date(reg.conference.end_date).toLocaleDateString()}</span>
+          </div>
+          {reg.presentation_title && (
+            <p className="pub-abstract"><strong>Presenting:</strong> {reg.presentation_title}</p>
+          )}
+          <div className="pub-item-actions">
+            <button className="btn-text-danger" onClick={() => handleCancelRegistration(reg.id)}>
+              Cancel registration
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
       <PublicationForm
         editingPublication={editingPublication}
@@ -114,6 +170,7 @@ function ResearcherDashboard() {
           onEdit={setEditingPublication}
           onSubmit={handleSubmitForReview}
           onDelete={handleDelete}
+          onFileUploaded={loadPublications}
         />
       )}
     </DashboardShell>

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from app.api.user import router as user_router
 from app.api.auth import router as auth_router
 from app.api.researcher import router as researcher_router
@@ -12,6 +14,8 @@ app = FastAPI(
     description="Backend API for managing researchers, publications, collaborations, conferences, and institutions.",
     version="1.0.0"
 )
+os.makedirs("uploads/publications", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

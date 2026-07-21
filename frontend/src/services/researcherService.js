@@ -24,3 +24,8 @@ export const deleteResearcher = async (id) => {
   const response = await api.delete(`/researchers/${id}`);
   return response.data;
 };
+
+export const searchResearchers = async (query) => {
+  const response = await api.get("/researchers/search", { params: { q: query } });
+  return response.data;
+};

@@ -20,3 +20,14 @@ class PublicationStatus(str, Enum):
     UNDER_REVIEW = "UNDER_REVIEW"
     PUBLISHED = "PUBLISHED"
     REJECTED = "REJECTED"
+
+class PublicationType(str, Enum):
+    JOURNAL_PAPER = "JOURNAL_PAPER"
+    CONFERENCE_PAPER = "CONFERENCE_PAPER"
+    BOOK = "BOOK"
+    PATENT = "PATENT"
+    TECHNICAL_REPORT = "TECHNICAL_REPORT"
+
+class ConferenceRole(str, Enum):
+    ATTENDEE = "ATTENDEE"
+    PRESENTER = "PRESENTER"

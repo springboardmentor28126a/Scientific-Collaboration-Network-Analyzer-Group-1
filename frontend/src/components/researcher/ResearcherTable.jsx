@@ -1,4 +1,4 @@
-function ResearcherTable({ researchers, departments, loading, onManage }) {
+function ResearcherTable({ researchers, departments, institutions, loading, onManage }) {
   if (loading) {
     return (
       <div className="card shadow-sm border-0 rounded-4 mt-4">
@@ -13,6 +13,11 @@ function ResearcherTable({ researchers, departments, loading, onManage }) {
   const getDepartmentName = (id) => {
     const dept = departments.find((d) => d.id === id);
     return dept ? dept.department_name : "-";
+  };
+
+  const getInstitutionName = (id) => {
+    const inst = institutions.find((i) => i.id === id);
+    return inst ? inst.institution_name : "-";
   };
 
   return (
@@ -37,6 +42,7 @@ function ResearcherTable({ researchers, departments, loading, onManage }) {
                 <tr>
                   <th>Name</th>
                   <th>Designation</th>
+                  <th>Institution</th>
                   <th>Department</th>
                   <th className="text-center">Actions</th>
                 </tr>
@@ -46,6 +52,7 @@ function ResearcherTable({ researchers, departments, loading, onManage }) {
                   <tr key={researcher.id}>
                     <td><strong>{researcher.first_name} {researcher.last_name}</strong></td>
                     <td>{researcher.designation || "-"}</td>
+                    <td>{getInstitutionName(researcher.institution_id)}</td>
                     <td>{getDepartmentName(researcher.department_id)}</td>
                     <td className="text-center">
                       <button className="btn btn-outline-primary btn-sm" onClick={() => onManage(researcher)}>

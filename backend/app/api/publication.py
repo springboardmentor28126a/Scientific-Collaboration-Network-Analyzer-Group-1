@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
-
+from fastapi import UploadFile, File
+from app.services.publication_service import upload_publication_file
+from typing import Optional
+from app.schemas.publication import PublicationBrowseResponse
+from app.services.publication_service import list_published_publications
+from app.models.researcher import Researcher
 from app.db.database import get_db
 from app.schemas.publication import (
     PublicationCreate,
@@ -125,3 +130,46 @@ def review_decision(
     current_user: User = Depends(get_current_user),
 ):
     return decide_review(db, current_user.id, publication_id, payload)
+@router.post(
+    "/{publication_id}/upload",
+    response_model=PublicationResponse,
+    dependencies=[Depends(require_roles(UserRole.RESEARCHER.value))],
+)
+def upload_file_for_publication(
+    publication_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return upload_publication_file(db, current_user.id, publication_id, file)
+@router.get(
+    "/published",
+    response_model=List[PublicationBrowseResponse],
+)
+def browse_published(
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    publications = list_published_publications(db, search)
+
+    results = []
+    for pub in publications:
+        owner = db.query(Researcher).filter(Researcher.id == pub.owner_researcher_id).first()
+        results.append({
+            "id": pub.id,
+            "title": pub.title,
+            "publication_type": pub.publication_type,
+            "conference_id": pub.conference_id,
+            "abstract": pub.abstract,
+            "authors_text": pub.authors_text,
+            "publish_date": pub.publish_date,
+            "doi": pub.doi,
+            "external_link": pub.external_link,
+            "file_path": pub.file_path,
+            "owner_first_name": owner.first_name,
+            "owner_last_name": owner.last_name,
+            "owner_institution_id": owner.institution_id,
+            "coauthors": pub.coauthors,
+        })
+    return results

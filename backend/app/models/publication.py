@@ -19,8 +19,8 @@ class Publication(Base):
 
     owner_researcher_id = Column(Integer, ForeignKey("researchers.id"), nullable=False)
     conference_id = Column(Integer, ForeignKey("conferences.id"), nullable=True)
-
     title = Column(String(500), nullable=False)
+    publication_type = Column(String(30), nullable=False, default="JOURNAL_PAPER")
     abstract = Column(Text, nullable=True)
     authors_text = Column(String(500), nullable=True)  # free-text author list, e.g. for external co-authors
     publish_date = Column(DateTime(timezone=True), nullable=True)

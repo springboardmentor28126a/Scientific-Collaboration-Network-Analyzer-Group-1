@@ -29,3 +29,8 @@ export const deleteDepartment = async (id) => {
   const response = await api.delete(`/departments/${id}`);
   return response.data;
 };
+
+export const fetchDepartmentsByInstitutionPublic = async (institutionId) => {
+  const response = await api.get("/departments/public", { params: { institution_id: institutionId } });
+  return response.data;
+};
