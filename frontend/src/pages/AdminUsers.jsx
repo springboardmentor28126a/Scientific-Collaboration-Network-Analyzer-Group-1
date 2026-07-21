@@ -3,9 +3,9 @@ import api from '../config/api';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
-  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [form, setForm] = useState({ email: '', username: '', full_name: '', password: '', role: 'researcher' });
 
   useEffect(() => {
     fetchUsers();
@@ -13,9 +13,8 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const [usersResponse, institutionsResponse] = await Promise.all([api.get('/admin/users'), api.get('/institutions/?limit=1000')]);
-      setUsers(usersResponse.data || []);
-      setInstitutions(institutionsResponse.data || []);
+      const res = await api.get('/admin/users');
+      setUsers(res.data || []);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to fetch users');
     } finally {
@@ -23,6 +22,18 @@ const AdminUsers = () => {
     }
   };
 
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/admin/users', form);
+      setForm({ email: '', username: '', full_name: '', password: '', role: 'researcher' });
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to create user');
+    }
+  };
   const handleDelete = async (id) => {
     if (!window.confirm('Delete user?')) return;
     try {
@@ -51,24 +62,7 @@ const AdminUsers = () => {
     }
   };
 
-  const decideRequest = async (id, approved) => {
-    try {
-      await api.put(`/admin/users/${id}/role-request`, null, { params: { approved } });
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update role request');
-    }
-  };
-
-  const assignInstitution = async (id, institutionId) => {
-    try {
-      await api.put(`/admin/users/${id}/institution`, null, { params: { institution_id: institutionId || null } });
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to assign institution');
-    }
-  };
-
+  
   return (
     <div className="container py-4">
       <h3>Admin — Users</h3>

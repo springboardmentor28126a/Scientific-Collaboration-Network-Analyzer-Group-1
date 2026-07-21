@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from fastapi.openapi.utils import get_openapi
-from .database import engine, Base, ensure_user_access_columns
+from .database import engine, Base
 from .models import User, ResearcherProfile, Institution
 from .routes import auth, researchers, institutions, publications, conferences, reviews, admin
 
 Base.metadata.create_all(bind=engine)
-ensure_user_access_columns()
+
 
 app = FastAPI(
     title="Scientific Collaboration Network API",
