@@ -44,7 +44,9 @@ function formDataToJson(form) {
   return data;
 }
 
-function bindForm(formId, endpoint, successMessage, afterSave = loadAll) {
+function bindForm(formId, endpoint, successMessage, afterSave = loadAll) 
+{
+  
   const form = document.getElementById(formId);
   if (!form) return;
 
@@ -58,6 +60,41 @@ function bindForm(formId, endpoint, successMessage, afterSave = loadAll) {
       form.reset();
       showToast("Saved", successMessage);
       await afterSave();
+    } catch (error) {
+      showToast("Error", error.message);
+    }
+  });
+}
+async function bindPublicationForm() 
+  {
+  console.log("bindPublicationForm loaded");
+  const form = document.getElementById("publicationForm");
+
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    console.log("Publication form submitted");
+    event.preventDefault();
+    const fileInput = form.querySelector('input[name="pdf_file"]');
+
+    
+    const formData = new FormData(form);
+    console.log(formData.get("pdf_file"));
+
+    try {
+      const response = await fetch("/publications/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add publication");
+      }
+
+      form.reset();
+      showToast("Success", "Publication added.");
+      await loadAll();
+
     } catch (error) {
       showToast("Error", error.message);
     }
@@ -134,6 +171,7 @@ async function loadAll() {
 }
 async function searchPublications() {
   console.log("Search button clicked");
+  console.log("TEST APP.JS");
 
   const title = document.getElementById("searchTitle").value.trim();
 
@@ -172,20 +210,38 @@ async function searchPublications() {
       results.innerHTML = "<p><strong>No publications found.</strong></p>";
       return;
     }
+   console.log(publications);
+   
 
-    results.innerHTML = publications
-      .map(
-        (publication) => `
-        <div class="panel" style="margin-top:10px;">
-          <h3>${publication.title}</h3>
-          <p><strong>Type:</strong> ${publication.publication_type}</p>
-          <p><strong>Status:</strong> ${publication.status}</p>
-          <p><strong>Year:</strong> ${publication.publication_year}</p>
-          <p><strong>DOI:</strong> ${publication.doi}</p>
-        </div>
-      `
-      )
-      .join("");
+results.innerHTML = publications
+  .map((publication) => {
+    console.log(publication);
+
+    return `
+      <div class="panel" style="margin-top:10px;">
+
+        <h3>${publication.title}</h3>
+
+        <p><strong>Authors:</strong> ${publication.authors}</p>
+
+        <p><strong>Abstract:</strong> ${publication.abstract}</p>
+
+        <p><strong>Citation Count:</strong> ${publication.citation_count}</p>
+
+        <p><strong>Publication Type:</strong> ${publication.publication_type}</p>
+
+        <p><strong>Publication Name:</strong> ${publication.publication_name}</p>
+
+        <p><strong>Status:</strong> ${publication.status}</p>
+
+        <p><strong>Year:</strong> ${publication.publication_year}</p>
+
+        <p><strong>DOI:</strong> ${publication.doi}</p>
+
+      </div>
+    `;
+  })
+  .join("");
   } catch (error) {
     showToast("Error", error.message);
   }
@@ -193,11 +249,11 @@ async function searchPublications() {
 
 bindForm("researcherForm", "/researchers/", "Researcher added.");
 bindForm("institutionForm", "/institutions/", "Institution added.");
-bindForm(
-  "publicationForm",
-  "/publications/",
-  "Publication added."
-);
+//bindForm(
+//  "publicationForm",
+ // "/publications/",
+ // "Publication added."
+//);
 const searchBtn = document.getElementById("searchBtn");
 
 searchBtn?.addEventListener("click", searchPublications);
@@ -215,7 +271,7 @@ clearSearchBtn?.addEventListener("click", () => {
   document.getElementById("filterStatus").value = "";
   document.getElementById("searchResults").innerHTML = "";
 });
-
+bindPublicationForm();
 document.getElementById("refreshReports")?.addEventListener("click", loadReports);
 bindLogout();
 loadCurrentUser();

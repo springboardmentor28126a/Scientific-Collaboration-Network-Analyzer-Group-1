@@ -9,6 +9,9 @@ class Publication(Base):
     researcher_id = Column(Integer, ForeignKey("researchers.id"))
 
     title = Column(String, nullable=False)
+    authors = Column(String, nullable=False)
+    abstract = Column(String)
+    citation_count = Column(Integer, default=0)
 
     publication_type = Column(String, nullable=False)
     # Journal / Conference / Book / Patent / Technical Report

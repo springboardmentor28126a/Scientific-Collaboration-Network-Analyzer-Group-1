@@ -62,6 +62,23 @@
         <form class="form-grid" id="publicationForm">
           <input name="researcher_id" type="number" placeholder="Primary researcher ID" required>
           <input name="title" placeholder="Title" required>
+          <input
+    name="authors"
+    placeholder="Authors (comma separated)"
+    required
+>
+<textarea
+    name="abstract"
+    placeholder="Abstract"
+    rows="4">
+</textarea>
+<input
+    name="citation_count"
+    type="number"
+    placeholder="Citation Count"
+    value="0"
+    min="0"
+>
           <select name="publication_type" required>
             <option value="Journal">Journal</option>
             <option value="Conference">Conference</option>
@@ -78,7 +95,11 @@
             <option value="Published">Published</option>
             <option value="Archived">Archived</option>
           </select>
-          <input name="upload_path" placeholder="Upload path / file name">
+         <input
+    type="file"
+    name="pdf_file"
+    accept=".pdf"
+>
           <button type="submit">Add publication</button>
         </form>
       </div>

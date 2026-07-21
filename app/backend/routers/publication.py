@@ -1,5 +1,9 @@
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
 from fastapi import APIRouter, Depends,Query
+from fastapi import UploadFile, File, Form
+import shutil
+import os
 from sqlalchemy.orm import Session
 
 from app.backend.database.database import SessionLocal
@@ -20,20 +24,40 @@ def get_db():
         db.close()
 
 @router.post("/", response_model=PublicationResponse)
-def create_publication(
-    publication: PublicationCreate,
+async def create_publication(
+    researcher_id: int = Form(...),
+    title: str = Form(...),
+    authors: str = Form(...),
+    abstract: str = Form(None),
+    citation_count: int = Form(0),
+    publication_type: str = Form(...),
+    publication_name: str = Form(...),
+    publication_year: int = Form(...),
+    doi: str = Form(None),
+    status: str = Form("Draft"),
+    pdf_file: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
+    upload_path = None
+    if pdf_file:
+        os.makedirs("app/uploads", exist_ok=True)
+        upload_path = os.path.join("app/uploads", pdf_file.filename)
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(pdf_file.file, buffer)
+        
     new_publication = Publication(
-        researcher_id=publication.researcher_id,
-        title=publication.title,
-        publication_type=publication.publication_type,
-        publication_name=publication.publication_name,
-        publication_year=publication.publication_year,
-        doi=publication.doi,
-        status=publication.status,
-        upload_path=publication.upload_path
-    )
+    researcher_id=researcher_id,
+    title=title,
+    authors=authors,
+    abstract=abstract,
+    citation_count=citation_count,
+    publication_type=publication_type,
+    publication_name=publication_name,
+    publication_year=publication_year,
+    doi=doi,
+    status=status,
+    upload_path=upload_path
+)
 
     db.add(new_publication)
     db.commit()
@@ -111,6 +135,10 @@ def update_publication(
 
     publication.researcher_id = updated_publication.researcher_id
     publication.title = updated_publication.title
+    publication.authors = updated_publication.authors
+    publication.abstract = updated_publication.abstract
+    publication.citation_count = updated_publication.citation_count
+
     publication.publication_type = updated_publication.publication_type
     publication.publication_name = updated_publication.publication_name
     publication.publication_year = updated_publication.publication_year
@@ -144,3 +172,29 @@ def delete_publication(
     return {
         "message": "Publication deleted successfully"
     }
+
+@router.get("/download/{publication_id}")
+def download_publication_pdf(
+    publication_id: int,
+    db: Session = Depends(get_db)
+):
+    publication = (
+        db.query(Publication)
+        .filter(Publication.id == publication_id)
+        .first()
+    )
+
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+
+    if not publication.upload_path:
+        raise HTTPException(status_code=404, detail="PDF not uploaded")
+
+    file_path = os.path.join("app/uploads", publication.upload_path)
+    return FileResponse(
+    
+    file_path,
+    media_type="application/pdf",
+    filename=os.path.basename(file_path)
+)
+    
