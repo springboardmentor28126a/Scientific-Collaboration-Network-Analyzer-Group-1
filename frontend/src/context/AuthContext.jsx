@@ -20,12 +20,24 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('user');
     
     if (storedToken && storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      const normalizedUser = parsedUser ? { ...parsedUser, role: normalizeRole(parsedUser.role) } : parsedUser;
-      setToken(storedToken);
-      setUser(normalizedUser);
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        const normalizedUser = parsedUser ? { ...parsedUser, role: normalizeRole(parsedUser.role) } : parsedUser;
+        setToken(storedToken);
+        setUser(normalizedUser);
+      } catch (err) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        console.warn('Failed to parse stored user information, clearing auth storage.', err);
+      }
     }
     setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const handleExpiredSession = () => logout();
+    window.addEventListener('auth:expired', handleExpiredSession);
+    return () => window.removeEventListener('auth:expired', handleExpiredSession);
   }, []);
 
   const login = (token, user) => {

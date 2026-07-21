@@ -10,7 +10,7 @@ const normalizeRole = (role) => {
   return String(role).toLowerCase();
 };
 
-const PrivateRoute = ({ children, allowedRoles = ['researcher'] }) => {
+const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { token, user, loading } = useContext(AuthContext);
 
   if (loading) {

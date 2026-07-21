@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import engine, Base
-from .models import User, Institution, ResearcherProfile
-from .routes import auth, researchers, institutions
+from fastapi.staticfiles import StaticFiles
+import os
+from fastapi.openapi.utils import get_openapi
+from .database import engine, Base, ensure_user_access_columns
+from .models import User, ResearcherProfile, Institution
+from .routes import auth, researchers, institutions, publications, conferences, reviews, admin
+
 Base.metadata.create_all(bind=engine)
+ensure_user_access_columns()
 
 app = FastAPI(
     title="Scientific Collaboration Network API",
@@ -11,23 +16,38 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include routers
 app.include_router(auth.router)
 app.include_router(researchers.router)
 app.include_router(institutions.router)
+app.include_router(publications.router)
+app.include_router(conferences.router)
+app.include_router(reviews.router)
+app.include_router(admin.router)
+
+# Mount uploads directory for file serving
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 
 
 @app.get("/")
 def read_root():
-    return {"message": "API Running", "docs": "/docs"}
+    return {
+        "message": "Welcome to Scientific Collaboration Network API",
+        "docs": "/docs",
+        "redoc": "/redoc"
+    }
 
 @app.get("/health")
-def health():
+def health_check():
     return {"status": "healthy"}

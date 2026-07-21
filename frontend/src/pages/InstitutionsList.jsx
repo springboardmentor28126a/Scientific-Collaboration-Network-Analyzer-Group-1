@@ -1,11 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../config/api';
 import '../styles/cards.css';
+import { AuthContext } from '../context/AuthContext';
+
+const normalizeRole = (role) => {
+  if (!role) return '';
+  if (typeof role === 'string') return role.toLowerCase();
+  if (typeof role === 'object' && role?.value) return String(role.value).toLowerCase();
+  return String(role).toLowerCase();
+};
+
+const canAccess = (userRole, allowedRoles = []) => {
+  if (!userRole) return false;
+  if (!allowedRoles || allowedRoles.length === 0) return true;
+  const normalized = normalizeRole(userRole);
+  return allowedRoles.map((r) => normalizeRole(r)).includes(normalized);
+};
 
 const InstitutionsList = () => {
   const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext);
+  const role = user ? normalizeRole(user.role) : null;
 
   useEffect(() => {
     fetchInstitutions();
@@ -28,9 +45,11 @@ const InstitutionsList = () => {
     <div className="container py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2><i className="bi bi-building"></i> Research Institutions</h2>
-        <Link to="/institutions/create" className="btn btn-primary">
-          <i className="bi bi-plus-circle"></i> Add Institution
-        </Link>
+        {canAccess(role, ['institution_admin', 'system_admin']) && (
+          <Link to="/institutions/create" className="btn btn-primary px-4">
+            <i className="bi bi-plus-circle"></i> Add Institution
+          </Link>
+        )}
       </div>
 
       <div className="row">

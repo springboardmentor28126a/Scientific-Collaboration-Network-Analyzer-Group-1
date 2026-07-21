@@ -25,6 +25,7 @@ const renderWithAuth = (role) => {
               </PrivateRoute>
             }
           />
+          <Route path="/access-denied" element={<div>Access denied</div>} />
           <Route path="/login" element={<div>Login page</div>} />
         </Routes>
       </MemoryRouter>

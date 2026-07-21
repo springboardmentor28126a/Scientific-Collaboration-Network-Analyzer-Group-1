@@ -1,32 +1,117 @@
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 60px 20px;
-  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    #A0D2EB 0%,
+    #E5EAF5 30%,
+    #D0BDF4 60%,
+    #8458B3 85%,
+    #494D5F 100%
+  );
+
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 24px;
   margin-bottom: 40px;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+
+  box-shadow: 0 20px 45px rgba(0,0,0,.18);
+
+  position: relative;
+  overflow: hidden;
 }
 
-.hero-section h1 {
-  margin-bottom: 10px;
+/* Decorative circles */
+
+.hero-section::before{
+  content:"";
+  position:absolute;
+  width:280px;
+  height:280px;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  top:-120px;
+  right:-80px;
 }
 
-.hero-section .lead {
-  margin: 0;
-  opacity: 0.95;
+.hero-section::after{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  bottom:-70px;
+  left:-40px;
 }
 
-.card {
-  transition: transform 0.3s, box-shadow 0.3s;
-  border: none;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+.hero-section h1{
+  position:relative;
+  z-index:1;
+
+  font-size:2.6rem;
+  font-weight:700;
+  margin-bottom:12px;
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.2);
+.hero-section .lead{
+  position:relative;
+  z-index:1;
+
+  font-size:1.15rem;
+  opacity:.95;
 }
 
-.card-header {
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+/* Cards */
+
+.card{
+  border:none;
+  border-radius:20px;
+
+  background:rgba(255,255,255,.18);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+
+  border:1px solid rgba(255,255,255,.25);
+
+  box-shadow:0 15px 35px rgba(0,0,0,.12);
+
+  transition:.35s;
+}
+
+.card:hover{
+  transform:translateY(-8px);
+  box-shadow:0 22px 45px rgba(0,0,0,.2);
+}
+
+/* Card Header */
+
+.card-header{
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.2);
+
+  font-weight:600;
+  color:#494D5F;
+}
+
+/* Card Body */
+
+.card-body{
+  color:#494D5F;
+}
+
+/* Icons */
+
+.card i{
+  color:#8458B3;
+}
+
+/* Buttons inside cards */
+
+.card .btn-primary{
+  background:#8458B3;
+  border:none;
+  border-radius:12px;
+}
+
+.card .btn-primary:hover{
+  background:#6f46a5;
 }

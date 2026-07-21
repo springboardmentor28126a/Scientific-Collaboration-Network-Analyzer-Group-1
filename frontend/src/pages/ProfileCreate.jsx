@@ -1,29 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../config/api';
 import '../styles/forms.css';
 
 const ProfileCreate = () => {
-  
+  const [institutions, setInstitutions] = useState([]);  // ✅ ADD THIS
   const [formData, setFormData] = useState({
     department: '',
     designation: '',
     bio: '',
     skills: '',
     research_interests: '',
-
+    institution_id: null, 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  
+  // ✅ ADD THIS USEEFFECT
+  useEffect(() => {
+    fetchInstitutions();
+  }, []);
 
-  
+  // ✅ ADD THIS FUNCTION
+  const fetchInstitutions = async () => {
+    try {
+      const response = await api.get('/institutions/?limit=1000');
+      setInstitutions(response.data);
+    } catch (err) {
+      console.error('Failed to fetch institutions');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'institution_id' ? (value ? parseInt(value) : null) : value  // ✅ UPDATED
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -118,7 +132,22 @@ const ProfileCreate = () => {
             />
           </div>
 
-         
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-building"></i> Institution (Optional)</label>
+            <select
+              className="form-control"
+              name="institution_id"
+              value={formData.institution_id || ''}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value="">-- Select Institution --</option>
+              {institutions.map((inst) => (
+                <option key={inst.id} value={inst.id}>{inst.name}</option>
+              ))}
+            </select>
+            <small className="text-muted">Don't see your institution? <Link to="/institutions/create">Create one</Link></small>
+          </div>
 
           <div className="d-flex gap-2">
             <button type="submit" className="btn btn-primary" disabled={loading}>

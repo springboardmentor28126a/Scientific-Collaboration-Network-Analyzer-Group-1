@@ -26,7 +26,15 @@ const InstitutionCreate = () => {
     setLoading(true);
 
     try {
-      await api.post('/institutions/', formData);
+      const payload = {
+        ...formData,
+        name: formData.name.trim(),
+        country: formData.country.trim(),
+        city: formData.city.trim(),
+        website: formData.website.trim(),
+      };
+
+      await api.post('/institutions/', payload);
       alert('Institution created successfully!');
       navigate('/institutions');
     } catch (err) {

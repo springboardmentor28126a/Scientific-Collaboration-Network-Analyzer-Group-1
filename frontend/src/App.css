@@ -1,36 +1,121 @@
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --primary-color: #667eea;
-  --secondary-color: #764ba2;
+  --primary-color: #8458B3;
+  --secondary-color: #A0D2EB;
+  --light-color: #E5EAF5;
+  --accent-color: #D0BDF4;
+  --dark-color: #494D5F;
+
+  --primary-gradient: linear-gradient(
+    135deg,
+    #A0D2EB 0%,
+    #E5EAF5 30%,
+    #D0BDF4 60%,
+    #8458B3 85%,
+    #494D5F 100%
+  );
 }
 
 body {
-  background-color: #f8f9fa;
-  font-family: 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+  min-height: 100vh;
+  background: var(--primary-gradient);
+  background-attachment: fixed;
+  font-family: "Segoe UI", "Roboto", sans-serif;
 }
 
+/* Main Content */
 .container-fluid {
-  padding: 0 !important;
+  padding: 30px !important;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Cards */
+.card {
   border: none;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
+
+/* Card Header */
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  color: var(--dark-color);
+  font-weight: 600;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #8458B3;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 22px;
+  transition: 0.3s;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: #6F46A6;
+  transform: translateY(-2px);
 }
 
+/* Inputs */
+.form-control,
+.form-select {
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.75);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #8458B3;
+  box-shadow: 0 0 0 .2rem rgba(132,88,179,.2);
+}
+
+/* Tables */
+.table {
+  background: rgba(255,255,255,.18);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.table thead {
+  background: rgba(132,88,179,.15);
+}
+
+/* Alerts */
 .alert-info {
-  background-color: #e7f3ff;
-  border-color: #b3d9ff;
-  color: #004085;
+  background: rgba(160,210,235,.3);
+  border: none;
+  color: #2d3748;
 }
 
+/* Badges */
 .badge {
-  font-size: 0.75rem;
-  padding: 0.35em 0.65em;
-  margin-right: 5px;
-  margin-bottom: 5px;
+  background: #8458B3;
+  font-size: .75rem;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+/* Navbar */
+.navbar {
+  background: rgba(255,255,255,.15) !important;
+  backdrop-filter: blur(15px);
+}
+
+/* Sidebar */
+.sidebar {
+  background: rgba(73,77,95,.92);
+  color: white;
+}
+
+.sidebar a {
+  color: #E5EAF5;
+}
+
+.sidebar a:hover {
+  background: rgba(255,255,255,.12);
+  border-radius: 10px;
 }

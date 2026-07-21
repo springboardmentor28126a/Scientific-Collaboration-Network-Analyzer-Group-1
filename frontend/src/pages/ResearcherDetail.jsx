@@ -82,7 +82,7 @@ const ResearcherDetail = () => {
 
               <div className="mb-3">
                 <strong><i className="bi bi-envelope"></i> Email:</strong>
-                <p>{researcher?.user?.email || 'Not available'}</p>
+                  <p>{researcher?.email || 'Not available'}</p>
               </div>
 
               <div className="mt-4">

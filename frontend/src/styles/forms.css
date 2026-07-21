@@ -3,48 +3,182 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 30px;
+
+  background: linear-gradient(
+    135deg,
+    #A0D2EB 0%,
+    #E5EAF5 30%,
+    #D0BDF4 60%,
+    #8458B3 85%,
+    #494D5F 100%
+  );
 }
 
+/* Glass Card */
+
 .form-card {
-  background: white;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 500px;
+  max-width: 470px;
+  padding: 40px;
+
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 22px;
+
+  box-shadow: 0 20px 45px rgba(0,0,0,.18);
 }
+
+/* Title */
 
 .form-title {
   text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-weight: 600;
+  margin-bottom: 35px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #494D5F;
 }
 
-.form-title i {
-  color: #667eea;
-  margin-right: 10px;
+.form-title i{
+  color:#8458B3;
+  margin-right:10px;
 }
 
-.form-label {
-  font-weight: 500;
-  color: #555;
-  margin-bottom: 8px;
+/* Labels */
+
+.form-label{
+  color:#494D5F;
+  font-weight:600;
+  margin-bottom:8px;
 }
 
-.form-control {
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  padding: 10px 12px;
-  transition: all 0.3s;
+.form-label i{
+  color:#8458B3;
+  margin-right:6px;
 }
 
-.form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+/* Inputs */
+
+.form-control{
+  border-radius:12px;
+  padding:12px 16px;
+  border:1px solid rgba(255,255,255,.4);
+
+  background:rgba(255,255,255,.75);
+
+  transition:.3s;
 }
 
-.form-control:disabled {
-  background-color: #f0f0f0;
+.form-control:focus{
+  border-color:#8458B3;
+  box-shadow:0 0 0 4px rgba(132,88,179,.2);
+  background:white;
+}
+
+.form-control:disabled{
+  background:#eef2f7;
+}
+
+/* Button */
+
+.btn-primary{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:auto;
+  min-width:fit-content;
+  padding:12px 16px;
+
+  border:none;
+  border-radius:12px;
+
+  background:#8458B3;
+  color:white;
+
+  font-weight:600;
+  transition:.3s;
+}
+
+.form-card .btn-primary,
+.form-container .btn-primary{
+  width:100%;
+}
+
+.btn-primary:hover:not(:disabled){
+  background:#6f46a5;
+  transform:translateY(-2px);
+  box-shadow:0 10px 20px rgba(132,88,179,.35);
+}
+
+.btn-primary:disabled{
+  opacity:.7;
+}
+
+/* Password */
+
+.input-group{
+  display:flex;
+}
+
+.input-group .form-control{
+  border-radius:12px 0 0 12px;
+}
+
+.input-group .btn-outline-secondary{
+  border-radius:0 12px 12px 0;
+}
+
+/* Eye Button */
+
+.btn-outline-secondary{
+  border:1px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.6);
+
+  color:#8458B3;
+}
+
+.btn-outline-secondary:hover{
+  background:#8458B3;
+  color:white;
+}
+
+/* Alert */
+
+.alert-sm{
+  border:none;
+  border-radius:10px;
+  background:rgba(255,255,255,.55);
+  color:#494D5F;
+}
+
+/* Register Link */
+
+.btn-link{
+  color:#8458B3;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.btn-link:hover{
+  color:#6f46a5;
+  text-decoration:underline;
+}
+
+/* Divider */
+
+hr{
+  border:none;
+  height:1px;
+  background:rgba(255,255,255,.35);
+  margin:25px 0;
+}
+
+/* Spinner */
+
+.spinner-border-sm{
+  width:1rem;
+  height:1rem;
 }

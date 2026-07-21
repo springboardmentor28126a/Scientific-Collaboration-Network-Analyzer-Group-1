@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     username: '',
     password: '',
-    role: 'researcher',
+    
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,15 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await api.post('/auth/register', formData);
+      const payload = {
+        ...formData,
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        username: formData.username.trim(),
+        password: formData.password.trim(),
+      };
+
+      await api.post('/auth/register', payload);
       alert('Registration successful! Please login.');
       navigate('/login');
     } catch (err) {
@@ -90,20 +98,7 @@ const Register = () => {
               disabled={loading}
             />
           </div>
-          <div className="mb-3">
-            <label className="form-label">Role</label>
-            <select
-              className="form-control"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value="researcher">Researcher</option>
-              <option value="institution_admin">Institution Admin</option>
-              <option value="reviewer">Reviewer</option>
-            </select>
-          </div>
+          
           <button type="submit" className="btn btn-primary w-100 mb-3" disabled={loading}>
             {loading ? 'Registering...' : 'Register'}
           </button>

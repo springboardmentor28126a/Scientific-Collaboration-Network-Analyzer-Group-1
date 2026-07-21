@@ -4,7 +4,7 @@ import api from '../config/api';
 import '../styles/forms.css';
 
 const ProfileEdit = () => {
-  
+  const [institutions, setInstitutions] = useState([]);
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -18,11 +18,15 @@ const ProfileEdit = () => {
 
   const fetchData = async () => {
     try {
-      const profileRes = await api.get('/researchers/profile/me');
+      const [profileRes, instRes] = await Promise.all([
+        api.get('/researchers/profile/me'),
+        api.get('/institutions/?limit=1000')
+      ]);
       setProfile(profileRes.data);
       setFormData(profileRes.data);
+      setInstitutions(instRes.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch profile');
+      setError('Failed to fetch profile');
       setTimeout(() => navigate('/profile'), 2000);
     } finally {
       setFetchLoading(false);
@@ -31,7 +35,12 @@ const ProfileEdit = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: name === 'h_index' ? parseInt(value) || 0 : value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'h_index' ? (value ? parseInt(value) : 0) : 
+              name === 'institution_id' ? (value ? parseInt(value) : null) :
+              value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -141,7 +150,22 @@ const ProfileEdit = () => {
             />
           </div>
 
-          
+          {/* ✅ ADD THIS INSTITUTIONS DROPDOWN */}
+          <div className="mb-3">
+            <label className="form-label"><i className="bi bi-building"></i> Institution</label>
+            <select
+              className="form-control"
+              name="institution_id"
+              value={formData.institution_id || ''}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value="">-- Select Institution --</option>
+              {institutions.map((inst) => (
+                <option key={inst.id} value={inst.id}>{inst.name}</option>
+              ))}
+            </select>
+          </div>
 
           <div className="d-flex gap-2">
             <button type="submit" className="btn btn-primary" disabled={loading}>
