@@ -1,0 +1,129 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Publication Management</p>
+        <h1>Publication repository and citations</h1>
+        <p class="subtle">Manage publication records, uploads, DOI details, citation records, and reference links.</p>
+      </div>
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel wide">
+  <div class="panel-heading">
+    <div>
+      <h2>Search Publications</h2>
+      <p>Search and filter publication records.</p>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <input
+      type="text"
+      id="searchTitle"
+      placeholder="Search by title"
+    >
+
+    <select id="filterType">
+      <option value="">All Types</option>
+      <option value="Journal">Journal</option>
+      <option value="Conference">Conference</option>
+      <option value="Book">Book</option>
+      <option value="Patent">Patent</option>
+      <option value="Technical Report">Technical Report</option>
+    </select>
+
+    <select id="filterStatus">
+      <option value="">All Status</option>
+      <option value="Draft">Draft</option>
+      <option value="Submitted">Submitted</option>
+      <option value="Published">Published</option>
+      <option value="Archived">Archived</option>
+    </select>
+
+    <button
+      type="button"
+      id="searchBtn">
+      Search
+    </button>
+    <button type="button" id="clearSearchBtn">Clear</button>
+    <div id="searchResults" style="margin-top:20px;"></div>
+  </div>
+</div>
+      <div class="panel wide">
+        <div class="panel-heading">
+          <div>
+            <h2>Publication Repository</h2>
+            <p>Journal papers, conference papers, books, patents, and technical reports.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="publicationForm">
+          <input name="researcher_id" type="number" placeholder="Primary researcher ID" required>
+          <input name="title" placeholder="Title" required>
+          <input
+    name="authors"
+    placeholder="Authors (comma separated)"
+    required
+>
+<textarea
+    name="abstract"
+    placeholder="Abstract"
+    rows="4">
+</textarea>
+<input
+    name="citation_count"
+    type="number"
+    placeholder="Citation Count"
+    value="0"
+    min="0"
+>
+          <select name="publication_type" required>
+            <option value="Journal">Journal</option>
+            <option value="Conference">Conference</option>
+            <option value="Book">Book</option>
+            <option value="Patent">Patent</option>
+            <option value="Technical Report">Technical Report</option>
+          </select>
+          <input name="publication_name" placeholder="Journal / conference / book name" required>
+          <input name="publication_year" type="number" placeholder="Year" required>
+          <input name="doi" placeholder="DOI">
+          <select name="status">
+            <option value="Draft">Draft</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Published">Published</option>
+            <option value="Archived">Archived</option>
+          </select>
+         <input
+    type="file"
+    name="pdf_file"
+    accept=".pdf"
+>
+          <button type="submit">Add publication</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Citations</h2>
+            <p>Citation records, DOI management, references, and publication linking.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="citationForm">
+          <input name="publication_id" type="number" placeholder="Publication ID" required>
+          <input name="cited_publication_id" type="number" placeholder="Cited publication ID">
+          <input name="citation_text" placeholder="Citation text" required>
+          <input name="doi" placeholder="DOI">
+          <input name="reference_order" type="number" placeholder="Reference order">
+          <button type="submit">Add citation</button>
+        </form>
+      </div>
+    </section>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock scripts %}

@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Collaboration Management</p>
+        <h1>Collaborations, projects, and conferences</h1>
+        <p class="subtle">Track co-authorship, project teams, funding work, conference participation, and network edges.</p>
+      </div>
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Collaboration Network</h2>
+            <p>Co-authorship and institutional partnership records.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="authorForm">
+          <input name="publication_id" type="number" placeholder="Publication ID" required>
+          <input name="researcher_id" type="number" placeholder="Researcher ID" required>
+          <input name="author_order" type="number" placeholder="Author order">
+          <input name="contribution" placeholder="Contribution">
+          <button type="submit">Add co-author</button>
+        </form>
+        <div class="network-box" id="networkBox">No collaboration data yet.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Projects</h2>
+            <p>Funding projects, teams, assignments, and project status.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="projectForm">
+          <input name="title" placeholder="Project title" required>
+          <input name="funding_agency" placeholder="Funding agency">
+          <input name="budget" placeholder="Budget">
+          <input name="institution_name" placeholder="Institution">
+          <input name="start_date" placeholder="Start date">
+          <input name="end_date" placeholder="End date">
+          <select name="status">
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Paused">Paused</option>
+          </select>
+          <input name="description" placeholder="Description">
+          <button type="submit">Add project</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Conferences</h2>
+            <p>Events, registrations, presentations, and participation history.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="conferenceForm">
+          <input name="name" placeholder="Conference name" required>
+          <input name="organizer" placeholder="Organizer">
+          <input name="location" placeholder="Location">
+          <input name="start_date" placeholder="Start date">
+          <input name="end_date" placeholder="End date">
+          <input name="website" placeholder="Website">
+          <button type="submit">Add conference</button>
+        </form>
+      </div>
+    </section>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock scripts %}

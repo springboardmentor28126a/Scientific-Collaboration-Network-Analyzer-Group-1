@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Researcher Management</p>
+        <h1>Researchers and institutions</h1>
+        <p class="subtle">Manage academic profiles, departments, skills, research interests, affiliations, and institution records.</p>
+      </div>
+    </section>
+
+    <section class="panel-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Researchers</h2>
+            <p>Academic profiles, departments, skills, interests, and affiliations.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="researcherForm">
+          <input name="user_id" type="number" placeholder="User ID" required>
+          <input name="full_name" placeholder="Full name" required>
+          <input name="academic_profile" placeholder="Academic profile" required>
+          <input name="department" placeholder="Department" required>
+          <input name="institution" placeholder="Institution" required>
+          <input name="skills" placeholder="Skills" required>
+          <input name="research_interest" placeholder="Research interests" required>
+          <input name="affiliations" placeholder="Affiliations" required>
+          <button type="submit">Add researcher</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Institutions</h2>
+            <p>Universities, institutes, laboratories, publishers, and funding organizations.</p>
+          </div>
+        </div>
+        <form class="form-grid" id="institutionForm">
+          <input name="name" placeholder="Institution name" required>
+          <input name="institution_type" placeholder="Type">
+          <input name="country" placeholder="Country">
+          <input name="city" placeholder="City">
+          <input name="website" placeholder="Website">
+          <input name="contact_email" type="email" placeholder="Contact email">
+          <button type="submit">Add institution</button>
+        </form>
+      </div>
+    </section>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock scripts %}
