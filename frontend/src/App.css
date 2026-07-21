@@ -130,7 +130,7 @@ h1 {
 .card h2 {
   font-size: 40px;
   color: #d46a83;
-}+
+}
 
 .card p {
   color: #d8c7cc;
@@ -864,5 +864,131 @@ button:hover {
   background: #800020;
 
   border-color: #800020;
+
+}
+/* Login and Sign In Pages */
+
+.login-container {
+
+  min-height: 100vh;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  background:
+    radial-gradient(circle at top left, #3a0714, transparent 35%),
+    radial-gradient(circle at bottom right, #101b35, transparent 40%),
+    #020308;
+
+}
+
+
+
+.login-container form {
+
+  width: 400px;
+
+  padding: 45px;
+
+  background: rgba(10,5,12,0.9);
+
+  border-radius: 25px;
+
+  border: 5px solid rgba(16,42,86,0.8);
+
+  box-shadow:
+    0 0 35px rgba(128,0,32,0.4);
+
+  text-align: center;
+
+}
+
+
+
+.login-container h2 {
+
+  font-size: 40px;
+
+  color: #c1123f;
+
+  margin-bottom: 35px;
+
+}
+
+
+
+.login-container input {
+
+  width: 90%;
+
+  padding: 15px;
+
+  margin: 12px 0;
+
+  border-radius: 25px;
+
+  border: 2px solid #1b4f8a;
+
+  background: #111;
+
+  color: white;
+
+  font-size: 16px;
+
+  outline: none;
+
+}
+
+
+
+.login-container input:focus {
+
+  border-color: #800020;
+
+}
+
+
+
+.login-container button {
+
+  width: 70%;
+
+}
+
+
+
+.login-text {
+
+  margin-top: 25px;
+
+  color: #c8b6bd;
+
+  font-size: 16px;
+
+}
+
+
+
+.login-link {
+
+  color: #3b82f6;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+}
+
+
+
+.login-link:hover {
+
+  text-decoration: underline;
+
+  text-shadow:
+    0 0 10px rgba(59,130,246,0.8);
 
 }
