@@ -249,6 +249,40 @@ let conferences = await api(
 
 }
 
+async function viewInstitution(id) {
+
+    try {
+
+        const inst = await api(`/institutions/${id}`);
+
+        document.getElementById("viewName").textContent = inst.name ?? "";
+        document.getElementById("viewType").textContent = inst.institution_type ?? "";
+        document.getElementById("viewCountry").textContent = inst.country ?? "";
+        document.getElementById("viewCity").textContent = inst.city ?? "";
+        document.getElementById("viewWebsite").innerHTML =
+            inst.website
+                ? `<a href="${inst.website}" target="_blank">${inst.website}</a>`
+                : "";
+
+        document.getElementById("viewEmail").textContent =
+            inst.contact_email ?? "";
+
+        const modal = new bootstrap.Modal(
+            document.getElementById("institutionModal")
+        );
+
+        modal.show();
+
+    }
+
+    catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+}
+
 function registerConference(id, name) {
 
     document.getElementById("conference_id").value = id;
@@ -464,6 +498,57 @@ async function editConference(id) {
     form.querySelector("button").textContent = "Update Conference";
 }
 
+async function searchInstitution() {
+
+    const name = document.getElementById("institutionSearch").value.trim();
+    const country = document.getElementById("countryFilter").value.trim();
+    const city = document.getElementById("cityFilter").value.trim();
+    const type = document.getElementById("typeFilter").value;
+
+   const institutions = await api(
+    `/institutions/search?name=${encodeURIComponent(name)}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(city)}&institution_type=${encodeURIComponent(type)}`
+);
+
+    const table = document.getElementById("institutionTableBody");
+    const container = document.getElementById("institutionTableContainer");
+
+    container.style.display = "block";
+
+    if (institutions.length === 0) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    No institutions found.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    table.innerHTML = institutions.map(inst => `
+        <tr>
+            <td>${inst.name}</td>
+            <td>${inst.institution_type ?? ""}</td>
+            <td>${inst.country ?? ""}</td>
+            <td>${inst.city ?? ""}</td>
+            <td>
+                ${inst.website
+                    ? `<a href="${inst.website}" target="_blank">Website</a>`
+                    : ""}
+            </td>
+            <td>${inst.contact_email ?? ""}</td>
+            <td>
+                <button class="btn btn-primary btn-sm"
+                    onclick="viewInstitution(${inst.id})">
+                    View
+                </button>
+            </td>
+        </tr>
+    `).join("");
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
 
     bindPublicationForm();
@@ -501,6 +586,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+
     // Auto Filter
     const conferenceSearch = document.getElementById("conferenceSearch");
     const organizerFilter = document.getElementById("organizerFilter");
@@ -536,9 +622,49 @@ document.getElementById("prevPage")
 
     });
 
+    // Institution Search & Filter Buttons
+document.getElementById("institutionSearchBtn")
+    ?.addEventListener("click", function (e) {
+        e.preventDefault();
+        searchInstitution();
+    });
+
+document.getElementById("institutionFilterBtn")
+    ?.addEventListener("click", function (e) {
+        e.preventDefault();
+        searchInstitution();
+    });
+
+// Clear Button
+document.getElementById("institutionClearBtn")
+    ?.addEventListener("click", function () {
+
+        document.getElementById("institutionSearch").value = "";
+        document.getElementById("countryFilter").value = "";
+        document.getElementById("cityFilter").value = "";
+        document.getElementById("typeFilter").value = "";
+
+        document.getElementById("institutionTableBody").innerHTML = "";
+        document.getElementById("institutionTableContainer").style.display = "none";
+    });
+
+// Auto Search (Optional)
+document.getElementById("institutionSearch")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("countryFilter")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("cityFilter")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("typeFilter")
+    ?.addEventListener("change", searchInstitution);
 });
 
 window.loadConferences = loadConferences;
 window.registerConference = registerConference;
 window.deleteConference = deleteConference;
 window.editConference = editConference;
+window.viewInstitution = viewInstitution;
+window.searchInstitution = searchInstitution;

@@ -1,57 +1,350 @@
 {% extends "layout.html" %}
 
 {% block content %}
-  <section class="workspace">
+
+<section class="workspace">
+
     <section class="page-header">
-      <div>
-        <p class="eyebrow">Researcher Management</p>
-        <h1>Researchers and institutions</h1>
-        <p class="subtle">Manage academic profiles, departments, skills, research interests, affiliations, and institution records.</p>
-      </div>
+
+        <div>
+
+            <p class="eyebrow">
+                Researcher Management
+            </p>
+
+            <h1>
+                Researchers and Institutions
+            </h1>
+
+            <p class="subtle">
+                Manage academic profiles, departments, skills, research interests,
+                affiliations, and institution records.
+            </p>
+
+        </div>
+
     </section>
 
     <section class="panel-grid">
-      <div class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Researchers</h2>
-            <p>Academic profiles, departments, skills, interests, and affiliations.</p>
-          </div>
-        </div>
-        <form class="form-grid" id="researcherForm">
-          <input name="user_id" type="number" placeholder="User ID" required>
-          <input name="full_name" placeholder="Full name" required>
-          <input name="academic_profile" placeholder="Academic profile" required>
-          <input name="department" placeholder="Department" required>
-          <input name="institution" placeholder="Institution" required>
-          <input name="skills" placeholder="Skills" required>
-          <input name="research_interest" placeholder="Research interests" required>
-          <input name="affiliations" placeholder="Affiliations" required>
-          <button type="submit">Add researcher</button>
-        </form>
-      </div>
 
-      <div class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Institutions</h2>
-            <p>Universities, institutes, laboratories, publishers, and funding organizations.</p>
-          </div>
+        <!-- ================= Researchers ================= -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>Researchers</h2>
+
+                    <p>
+                        Academic profiles, departments, skills,
+                        interests, and affiliations.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <form
+                class="form-grid"
+                id="researcherForm">
+
+                <input
+                    name="user_id"
+                    type="number"
+                    placeholder="User ID"
+                    required>
+
+                <input
+                    name="full_name"
+                    placeholder="Full Name"
+                    required>
+
+                <input
+                    name="academic_profile"
+                    placeholder="Academic Profile"
+                    required>
+
+                <input
+                    name="department"
+                    placeholder="Department"
+                    required>
+
+                <input
+                    name="institution"
+                    placeholder="Institution"
+                    required>
+
+                <input
+                    name="skills"
+                    placeholder="Skills"
+                    required>
+
+                <input
+                    name="research_interest"
+                    placeholder="Research Interests"
+                    required>
+
+                <input
+                    name="affiliations"
+                    placeholder="Affiliations"
+                    required>
+
+                <button type="submit">
+
+                    Add Researcher
+
+                </button>
+
+            </form>
+
         </div>
-        <form class="form-grid" id="institutionForm">
-          <input name="name" placeholder="Institution name" required>
-          <input name="institution_type" placeholder="Type">
-          <input name="country" placeholder="Country">
-          <input name="city" placeholder="City">
-          <input name="website" placeholder="Website">
-          <input name="contact_email" type="email" placeholder="Contact email">
-          <button type="submit">Add institution</button>
-        </form>
-      </div>
+
+        <!-- ================= Institutions ================= -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>Institutions</h2>
+
+                    <p>
+                        Universities, institutes, laboratories,
+                        publishers and funding organizations.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <!-- Add Institution -->
+
+            <form
+                class="form-grid"
+                id="institutionForm">
+
+                <input
+                    name="name"
+                    placeholder="Institution Name"
+                    required>
+
+                <input
+                    name="institution_type"
+                    placeholder="Institution Type">
+
+                <input
+                    name="country"
+                    placeholder="Country">
+
+                <input
+                    name="city"
+                    placeholder="City">
+
+                <input
+                    name="website"
+                    placeholder="Website">
+
+                <input
+                    name="contact_email"
+                    type="email"
+                    placeholder="Contact Email">
+
+                <button type="submit">
+
+                    Add Institution
+
+                </button>
+
+            </form>
+
+            <hr class="my-4">
+
+<!-- ================= Search & Filter ================= -->
+
+<hr class="my-4">
+
+<h3>Search & Filter Institutions</h3>
+
+<div class="row g-3 mb-3">
+
+    <div class="col-md-3">
+        <input
+            id="institutionSearch"
+            type="text"
+            class="form-control"
+            placeholder="Institution Name">
+    </div>
+
+    <div class="col-md-2">
+        <input
+            id="countryFilter"
+            type="text"
+            class="form-control"
+            placeholder="Country">
+    </div>
+
+    <div class="col-md-2">
+        <input
+            id="cityFilter"
+            type="text"
+            class="form-control"
+            placeholder="City">
+    </div>
+
+    <div class="col-md-2">
+        <select
+            id="typeFilter"
+            class="form-select">
+
+            <option value="">All Types</option>
+            <option value="University">University</option>
+            <option value="College">College</option>
+            <option value="Research Institute">Research Institute</option>
+            <option value="Laboratory">Laboratory</option>
+            <option value="Publisher">Publisher</option>
+
+        </select>
+    </div>
+
+    <div class="col-md-3 d-flex gap-2">
+
+        <button
+            id="institutionSearchBtn"
+            type="button"
+            class="btn btn-success flex-fill">
+            Search
+        </button>
+
+        <button
+            id="institutionClearBtn"
+            type="button"
+            class="btn btn-secondary flex-fill">
+            Clear
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ================= Institution Table ================= -->
+
+<div id="institutionTableContainer"
+     style="display:none; margin-top:20px;">
+
+    <div style="
+        width:100%;
+        overflow-x:auto;
+        overflow-y:hidden;
+        border:1px solid #ddd;
+        border-radius:8px;">
+
+        <table
+            class="table table-bordered table-hover mb-0"
+            style="min-width:900px; white-space:nowrap;">
+
+            <thead class="table-success">
+
+                <tr>
+
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Country</th>
+                    <th>City</th>
+                    <th>Website</th>
+                    <th>Email</th>
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="institutionTableBody">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
     </section>
-  </section>
+
+</section>
+<div class="modal fade" id="institutionModal" tabindex="-1">
+
+    <div class="modal-dialog modal-lg">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Institution Details
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <table class="table table-bordered">
+
+                    <tr>
+                        <th>Name</th>
+                        <td id="viewName"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Type</th>
+                        <td id="viewType"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Country</th>
+                        <td id="viewCountry"></td>
+                    </tr>
+
+                    <tr>
+                        <th>City</th>
+                        <td id="viewCity"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Website</th>
+                        <td id="viewWebsite"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Email</th>
+                        <td id="viewEmail"></td>
+                    </tr>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 {% endblock content %}
 
 {% block scripts %}
-  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+
+<script
+    type="module"
+    src="{{ url_for('static', path='js/app.js') }}">
+</script>
+
 {% endblock scripts %}
