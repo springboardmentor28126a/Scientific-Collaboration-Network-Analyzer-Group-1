@@ -18,12 +18,11 @@ os.makedirs("uploads/publications", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 app.include_router(user_router)
 app.include_router(auth_router)

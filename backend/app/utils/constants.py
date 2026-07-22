@@ -20,6 +20,7 @@ class PublicationStatus(str, Enum):
     UNDER_REVIEW = "UNDER_REVIEW"
     PUBLISHED = "PUBLISHED"
     REJECTED = "REJECTED"
+    ARCHIVED = "ARCHIVED"
 
 class PublicationType(str, Enum):
     JOURNAL_PAPER = "JOURNAL_PAPER"

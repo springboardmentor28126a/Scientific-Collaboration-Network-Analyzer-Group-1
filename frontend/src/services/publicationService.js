@@ -5,8 +5,10 @@ export const createPublication = async (payload) => {
   return response.data;
 };
 
-export const fetchMyPublications = async () => {
-  const response = await api.get("/publications/mine");
+export const fetchMyPublications = async (statusFilter = "", sort = "newest") => {
+  const response = await api.get("/publications/mine", {
+    params: { status_filter: statusFilter || undefined, sort },
+  });
   return response.data;
 };
 
@@ -49,7 +51,38 @@ export const uploadPublicationFile = async (id, file) => {
   });
   return response.data;
 };
-export const fetchPublishedPublications = async (search = "") => {
-  const response = await api.get("/publications/published", { params: { search } });
+export const fetchPublishedPublications = async (search = "", publicationType = "", sort = "newest") => {
+  const response = await api.get("/publications/published", {
+    params: { search, publication_type: publicationType || undefined, sort },
+  });
+  return response.data;
+};
+
+export const downloadPublicationFile = async (id) => {
+  const response = await api.get(`/publications/${id}/download`, {
+    responseType: "blob",
+  });
+
+  let filename = "publication_file";
+  const disposition = response.headers["content-disposition"];
+  if (disposition) {
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) {
+      filename = match[1];
+    }
+  }
+
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+export const archivePublication = async (id) => {
+  const response = await api.patch(`/publications/${id}/archive`);
   return response.data;
 };

@@ -20,7 +20,8 @@ function ResearcherDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingPublication, setEditingPublication] = useState(null);
   const [myConferences, setMyConferences] = useState([]);
-
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sort, setSort] = useState("newest");
 useEffect(() => {
   loadMyConferences();
 }, []);
@@ -45,21 +46,21 @@ const handleCancelRegistration = async (id) => {
     toast.error("Could not cancel registration.");
   }
 };
-  useEffect(() => {
-    loadPublications();
-  }, []);
-
   const loadPublications = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchMyPublications();
-      setPublications(data);
-    } catch (err) {
-      toast.error("Could not load your publications.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const data = await fetchMyPublications(statusFilter, sort);
+    setPublications(data);
+  } catch (err) {
+    toast.error("Could not load your publications.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  loadPublications();
+}, [statusFilter, sort]);
 
   const handleSave = async (payload) => {
     try {
@@ -155,7 +156,21 @@ const handleCancelRegistration = async (id) => {
     </div>
   )}
 </div>
-
+<div className="d-flex gap-2 mb-3">
+  <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+    <option value="">All statuses</option>
+    <option value="DRAFT">Draft</option>
+    <option value="SUBMITTED">Submitted</option>
+    <option value="UNDER_REVIEW">Under review</option>
+    <option value="PUBLISHED">Published</option>
+    <option value="REJECTED">Rejected</option>
+    <option value="ARCHIVED">Archived</option>
+  </select>
+  <select className="form-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+  </select>
+</div>
       <PublicationForm
         editingPublication={editingPublication}
         onSave={handleSave}
