@@ -163,22 +163,30 @@ function bindLogout() {
   });
 }
 async function loadConferences() {
-    alert("loadConferences called");
 
     const table = document.getElementById("conferenceTableBody");
 
     if (!table) return;
 
-    const search = document
+    const name = document
         .getElementById("conferenceSearch")
         .value
         .trim();
 
+    const organizer = document
+        .getElementById("organizerFilter")
+        .value
+        .trim();
+
+    const location = document
+        .getElementById("locationFilter")
+        .value
+        .trim();
+
     const conferences = await api(
-        `/conferences/search?name=${encodeURIComponent(search)}`
+        `/conferences/filter?name=${encodeURIComponent(name)}&organizer=${encodeURIComponent(organizer)}&location=${encodeURIComponent(location)}`
     );
-    console.log("Search text:", search);
-console.log("Returned conferences:", conferences);
+
     table.innerHTML = conferences.map(conf => `
 
         <tr>
@@ -207,7 +215,9 @@ console.log("Returned conferences:", conferences);
                     type="button"
                     class="btn btn-success btn-sm"
                     onclick="registerConference(${conf.id}, '${(conf.name ?? "").replace(/'/g, "\\'")}')">
+
                     Register
+
                 </button>
 
             </td>
@@ -453,24 +463,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchBtn = document.getElementById("conferenceSearchBtn");
 
     if (searchBtn) {
-        searchBtn.addEventListener("click", async function (e) {
-
+        searchBtn.addEventListener("click", function (e) {
             e.preventDefault();
-
-            await loadConferences();
-
+            loadConferences();
         });
     }
 
-    const searchBox = document.getElementById("conferenceSearch");
+    const conferenceSearch = document.getElementById("conferenceSearch");
+    const organizerFilter = document.getElementById("organizerFilter");
+    const locationFilter = document.getElementById("locationFilter");
 
-    if (searchBox) {
-        searchBox.addEventListener("input", async function () {
-
-            await loadConferences();
-
-        });
-    }
+    conferenceSearch?.addEventListener("input", loadConferences);
+    organizerFilter?.addEventListener("input", loadConferences);
+    locationFilter?.addEventListener("input", loadConferences);
 
 });
 

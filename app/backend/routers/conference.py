@@ -49,6 +49,35 @@ def search_conferences(
         .all()
     )
     return conferences
+# ----------------------------
+# Filter Conferences
+# ----------------------------
+
+@router.get("/filter", response_model=list[ConferenceResponse])
+def filter_conferences(
+    name: str = "",
+    organizer: str = "",
+    location: str = "",
+    db: Session = Depends(get_db),
+):
+    query = db.query(Conference)
+
+    if name:
+        query = query.filter(
+            Conference.name.ilike(f"%{name}%")
+        )
+
+    if organizer:
+        query = query.filter(
+            Conference.organizer.ilike(f"%{organizer}%")
+        )
+
+    if location:
+        query = query.filter(
+            Conference.location.ilike(f"%{location}%")
+        )
+
+    return query.all()
 
 
 # ----------------------------

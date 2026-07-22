@@ -129,49 +129,67 @@
 
         <hr class="my-4">
 
-        <h3>Conference List</h3>
+<h3>Conference List</h3>
 
 <div class="row mb-3">
 
-    <div class="col-md-8">
-
+    <div class="col-md-4">
         <input
             type="text"
             id="conferenceSearch"
             class="form-control"
-            placeholder="Search Conference by Name">
-<button
-    type="button"
-    class="btn btn-success"
-    id="conferenceSearchBtn">
-    Search
-</button>
+            placeholder="Conference Name">
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <input
+            type="text"
+            id="organizerFilter"
+            class="form-control"
+            placeholder="Organizer">
+    </div>
 
+    <div class="col-md-3">
+        <input
+            type="text"
+            id="locationFilter"
+            class="form-control"
+            placeholder="Location">
+    </div>
+
+    <div class="col-md-2">
+        <button
+            type="button"
+            class="btn btn-success w-100"
+            id="conferenceSearchBtn">
+            Filter
+        </button>
     </div>
 
 </div>
 
-        <div class="table-responsive">
+<div class="table-responsive">
 
-            <table class="table table-bordered table-hover align-middle">
+    <table class="table table-bordered table-hover align-middle">
 
-                <thead style="background:#198754;color:white;">
-                    <tr>
-                        <th>Name</th>
-                        <th>Organizer</th>
-                        <th>Location</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Website</th>
-                        <th class="text-center">Register</th>
-                    </tr>
-                </thead>
+        <thead style="background:#198754;color:white;">
+            <tr>
+                <th>Name</th>
+                <th>Organizer</th>
+                <th>Location</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Website</th>
+                <th class="text-center">Register</th>
+            </tr>
+        </thead>
 
-                <tbody id="conferenceTableBody">
-                </tbody>
+        <tbody id="conferenceTableBody">
+        </tbody>
+
+    </table>
+
+  </div>
 
             </table>
 
