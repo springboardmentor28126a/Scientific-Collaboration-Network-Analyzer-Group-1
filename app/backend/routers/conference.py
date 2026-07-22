@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc
+from fastapi import Query
 
 from app.backend.database.database import get_db
 from app.backend.models.conference import Conference, ConferenceParticipation
@@ -79,6 +81,32 @@ def filter_conferences(
 
     return query.all()
 
+@router.get("/sort", response_model=list[ConferenceResponse])
+def sort_conferences(
+    sort_by: str = "name",
+    order: str = "asc",
+    db: Session = Depends(get_db),
+):
+
+    query = db.query(Conference)
+
+    sort_columns = {
+        "name": Conference.name,
+        "organizer": Conference.organizer,
+        "location": Conference.location,
+        "start_date": Conference.start_date,
+        "end_date": Conference.end_date,
+    }
+
+    column = sort_columns.get(sort_by, Conference.name)
+
+    if order.lower() == "desc":
+        query = query.order_by(desc(column))
+    else:
+        query = query.order_by(asc(column))
+
+    return query.all()
+
 
 # ----------------------------
 # Conference Participation
@@ -102,6 +130,18 @@ def create_participation(
 )
 def list_participations(db: Session = Depends(get_db)):
     return db.query(ConferenceParticipation).all()
+@router.get("/", response_model=list[ConferenceResponse])
+def get_conferences(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(5, ge=1),
+    db: Session = Depends(get_db)
+):
+    return (
+        db.query(Conference)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 # ----------------------------

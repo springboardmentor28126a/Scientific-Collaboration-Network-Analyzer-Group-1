@@ -167,6 +167,35 @@
     </div>
 
 </div>
+<div class="row mb-3">
+
+    <div class="col-md-4">
+        <select id="sortBy" class="form-control">
+            <option value="name">Sort by Name</option>
+            <option value="organizer">Organizer</option>
+            <option value="location">Location</option>
+            <option value="start_date">Start Date</option>
+            <option value="end_date">End Date</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <select id="sortOrder" class="form-control">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button
+            type="button"
+            id="sortConferenceBtn"
+            class="btn btn-primary w-100">
+            Sort
+        </button>
+    </div>
+
+</div>
 
 <div class="table-responsive">
 
@@ -190,6 +219,25 @@
     </table>
 
   </div>
+  <div class="d-flex justify-content-between mt-3">
+
+    <button
+        id="prevPage"
+        class="btn btn-secondary">
+        Previous
+    </button>
+
+    <span id="pageNumber">
+        Page 1
+    </span>
+
+    <button
+        id="nextPage"
+        class="btn btn-secondary">
+        Next
+    </button>
+
+</div>
 
             </table>
 

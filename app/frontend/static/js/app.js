@@ -1,3 +1,5 @@
+let currentPage = 1;
+const pageSize = 5;
 let editingConferenceId = null;
 const toastElement = document.getElementById("appToast");
 const toast = toastElement ? new bootstrap.Toast(toastElement) : null;
@@ -168,24 +170,45 @@ async function loadConferences() {
 
     if (!table) return;
 
-    const name = document
-        .getElementById("conferenceSearch")
-        .value
-        .trim();
+    const name = document.getElementById("conferenceSearch").value.trim();
 
-    const organizer = document
-        .getElementById("organizerFilter")
-        .value
-        .trim();
+    const organizer = document.getElementById("organizerFilter").value.trim();
 
-    const location = document
-        .getElementById("locationFilter")
-        .value
-        .trim();
+    const location = document.getElementById("locationFilter").value.trim();
 
-    const conferences = await api(
-        `/conferences/filter?name=${encodeURIComponent(name)}&organizer=${encodeURIComponent(organizer)}&location=${encodeURIComponent(location)}`
-    );
+    const sortBy = document.getElementById("sortBy").value;
+
+    const sortOrder = document.getElementById("sortOrder").value;
+
+    // Get filtered conferences
+   const skip = (currentPage - 1) * pageSize;
+
+let conferences = await api(
+    `/conferences/filter?name=${encodeURIComponent(name)}&organizer=${encodeURIComponent(organizer)}&location=${encodeURIComponent(location)}&skip=${skip}&limit=${pageSize}`
+);
+
+    // Sort conferences on frontend
+    conferences.sort((a, b) => {
+
+        let valueA = a[sortBy];
+        let valueB = b[sortBy];
+
+        if (valueA == null) valueA = "";
+        if (valueB == null) valueB = "";
+
+        if (sortBy === "start_date" || sortBy === "end_date") {
+            valueA = new Date(valueA);
+            valueB = new Date(valueB);
+        } else {
+            valueA = valueA.toString().toLowerCase();
+            valueB = valueB.toString().toLowerCase();
+        }
+
+        if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+        if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+
+        return 0;
+    });
 
     table.innerHTML = conferences.map(conf => `
 
@@ -215,9 +238,7 @@ async function loadConferences() {
                     type="button"
                     class="btn btn-success btn-sm"
                     onclick="registerConference(${conf.id}, '${(conf.name ?? "").replace(/'/g, "\\'")}')">
-
                     Register
-
                 </button>
 
             </td>
@@ -460,6 +481,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Load error", error.message);
     }
 
+    // Filter Button
     const searchBtn = document.getElementById("conferenceSearchBtn");
 
     if (searchBtn) {
@@ -469,6 +491,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    // Sort Button
+    const sortBtn = document.getElementById("sortConferenceBtn");
+
+    if (sortBtn) {
+        sortBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            loadConferences();
+        });
+    }
+
+    // Auto Filter
     const conferenceSearch = document.getElementById("conferenceSearch");
     const organizerFilter = document.getElementById("organizerFilter");
     const locationFilter = document.getElementById("locationFilter");
@@ -476,6 +509,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     conferenceSearch?.addEventListener("input", loadConferences);
     organizerFilter?.addEventListener("input", loadConferences);
     locationFilter?.addEventListener("input", loadConferences);
+
+    // Auto Sort
+    document.getElementById("sortBy")
+        ?.addEventListener("change", loadConferences);
+
+    document.getElementById("sortOrder")
+        ?.addEventListener("change", loadConferences);
+    // Pagination
+
+document.getElementById("nextPage")
+    ?.addEventListener("click", function () {
+
+        currentPage++;
+        loadConferences();
+
+    });
+
+document.getElementById("prevPage")
+    ?.addEventListener("click", function () {
+
+        if (currentPage > 1) {
+            currentPage--;
+            loadConferences();
+        }
+
+    });
 
 });
 
