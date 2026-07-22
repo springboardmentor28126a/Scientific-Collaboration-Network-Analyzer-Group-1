@@ -280,3 +280,24 @@ pre {
     grid-template-columns: 1fr;
   }
 }
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 15px;
+}
+
+.table th {
+    background: #198754;
+    color: white;
+    text-align: center;
+    padding: 12px;
+}
+
+.table td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background: #f2fdf7;
+}

@@ -1,3 +1,4 @@
+let editingConferenceId = null;
 const toastElement = document.getElementById("appToast");
 const toast = toastElement ? new bootstrap.Toast(toastElement) : null;
 
@@ -161,13 +162,82 @@ function bindLogout() {
     window.location.href = "/";
   });
 }
+async function loadConferences() {
+    alert("loadConferences called");
+
+    const table = document.getElementById("conferenceTableBody");
+
+    if (!table) return;
+
+    const search = document
+        .getElementById("conferenceSearch")
+        .value
+        .trim();
+
+    const conferences = await api(
+        `/conferences/search?name=${encodeURIComponent(search)}`
+    );
+    console.log("Search text:", search);
+console.log("Returned conferences:", conferences);
+    table.innerHTML = conferences.map(conf => `
+
+        <tr>
+
+            <td>${conf.name ?? ""}</td>
+
+            <td>${conf.organizer ?? ""}</td>
+
+            <td>${conf.location ?? ""}</td>
+
+            <td>${conf.start_date ?? ""}</td>
+
+            <td>${conf.end_date ?? ""}</td>
+
+            <td>
+                ${
+                    conf.website
+                        ? `<a href="${conf.website}" target="_blank">Website</a>`
+                        : ""
+                }
+            </td>
+
+            <td class="text-center">
+
+                <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    onclick="registerConference(${conf.id}, '${(conf.name ?? "").replace(/'/g, "\\'")}')">
+                    Register
+                </button>
+
+            </td>
+
+        </tr>
+
+    `).join("");
+
+}
+
+function registerConference(id, name) {
+
+    document.getElementById("conference_id").value = id;
+
+    document.getElementById("conference_name").value = name;
+
+    document.getElementById("registrationForm").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+}
 
 async function loadAll() {
-  await Promise.all([
-    loadDashboard(),
-    loadReports(),
-    loadNetwork(),
-  ]);
+    await Promise.all([
+        loadDashboard(),
+        loadReports(),
+        loadNetwork(),
+        loadConferences()
+    ]);
 }
 async function searchPublications() {
   console.log("Search button clicked");
@@ -247,7 +317,59 @@ results.innerHTML = publications
   }
 }
 
-bindForm("researcherForm", "/researchers/", "Researcher added.");
+const conferenceForm = document.getElementById("conferenceForm");
+
+conferenceForm?.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const data = formDataToJson(conferenceForm);
+
+    try {
+
+        if (editingConferenceId !== null) {
+
+            await api(`/conferences/${editingConferenceId}`, {
+                method: "PUT",
+                body: JSON.stringify(data),
+            });
+
+            showToast("Success", "Conference updated.");
+
+            editingConferenceId = null;
+
+            conferenceForm.querySelector("button").textContent =
+                "Add Conference";
+
+        } else {
+
+            await api("/conferences/", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+
+            showToast("Success", "Conference added.");
+
+        }
+
+        conferenceForm.reset();
+
+        await loadConferences();
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+});
+
+bindForm(
+    "registrationForm",
+    "/conferences/participations",
+    "Conference registration successful."
+);
+
 bindForm("institutionForm", "/institutions/", "Institution added.");
 //bindForm(
 //  "publicationForm",
@@ -271,8 +393,88 @@ clearSearchBtn?.addEventListener("click", () => {
   document.getElementById("filterStatus").value = "";
   document.getElementById("searchResults").innerHTML = "";
 });
-bindPublicationForm();
-document.getElementById("refreshReports")?.addEventListener("click", loadReports);
-bindLogout();
-loadCurrentUser();
-loadAll().catch((error) => showToast("Load error", error.message));
+async function deleteConference(id) {
+
+    if (!confirm("Are you sure you want to delete this conference?"))
+        return;
+
+    try {
+
+        await api(`/conferences/${id}`, {
+            method: "DELETE"
+        });
+
+        showToast("Success", "Conference deleted.");
+
+        loadConferences();
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+}
+async function editConference(id) {
+
+    const conference = await api(`/conferences/${id}`);
+
+    editingConferenceId = id;
+
+    const form = document.getElementById("conferenceForm");
+
+    form.name.value = conference.name;
+    form.organizer.value = conference.organizer;
+    form.location.value = conference.location;
+    form.start_date.value = conference.start_date;
+    form.end_date.value = conference.end_date;
+    form.website.value = conference.website;
+
+    form.querySelector("button").textContent = "Update Conference";
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    bindPublicationForm();
+
+    document.getElementById("refreshReports")
+        ?.addEventListener("click", loadReports);
+
+    bindLogout();
+
+    await loadCurrentUser();
+
+    try {
+        await loadAll();
+    } catch (error) {
+        showToast("Load error", error.message);
+    }
+
+    const searchBtn = document.getElementById("conferenceSearchBtn");
+
+    if (searchBtn) {
+        searchBtn.addEventListener("click", async function (e) {
+
+            e.preventDefault();
+
+            await loadConferences();
+
+        });
+    }
+
+    const searchBox = document.getElementById("conferenceSearch");
+
+    if (searchBox) {
+        searchBox.addEventListener("input", async function () {
+
+            await loadConferences();
+
+        });
+    }
+
+});
+
+window.loadConferences = loadConferences;
+window.registerConference = registerConference;
+window.deleteConference = deleteConference;
+window.editConference = editConference;
