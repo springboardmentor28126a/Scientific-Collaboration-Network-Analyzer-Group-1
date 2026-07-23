@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -10,52 +11,50 @@ function InstitutionManagement() {
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
-        
         id: null,
-
         name: "",
-
         address: "",
-
         city: "",
-
         state: "",
-
         country: "",
-
         website: "",
-
         email: "",
-
         phone: "",
-
-        description: ""
-
+        description: "",
+        aishe_code: "",
+        district: "",
+        pincode: "",
+        institution_type: "",
     });
+
 
     useEffect(() => {
 
         loadInstitutions();
 
     }, []);
+const loadInstitutions = async () => {
 
-    const loadInstitutions = async () => {
+    console.log("Loading institutions...");
 
-        try {
+    try {
 
-            const response = await API.get("/institution/");
+        const response = await API.get("/institution/");
 
-            setInstitutions(response.data);
+        alert(JSON.stringify(response.data[0], null, 2));
 
-        }
+        setInstitutions(response.data);
 
-        catch(error){
+    } catch (error) {
 
-            console.log(error);
+        console.error(error);
+        alert(error);
 
-        }
+    }
+};
 
-    };
+
+
 
     const handleChange = (e)=>{
 
@@ -143,21 +142,33 @@ function InstitutionManagement() {
 
     };
 
-    const filteredInstitutions = institutions.filter(
+    const filteredInstitutions = institutions
 
-        institution=>
+        .filter(
 
-            institution.name
+            (institution) =>
 
-            .toLowerCase()
+                (institution.name || "")
 
-            .includes(
+                    .toLowerCase()
 
-                search.toLowerCase()
+                    .includes(search.toLowerCase())
+
+        )
+
+        .sort((a, b) =>
+
+            (a.name || "").localeCompare(
+
+                b.name || "",
+
+                undefined,
+
+                { sensitivity: "base" }
 
             )
 
-    );
+        );
 
     const statsCard={
 
@@ -173,6 +184,10 @@ function InstitutionManagement() {
 
     };
 
+    const instituteDashboardCards = useMemo(() => {
+        return dashboardResults;
+    }, [dashboardResults]);
+
     return(
 
         <div style={{padding:"30px"}}>
@@ -182,6 +197,9 @@ function InstitutionManagement() {
                 🏫 Institution Management
 
             </h1>
+
+
+
             <div
 
 style={{
@@ -442,29 +460,51 @@ onChange={handleChange}
 
 />
 
-<textarea
+<input
+                    type="text"
+                    name="aishe_code"
+                    placeholder="AISHE Code"
+                    value={form.aishe_code}
+                    onChange={handleChange}
+                />
 
-name="description"
+                <input
+                    type="text"
+                    name="district"
+                    placeholder="District"
+                    value={form.district}
+                    onChange={handleChange}
+                />
 
-placeholder="Description"
+                <input
+                    type="text"
+                    name="pincode"
+                    placeholder="Pincode"
+                    value={form.pincode}
+                    onChange={handleChange}
+                />
 
-rows="4"
+                <input
+                    type="text"
+                    name="institution_type"
+                    placeholder="Institution Type"
+                    value={form.institution_type}
+                    onChange={handleChange}
+                />
 
-value={form.description}
+                <textarea
+                    name="description"
+                    placeholder="Description"
+                    rows="4"
+                    value={form.description}
+                    onChange={handleChange}
+                />
 
-onChange={handleChange}
-
-/>
-
-<button
-
-onClick={addInstitution}
-
->
-
-➕ Add Institution
-
-</button>
+                <button
+                    onClick={addInstitution}
+                >
+                    ➕ Add Institution
+                </button>
 
 </div>
 <div
@@ -550,6 +590,9 @@ boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 {institution.phone}
 
 </p>
+<p>
+    <b>👨‍🎓 Researchers:</b> {institution.researcher_count || 0}
+</p>
 
 <div
 
@@ -577,7 +620,7 @@ marginTop:"20px"
 
 </button>
 
-<button>
+<button onClick={() => navigate(`/institution/${institution.id}`)}>
 
 ✏ Edit
 
@@ -585,7 +628,7 @@ marginTop:"20px"
 
 <button
 
-onClick={()=>
+onClick={() =>
 
 deleteInstitution(
 

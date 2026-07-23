@@ -434,13 +434,14 @@ export default function Register() {
                                 className="role-select"
                             >
                                 <option value="Researcher">Researcher</option>
+                                <option value="Reviewer">Reviewer</option>
                                 <option value="Student">Student</option>
                                 <option value="Faculty">Faculty</option>
                                 <option value="Industry Researcher">Industry Researcher</option>
                                 <option value="System Admin">System Admin</option>
                             </select>
 
-                        </div>
+                        </div> 
 
                     </div>
                     {/* PROFESSIONAL INFORMATION */}

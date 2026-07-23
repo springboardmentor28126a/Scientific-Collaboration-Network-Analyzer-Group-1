@@ -22,6 +22,8 @@ import Chat from "./pages/Chat";
 import ConferenceOrganization from "./pages/ConferenceOrganization";
 import InstitutionManagement from "./pages/InstitutionManagement";
 import InstitutionDetails from "./pages/InstitutionDetails";
+import InstitutionDashboard from "./pages/InstitutionDashboard";
+
 
 function App() {
     const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
@@ -58,8 +60,10 @@ function App() {
                     <Route path="/publication/:id" element={<PublicationDetails />} />
                     <Route path="/conference" element={<ConferenceOrganization />} />
                     <Route path="/conference/:id" element={<ConferenceDetails />} />
-                    <Route path="/institution" element={<InstitutionManagement />} />
+                    <Route path="/institution" element={<InstitutionDashboard />} />
+                    <Route path="/institution/manage" element={<InstitutionManagement />} />
                     <Route path="/institution/:id" element={<InstitutionDetails />} />
+
                     <Route path="/settings" element={<Settings theme={theme} toggleTheme={toggleTheme} />} />
                     <Route path="/collaborations" element={<Collaborations />} />
                     <Route path="/workspace/:id" element={<Workspace />} />

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from database.database import get_db
-from database.models import ChatMessage,User
-from schemas.chat import ChatCreate, ChatResponse
+from backend.database.database import get_db
+from backend.database.models import ChatMessage, User
+from backend.schemas.chat import ChatCreate, ChatResponse
 
 router = APIRouter(
 

@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from database.database import get_db
-from database.models import (
+from backend.database.database import get_db
+from backend.database.models import (
     Publication,
     Collaboration,
 )

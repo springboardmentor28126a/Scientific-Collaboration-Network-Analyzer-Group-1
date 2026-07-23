@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database.database import get_db
-from database.models import Conference, ConferenceMeetingDetails, Publication, User, Institution
-from schemas.conference import (
+from backend.database.database import get_db
+from backend.database.models import Conference, ConferenceMeetingDetails, Publication, User, Institution
+from backend.schemas.conference import (
     ConferenceCreate,
     ConferenceUpdate,
     ConferenceResponse
