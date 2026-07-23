@@ -36,12 +36,25 @@
     </select>
 
     <select id="filterStatus">
+      
+
       <option value="">All Status</option>
       <option value="Draft">Draft</option>
       <option value="Submitted">Submitted</option>
       <option value="Published">Published</option>
       <option value="Archived">Archived</option>
     </select>
+    <select id="sortBy">
+  <option value="id">Sort By</option>
+  <option value="title">Title (A-Z)</option>
+  <option value="publication_year">Publication Year</option>
+  <option value="citation_count">Citation Count</option>
+</select>
+
+<select id="sortOrder">
+  <option value="asc">Ascending</option>
+  <option value="desc">Descending</option>
+</select>
 
     <button
       type="button"
@@ -49,8 +62,20 @@
       Search
     </button>
     <button type="button" id="clearSearchBtn">Clear</button>
-    <div id="searchResults" style="margin-top:20px;"></div>
+
+
   </div>
+  <div id="searchResults" style="margin-top:20px;"></div>
+
+<div style="margin-top:20px; text-align:center;">
+  <button type="button" id="prevPage">Previous</button>
+
+  <span id="pageNumber" style="margin:0 15px;">
+    Page 1
+  </span>
+
+  <button type="button" id="nextPage">Next</button>
+</div>
 </div>
       <div class="panel wide">
         <div class="panel-heading">
@@ -111,7 +136,23 @@
             <p>Citation records, DOI management, references, and publication linking.</p>
           </div>
         </div>
+        <div class="form-grid" style="margin-bottom:20px;">
+    <input
+        type="text"
+        id="searchCitationText"
+        placeholder="Search citation text"
+    >
+
+    <button type="button" id="searchCitationBtn">
+        Search
+    </button>
+
+    <button type="button" id="clearCitationBtn">
+        Clear
+    </button>
+</div>
         <form class="form-grid" id="citationForm">
+
           <input name="publication_id" type="number" placeholder="Publication ID" required>
           <input name="cited_publication_id" type="number" placeholder="Cited publication ID">
           <input name="citation_text" placeholder="Citation text" required>
@@ -119,6 +160,8 @@
           <input name="reference_order" type="number" placeholder="Reference order">
           <button type="submit">Add citation</button>
         </form>
+        <div id="citationResults" style="margin-top:20px;"></div>
+      
       </div>
     </section>
   </section>
