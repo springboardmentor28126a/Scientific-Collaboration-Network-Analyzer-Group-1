@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.database.database import get_db
-from app.models.researcher import Researcher
+from app.backend.database.database import get_db
+from app.backend.models.researcher import Researcher
 
 # -------------------------------------------------
 # Template Configuration

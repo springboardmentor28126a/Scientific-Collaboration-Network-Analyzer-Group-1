@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.database.database import get_db
-from app.models.collaboration import Collaboration, PublicationAuthor
-from app.models.publication import Publication
-from app.models.researcher import Researcher
-from app.schemas.collaboration import (
+from app.backend.database.database import get_db
+from app.backend.models.collaboration import Collaboration, PublicationAuthor
+from app.backend.models.publication import Publication
+from app.backend.models.researcher import Researcher
+from app.backend.schemas.collaboration import (
     CollaborationCreate,
     CollaborationResponse,
     PublicationAuthorCreate,

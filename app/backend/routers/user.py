@@ -1,11 +1,11 @@
 from fastapi.security import OAuth2PasswordBearer
-from app.utils.security import verify_access_token
+from app.backend.utils.security import verify_access_token
 
 
 
 from fastapi import HTTPException
-from app.schemas.user import UserLogin
-from app.utils.security import (
+from app.backend.schemas.user import UserLogin
+from app.backend.utils.security import (
     verify_password,
     create_access_token,
     verify_access_token
@@ -14,10 +14,10 @@ from app.utils.security import (
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.schemas.user import UserCreate
-from app.models.user import User
-from app.database.database import SessionLocal
-from app.utils.security import hash_password
+from app.backend.schemas.user import UserCreate
+from app.backend.models.user import User
+from app.backend.database.database import SessionLocal
+from app.backend.utils.security import hash_password
 
 router = APIRouter(
     prefix="/users",

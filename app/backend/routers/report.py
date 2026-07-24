@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.database.database import get_db
-from app.models.researcher import Researcher
-from app.models.publication import Publication
-from app.models.project import ResearchProject
-from app.models.collaboration import Collaboration
+from app.backend.database.database import get_db
+from app.backend.models.researcher import Researcher
+from app.backend.models.publication import Publication
+from app.backend.models.project import ResearchProject
+from app.backend.models.collaboration import Collaboration
 
 router = APIRouter(
     prefix="/reports",
