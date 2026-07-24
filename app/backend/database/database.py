@@ -10,7 +10,7 @@ load_dotenv(ENV_PATH)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not set. Add it to .env in the project root.")
+    raise RuntimeError("DATABASE_URL is not set. Add it to backend/.env")
 
 engine = create_engine(DATABASE_URL)
 
@@ -24,3 +24,5 @@ def get_db():
         yield db
     finally:
         db.close()
+print("DATABASE FILE LOADED")
+print(get_db)
