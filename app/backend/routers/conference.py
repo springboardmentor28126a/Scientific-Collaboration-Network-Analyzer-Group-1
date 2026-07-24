@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import asc, desc
@@ -24,10 +25,56 @@ def create_conference(
     conference: ConferenceCreate,
     db: Session = Depends(get_db),
 ):
+    # Validate conference name
+    if not conference.name or conference.name.strip() == "":
+        raise HTTPException(
+            status_code=400,
+            detail="Conference name is required."
+        )
+
+    # Validate organizer
+    if not conference.organizer or conference.organizer.strip() == "":
+        raise HTTPException(
+            status_code=400,
+            detail="Organizer is required."
+        )
+
+    # Validate location
+    if not conference.location or conference.location.strip() == "":
+        raise HTTPException(
+            status_code=400,
+            detail="Location is required."
+        )
+
+
+    # Validate dates
+    if conference.end_date < conference.start_date:
+        raise HTTPException(
+            status_code=400,
+            detail="End date must be after start date."
+        )
+
+    # Check duplicate conference
+    existing = (
+        db.query(Conference)
+        .filter(
+            Conference.name == conference.name,
+            Conference.organizer == conference.organizer,
+        )
+        .first()
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Conference already exists."
+        )
+
     new_conference = Conference(**conference.model_dump())
     db.add(new_conference)
     db.commit()
     db.refresh(new_conference)
+
     return new_conference
 
 
@@ -60,26 +107,22 @@ def filter_conferences(
     name: str = "",
     organizer: str = "",
     location: str = "",
+    skip: int = Query(0, ge=0),
+    limit: int = Query(5, ge=1),
     db: Session = Depends(get_db),
 ):
     query = db.query(Conference)
 
     if name:
-        query = query.filter(
-            Conference.name.ilike(f"%{name}%")
-        )
+        query = query.filter(Conference.name.ilike(f"%{name}%"))
 
     if organizer:
-        query = query.filter(
-            Conference.organizer.ilike(f"%{organizer}%")
-        )
+        query = query.filter(Conference.organizer.ilike(f"%{organizer}%"))
 
     if location:
-        query = query.filter(
-            Conference.location.ilike(f"%{location}%")
-        )
+        query = query.filter(Conference.location.ilike(f"%{location}%"))
 
-    return query.all()
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/sort", response_model=list[ConferenceResponse])
 def sort_conferences(
@@ -130,6 +173,8 @@ def create_participation(
 )
 def list_participations(db: Session = Depends(get_db)):
     return db.query(ConferenceParticipation).all()
+
+
 @router.get("/", response_model=list[ConferenceResponse])
 def get_conferences(
     skip: int = Query(0, ge=0),
