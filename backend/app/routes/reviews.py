@@ -73,3 +73,12 @@ def submit_review(publication_id: int, review: ReviewCreate = Depends(), file: U
 def my_reviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     reviews = db.query(Review).filter(Review.reviewer_id == current_user.id).all()
     return reviews
+
+@router.get("/publication/{publication_id}", response_model=List[ReviewResponse])
+def publication_reviews(publication_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    publication = db.query(Publication).filter(Publication.id == publication_id).first()
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    if current_user.role != UserRole.SYSTEM_ADMIN and publication.created_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the publication owner can view its reviews")
+    return db.query(Review).filter(Review.publication_id == publication_id, Review.status == "completed").all()

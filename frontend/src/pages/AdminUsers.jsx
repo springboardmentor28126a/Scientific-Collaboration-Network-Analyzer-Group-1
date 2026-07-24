@@ -1,136 +1,59 @@
 import React, { useEffect, useState } from 'react';
 import api from '../config/api';
 
+const roleLabel = (role) => (role || 'researcher').replaceAll('_', ' ');
+
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ email: '', username: '', full_name: '', password: '', role: 'researcher' });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/admin/users');
-      setUsers(res.data || []);
+      const [usersRes, institutionsRes] = await Promise.all([api.get('/admin/users'), api.get('/institutions/?limit=1000')]);
+      setUsers(usersRes.data || []);
+      setInstitutions(institutionsRes.data || []);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to fetch users');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/admin/users', form);
-      setForm({ email: '', username: '', full_name: '', password: '', role: 'researcher' });
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to create user');
-    }
-  };
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete user?')) return;
-    try {
-      await api.delete(`/admin/users/${id}`);
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete user');
-    }
-  };
+  useEffect(() => { fetchData(); }, []);
 
   const updateRole = async (id, role) => {
-    try {
-      await api.put(`/admin/users/${id}/role`, null, { params: { role } });
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update role');
-    }
+    try { await api.put(`/admin/users/${id}/role`, null, { params: { role } }); fetchData(); }
+    catch (err) { alert(err.response?.data?.detail || 'Failed to update role'); }
   };
-
+  const decideRequest = async (id, approved) => {
+    try { await api.put(`/admin/users/${id}/role-request`, null, { params: { approved } }); fetchData(); }
+    catch (err) { alert(err.response?.data?.detail || 'Failed to process role request'); }
+  };
+  const assignInstitution = async (id, institutionId) => {
+    try { await api.put(`/admin/users/${id}/institution`, null, { params: { institution_id: institutionId || null } }); fetchData(); }
+    catch (err) { alert(err.response?.data?.detail || 'Failed to assign institution'); }
+  };
   const toggleActive = async (user) => {
-    try {
-      await api.put(`/admin/users/${user.id}/activate`, null, { params: { active: !user.is_active } });
-      fetchUsers();
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update account status');
-    }
+    try { await api.put(`/admin/users/${user.id}/activate`, null, { params: { active: !user.is_active } }); fetchData(); }
+    catch (err) { alert(err.response?.data?.detail || 'Failed to update account status'); }
   };
 
-  
-  return (
-    <div className="container py-4">
-      <h3>Admin — Users</h3>
-      {loading && <p>Loading...</p>}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      <div className="card mb-4">
-        <div className="card-body">
-          <h5>Create user</h5>
-          <form onSubmit={handleCreate} className="row g-2">
-            <div className="col-md-3">
-              <input className="form-control" name="full_name" placeholder="Full name" value={form.full_name} onChange={handleChange} required />
-            </div>
-            <div className="col-md-2">
-              <input className="form-control" name="username" placeholder="Username" value={form.username} onChange={handleChange} required />
-            </div>
-            <div className="col-md-3">
-              <input className="form-control" name="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-            </div>
-            <div className="col-md-2">
-              <input className="form-control" type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required />
-            </div>
-            <div className="col-md-2">
-              <select className="form-select" name="role" value={form.role} onChange={handleChange}>
-                <option value="researcher">researcher</option>
-                <option value="institution_admin">institution_admin</option>
-                <option value="reviewer">reviewer</option>
-                <option value="system_admin">system_admin</option>
-              </select>
-            </div>
-            <div className="col-12 mt-2">
-              <button className="btn btn-primary">Create user</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div>
-        <h5>Existing users</h5>
-        <table className="table">
-          <thead>
-            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id}>
-                <td>{u.full_name}</td>
-                <td>{u.email}</td>
-                <td>
-                  <select className="form-select form-select-sm" value={u.role} onChange={(e) => updateRole(u.id, e.target.value)}>
-                    <option value="researcher">Researcher</option>
-                    <option value="institution_admin">Institution Admin</option>
-                    <option value="reviewer">Reviewer</option>
-                    <option value="system_admin">System Admin</option>
-                  </select>
-                </td>
-                <td><span className={`badge ${u.is_active ? 'bg-success' : 'bg-secondary'}`}>{u.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td>
-                  <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => toggleActive(u)}>{u.is_active ? 'Deactivate' : 'Activate'}</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(u.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  return <div className="container py-4">
+    <div className="d-flex justify-content-between align-items-center mb-3"><div><h3>User access management</h3><p className="text-muted mb-0">Approve requested roles and assign institution administrators.</p></div><button className="btn btn-outline-primary" onClick={fetchData}>Refresh</button></div>
+    {loading && <p>Loading...</p>}{error && <div className="alert alert-danger">{error}</div>}
+    {!loading && <div className="table-responsive"><table className="table align-middle">
+      <thead><tr><th>User</th><th>Current role</th><th>Requested role</th><th>Institution assignment</th><th>Account</th><th>Actions</th></tr></thead>
+      <tbody>{users.map((u) => <tr key={u.id}>
+        <td><strong>{u.full_name}</strong><br /><small>{u.email}</small></td>
+        <td><select className="form-select form-select-sm" value={u.role} onChange={(e) => updateRole(u.id, e.target.value)}>
+          <option value="researcher">Researcher</option><option value="institution_admin">Institution admin</option><option value="reviewer">Reviewer</option><option value="system_admin">System admin</option>
+        </select></td>
+        <td>{u.requested_role ? <><span className="badge bg-warning text-dark">{roleLabel(u.requested_role)} · {u.role_request_status || 'pending'}</span><div className="mt-1"><button className="btn btn-sm btn-success me-1" onClick={() => decideRequest(u.id, true)}>Approve</button><button className="btn btn-sm btn-outline-danger" onClick={() => decideRequest(u.id, false)}>Reject</button></div></> : <span className="text-muted">—</span>}</td>
+        <td>{u.role === 'institution_admin' ? <select className="form-select form-select-sm" value={u.assigned_institution_id || ''} onChange={(e) => assignInstitution(u.id, e.target.value)}><option value="">Unassigned</option>{institutions.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}</select> : <span className="text-muted">N/A</span>}</td>
+        <td><span className={`badge ${u.is_active ? 'bg-success' : 'bg-secondary'}`}>{u.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button className="btn btn-sm btn-outline-secondary" onClick={() => toggleActive(u)}>{u.is_active ? 'Deactivate' : 'Activate'}</button></td>
+      </tr>)}</tbody>
+    </table></div>}
+  </div>;
 };
-
 export default AdminUsers;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../config/api';
 import '../styles/forms.css';
 
@@ -16,6 +18,8 @@ const ProfileCreate = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [requestedRole, setRequestedRole] = useState(user?.requested_role || 'researcher');
 
   // ✅ ADD THIS USEEFFECT
   useEffect(() => {
@@ -47,6 +51,9 @@ const ProfileCreate = () => {
 
     try {
       await api.post('/researchers/profile', formData);
+      if (requestedRole !== 'researcher' && requestedRole !== user?.role) {
+        await api.put('/researchers/profile/me/role-request', { requested_role: requestedRole });
+      }
       alert('Profile created successfully!');
       navigate('/profile');
     } catch (err) {
@@ -75,6 +82,15 @@ const ProfileCreate = () => {
               required
               disabled={loading}
             />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Requested platform role</label>
+            <select className="form-control" value={requestedRole} onChange={(e) => setRequestedRole(e.target.value)} disabled={loading}>
+              <option value="researcher">Researcher</option>
+              <option value="reviewer">Reviewer</option>
+              <option value="institution_admin">Institution administrator</option>
+            </select>
+            <small className="text-muted">You keep researcher access until a system administrator approves a requested role.</small>
           </div>
 
           <div className="mb-3">

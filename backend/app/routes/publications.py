@@ -38,12 +38,8 @@ def get_publications(db: Session = Depends(get_db), current_user: User = Depends
     if current_user.role in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN]:
         return db.query(Publication).all()
     if current_user.role == UserRole.REVIEWER:
-        return (
-            db.query(Publication)
-            .join(Review, Review.publication_id == Publication.id)
-            .filter(Review.reviewer_id == current_user.id)
-            .all()
-        )
+        # Reviewers may browse submitted work; drafts remain private to their owners.
+        return db.query(Publication).filter(Publication.status.in_([PublicationStatus.SUBMITTED, PublicationStatus.PUBLISHED])).all()
 
     profile = current_user.researcher_profile
     if not profile or not profile.institution_id:

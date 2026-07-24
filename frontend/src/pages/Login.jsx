@@ -124,7 +124,7 @@ const Login = () => {
               </>
             ) : (
               <>
-                <i className="bi bi-box-arrow-in-right"></i> Login
+                 Login
               </>
             )}
           </button>

@@ -81,6 +81,11 @@ const ResearcherDetail = () => {
               </div>
 
               <div className="mb-3">
+                <strong><i className="bi bi-building"></i> Institution:</strong>
+                <p>{researcher?.institution_id ? <Link to={`/institutions/${researcher.institution_id}`}>{researcher.institution_name || 'View institution'}</Link> : <span className="text-muted">Not affiliated with an institution</span>}</p>
+              </div>
+
+              <div className="mb-3">
                 <strong><i className="bi bi-envelope"></i> Email:</strong>
                   <p>{researcher?.email || 'Not available'}</p>
               </div>

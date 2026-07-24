@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     username: '',
     password: '',
-    
+    requested_role: 'researcher',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,10 +32,11 @@ const Register = () => {
         email: formData.email.trim().toLowerCase(),
         username: formData.username.trim(),
         password: formData.password.trim(),
+        requested_role: formData.requested_role,
       };
 
       await api.post('/auth/register', payload);
-      alert('Registration successful! Please login.');
+      alert(formData.requested_role === 'researcher' ? 'Registration successful! Please login.' : 'Registration successful. You can use researcher features while your requested role is awaiting administrator approval.');
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed');
@@ -61,6 +62,15 @@ const Register = () => {
               required
               disabled={loading}
             />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Requested role</label>
+            <select className="form-select" name="requested_role" value={formData.requested_role} onChange={handleChange} disabled={loading}>
+              <option value="researcher">Researcher</option>
+              <option value="reviewer">Reviewer (administrator approval required)</option>
+              <option value="institution_admin">Institution administrator (administrator approval required)</option>
+            </select>
+            <small className="text-muted">Every new account starts as a researcher. Elevated access is granted only after approval.</small>
           </div>
           <div className="mb-3">
             <label className="form-label">Email</label>

@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import Institution, User
-from ..schemas import InstitutionResponse, InstitutionCreate
+from ..models import Institution, User, ResearcherProfile, Publication, publication_author
+from ..schemas import InstitutionResponse, InstitutionCreate, InstitutionOverview
 from ..auth import get_current_user
 from ..models import UserRole
 
@@ -34,7 +34,7 @@ def create_institution(
         )
     
     # Check role
-    if current_user.role not in [UserRole.SYSTEM_ADMIN, UserRole.INSTITUTION_ADMIN]:
+    if current_user.role not in [UserRole.SYSTEM_ADMIN]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to create institutions")
     if current_user.role == UserRole.INSTITUTION_ADMIN and current_user.researcher_profile is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Create your profile before creating an institution")
@@ -123,3 +123,22 @@ def get_institution(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution administrators can view only their own institution")
     
     return institution
+
+@router.get("/{institution_id}/overview", response_model=InstitutionOverview)
+def institution_overview(institution_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    institution = db.query(Institution).filter(Institution.id == institution_id).first()
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    profiles = db.query(ResearcherProfile).filter(ResearcherProfile.institution_id == institution_id).all()
+    users = [profile.user for profile in profiles if profile.user]
+    administrators = [user for user in db.query(User).filter(User.assigned_institution_id == institution_id).all() if user not in users]
+    admins = [user for user in users + administrators if user.role == UserRole.INSTITUTION_ADMIN]
+    reviewers = [user for user in users if user.role == UserRole.REVIEWER]
+    researchers = [profile for profile in profiles if profile.user and profile.user.role == UserRole.RESEARCHER]
+    publication_count = (db.query(Publication).join(publication_author, publication_author.c.publication_id == Publication.id)
+        .join(ResearcherProfile, ResearcherProfile.user_id == publication_author.c.user_id)
+        .filter(ResearcherProfile.institution_id == institution_id).distinct().count())
+    person = lambda user, profile=None: {"id": profile.id if profile else None, "name": user.full_name, "email": user.email, "designation": profile.designation if profile else None}
+    return {**{key: getattr(institution, key) for key in ["id", "name", "description", "country", "city", "website", "created_at"]},
+            "researchers_count": len(researchers), "reviewers_count": len(reviewers), "administrators_count": len(admins), "publications_count": publication_count,
+            "researchers": [person(profile.user, profile) for profile in researchers], "reviewers": [person(user, next((p for p in profiles if p.user_id == user.id), None)) for user in reviewers], "administrators": [person(user, next((p for p in profiles if p.user_id == user.id), None)) for user in admins]}

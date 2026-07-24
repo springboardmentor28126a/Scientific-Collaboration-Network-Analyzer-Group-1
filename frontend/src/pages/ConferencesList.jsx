@@ -3,88 +3,27 @@ import { Link } from 'react-router-dom';
 import api from '../config/api';
 import { AuthContext } from '../context/AuthContext';
 
-const normalizeRole = (role) => {
-  if (!role) return '';
-  if (typeof role === 'string') return role.toLowerCase();
-  if (typeof role === 'object' && role?.value) return String(role.value).toLowerCase();
-  return String(role).toLowerCase();
-};
-
-const canAccess = (userRole, allowedRoles = []) => {
-  if (!userRole) return false;
-  if (!allowedRoles || allowedRoles.length === 0) return true;
-  const normalized = normalizeRole(userRole);
-  return allowedRoles.map((r) => normalizeRole(r)).includes(normalized);
-};
-
 const ConferencesList = () => {
   const [conferences, setConferences] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
-  const role = user ? normalizeRole(user.role) : null;
-
-  useEffect(() => {
-    const fetchConferences = async () => {
-      try {
-        const response = await api.get('/conferences/');
-        setConferences(response.data);
-      } catch (err) {
-        console.error('Failed to fetch conferences:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchConferences();
-  }, []);
-
-  const handleRegister = async (confId) => {
-    try {
-      await api.post(`/conferences/${confId}/register`, {
-        presentation_title: null,
-        presentation_abstract: null
-      });
-      alert('Successfully registered!');
-    } catch (err) {
-      alert('Registration failed: ' + (err.response?.data?.detail || err.message));
-    }
-  };
-
+  const role = user?.role;
+  const canRegister = role === 'researcher' || role === 'system_admin';
+  const canManage = role === 'institution_admin' || role === 'system_admin';
+  const load = async () => { try {
+    const requests = [api.get('/conferences/')]; if (canRegister) requests.push(api.get('/conferences/registrations/me'));
+    const results = await Promise.all(requests); setConferences(results[0].data); setRegistrations(results[1]?.data || []);
+  } catch (err) { alert(err.response?.data?.detail || 'Failed to load conferences'); } finally { setLoading(false); } };
+  useEffect(() => { load(); }, []);
+  const registrationFor = (id) => registrations.find((r) => r.conference_id === id);
+  const register = async (id) => { try { await api.post(`/conferences/${id}/register`, { presentation_title: null, presentation_abstract: null }); await load(); } catch (e) { alert(e.response?.data?.detail || 'Registration failed'); } };
+  const unregister = async (id) => { if (!window.confirm('Cancel this registration?')) return; try { await api.delete(`/conferences/${id}/register`); await load(); } catch (e) { alert(e.response?.data?.detail || 'Unable to cancel registration'); } };
+  const presentation = async (id, existing) => { const title = window.prompt('Presentation title', existing?.presentation_title || ''); if (title === null) return; const abstract = window.prompt('Presentation abstract', existing?.presentation_abstract || ''); if (abstract === null) return; try { await api.put(`/conferences/${id}/registration`, { presentation_title: title, presentation_abstract: abstract }); await load(); } catch (e) { alert(e.response?.data?.detail || 'Unable to save presentation details'); } };
+  const participants = async (id) => { try { const { data } = await api.get(`/conferences/${id}/participants`); alert(data.length ? data.map((p) => `User #${p.user_id}${p.presentation_title ? ` — ${p.presentation_title}` : ''}`).join('\n') : 'No participants yet.'); } catch (e) { alert(e.response?.data?.detail || 'Unable to load participants'); } };
   if (loading) return <div className="container mt-5"><div className="spinner-border" /></div>;
-
-  return (
-    <div className="container mt-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Conferences</h2>
-        {canAccess(role, ['institution_admin', 'system_admin']) && (
-          <Link to="/conferences/create" className="btn btn-primary">
-            <i className="bi bi-plus-circle"></i> New Conference
-          </Link>
-        )}
-      </div>
-
-      <div className="row">
-        {conferences.length === 0 ? (
-          <p>No conferences found.</p>
-        ) : (
-          conferences.map(conf => (
-            <div key={conf.id} className="col-md-6 mb-4">
-              <div className="card h-100 shadow-sm border-0">
-                <div className="card-body">
-                  <h5 className="card-title text-purple-600">{conf.name}</h5>
-                  <h6 className="card-subtitle mb-2 text-muted">{conf.location} • {conf.date}</h6>
-                  <p className="card-text">{conf.description}</p>
-                </div>
-                <div className="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
-                  <span className="badge bg-secondary">{conf.status}</span>
-                  {canAccess(role, ['researcher', 'system_admin']) && <button onClick={() => handleRegister(conf.id)} className="btn btn-sm btn-outline-primary">Register</button>}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
+  return <div className="container mt-5"><div className="d-flex justify-content-between align-items-center mb-4"><div><h2>Conferences</h2>{canRegister && <small className="text-muted">Your registrations: {registrations.length}</small>}</div>{canManage && <Link to="/conferences/create" className="btn btn-primary"><i className="bi bi-plus-circle"></i> New Conference</Link>}</div>
+    <div className="row">{conferences.length === 0 ? <p>No conferences found.</p> : conferences.map((conf) => { const registration = registrationFor(conf.id); return <div key={conf.id} className="col-md-6 mb-4"><div className="card h-100 shadow-sm border-0"><div className="card-body"><h5 className="card-title text-primary">{conf.name}</h5><h6 className="card-subtitle mb-2 text-muted">{conf.location} • {conf.date}</h6><p className="card-text">{conf.description}</p></div><div className="card-footer bg-white d-flex justify-content-between align-items-center"><span className="badge bg-secondary">{conf.status}</span><div>{canManage && <button onClick={() => participants(conf.id)} className="btn btn-sm btn-outline-secondary me-1">Participants</button>}{canRegister && !registration && <button onClick={() => register(conf.id)} className="btn btn-sm btn-outline-primary">Register</button>}{canRegister && registration && <><button onClick={() => presentation(conf.id, registration)} className="btn btn-sm btn-outline-primary me-1">Presentation</button><button onClick={() => unregister(conf.id)} className="btn btn-sm btn-outline-danger">Unregister</button></>}</div></div></div></div>; })}</div>
+  </div>;
 };
-
 export default ConferencesList;

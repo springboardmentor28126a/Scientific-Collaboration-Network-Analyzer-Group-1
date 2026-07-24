@@ -63,6 +63,37 @@ def register_for_conference(
     db.refresh(db_reg)
     return db_reg
 
+@router.get("/registrations/me", response_model=List[ConferenceRegistrationResponse])
+def my_registrations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(ConferenceRegistration).filter(ConferenceRegistration.user_id == current_user.id).all()
+
+@router.put("/{conf_id}/registration", response_model=ConferenceRegistrationResponse)
+def update_registration(conf_id: int, reg: ConferenceRegistrationCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    registration = db.query(ConferenceRegistration).filter(ConferenceRegistration.conference_id == conf_id, ConferenceRegistration.user_id == current_user.id).first()
+    if not registration:
+        raise HTTPException(status_code=404, detail="Conference registration not found")
+    registration.presentation_title = reg.presentation_title
+    registration.presentation_abstract = reg.presentation_abstract
+    db.commit(); db.refresh(registration)
+    return registration
+
+@router.delete("/{conf_id}/register")
+def unregister_from_conference(conf_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    registration = db.query(ConferenceRegistration).filter(ConferenceRegistration.conference_id == conf_id, ConferenceRegistration.user_id == current_user.id).first()
+    if not registration:
+        raise HTTPException(status_code=404, detail="Conference registration not found")
+    db.delete(registration); db.commit()
+    return {"detail": "Conference registration cancelled"}
+
+@router.get("/{conf_id}/participants", response_model=List[ConferenceRegistrationResponse])
+def conference_participants(conf_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    conference = db.query(Conference).filter(Conference.id == conf_id).first()
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    if current_user.role not in [UserRole.INSTITUTION_ADMIN, UserRole.SYSTEM_ADMIN, UserRole.REVIEWER]:
+        raise HTTPException(status_code=403, detail="Not authorized to view participants")
+    return db.query(ConferenceRegistration).filter(ConferenceRegistration.conference_id == conf_id).all()
+
 
 @router.delete("/{conf_id}")
 def delete_conference(conf_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

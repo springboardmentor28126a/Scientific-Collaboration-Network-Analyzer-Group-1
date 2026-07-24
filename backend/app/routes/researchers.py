@@ -1,11 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
-from ..models import User, ResearcherProfile
-from ..schemas import ResearcherProfileResponse, ResearcherProfileCreate, ResearcherProfileUpdate
+from ..models import User, ResearcherProfile, UserRole
+from ..schemas import ResearcherProfileResponse, ResearcherProfileCreate, ResearcherProfileUpdate, RoleRequest
 from ..auth import get_current_user
 
 router = APIRouter(prefix="/researchers", tags=["researchers"])
+
+@router.put("/profile/me/role-request")
+def request_role_change(
+    request: RoleRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Request an elevated role without changing the user's granted role."""
+    if request.requested_role == UserRole.SYSTEM_ADMIN:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="System administrator access cannot be requested")
+    if request.requested_role == current_user.role:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already have this role")
+    current_user.requested_role = request.requested_role.value
+    current_user.role_request_status = "pending"
+    db.commit()
+    return {"detail": "Role request submitted for administrator approval"}
 
 
 def serialize_profile(profile, current_user=None):
@@ -24,6 +40,7 @@ def serialize_profile(profile, current_user=None):
         "skills": profile.skills,
         "research_interests": profile.research_interests,
         "institution_id": profile.institution_id,
+        "institution_name": getattr(profile.institution, "name", None) if getattr(profile, "institution", None) else None,
         "h_index": profile.h_index,
         "full_name": full_name,
         "email": getattr(profile.user, "email", None) if getattr(profile, "user", None) is not None else getattr(current_user, "email", None),

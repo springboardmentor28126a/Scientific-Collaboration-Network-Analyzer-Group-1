@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus
 
@@ -16,6 +16,9 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class RoleRequest(BaseModel):
+    requested_role: UserRole
 
 class UserResponse(UserBase):
     id: int
@@ -70,6 +73,7 @@ class ResearcherProfileResponse(ResearcherProfileBase):
     h_index: int
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    institution_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
@@ -126,6 +130,25 @@ class ConferenceRegistrationResponse(ConferenceRegistrationCreate):
     class Config:
         from_attributes = True
 
+class InstitutionOverview(InstitutionResponse):
+    researchers_count: int = 0
+    reviewers_count: int = 0
+    administrators_count: int = 0
+    publications_count: int = 0
+    researchers: List[dict] = []
+    reviewers: List[dict] = []
+    administrators: List[dict] = []
+
+class DashboardStats(BaseModel):
+    publications_count: int = 0
+    conferences_count: int = 0
+    h_index: int = 0
+    active_projects: int = 0
+    pending_reviews: int = 0
+    completed_reviews: int = 0
+    researchers_count: int = 0
+    collaboration_count: int = 0
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -141,7 +164,9 @@ class ReviewCreate(ReviewBase):
     pass
 
 class ReviewResponse(ReviewBase):
-    id: int
+    # Pending queue entries are intentionally not stored until a reviewer
+    # submits feedback, so they do not have a database id yet.
+    id: Optional[int] = None
     publication_id: int
     reviewer_id: int
     file_path: Optional[str] = None

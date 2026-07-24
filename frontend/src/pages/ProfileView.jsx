@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../config/api';
 import '../styles/cards.css';
@@ -8,7 +8,7 @@ const ProfileView = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     fetchProfile();
@@ -50,6 +50,7 @@ const ProfileView = () => {
                 </Link>
               </div>
               <div className="card-body">
+                {user?.role_request_status === 'pending' && <div className="alert alert-warning">Role request for <strong>{user?.requested_role?.replace('_', ' ')}</strong> is awaiting administrator approval. Your current role remains researcher.</div>}
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <strong><i className="bi bi-building"></i> Department:</strong>
@@ -59,6 +60,10 @@ const ProfileView = () => {
                     <strong><i className="bi bi-briefcase"></i> Designation:</strong>
                     <p>{profile.designation}</p>
                   </div>
+                </div>
+                <div className="mb-3">
+                  <strong><i className="bi bi-building"></i> Institution:</strong>
+                  <p>{profile.institution_id ? <Link to={`/institutions/${profile.institution_id}`}>{profile.institution_name || 'View institution'}</Link> : <span className="text-muted">No institution selected</span>}</p>
                 </div>
                 <div className="mb-3">
                   <strong><i className="bi bi-file-text"></i> Bio:</strong>

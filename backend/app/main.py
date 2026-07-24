@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from fastapi.openapi.utils import get_openapi
-from .database import engine, Base
+from .database import engine, Base, ensure_user_access_columns
 from .models import User, ResearcherProfile, Institution
-from .routes import auth, researchers, institutions, publications, conferences, reviews, admin
+from .routes import auth, researchers, institutions, publications, conferences, reviews, admin, dashboard
 
 Base.metadata.create_all(bind=engine)
+ensure_user_access_columns()
 
 
 app = FastAPI(
@@ -33,6 +34,7 @@ app.include_router(publications.router)
 app.include_router(conferences.router)
 app.include_router(reviews.router)
 app.include_router(admin.router)
+app.include_router(dashboard.router)
 
 # Mount uploads directory for file serving
 os.makedirs("uploads", exist_ok=True)
