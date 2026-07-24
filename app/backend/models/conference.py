@@ -13,7 +13,6 @@ class Conference(Base):
     end_date = Column(String)
     website = Column(String)
 
-
 class ConferenceParticipation(Base):
     __tablename__ = "conference_participations"
 
