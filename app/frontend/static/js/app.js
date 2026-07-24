@@ -1,8 +1,7 @@
-const toastElement = document.getElementById("appToast");
 let currentPage = 1;
-const pageSize = 2;
-let editingCitationId = null;
-let editingPublicationId = null;
+const pageSize = 5;
+let editingConferenceId = null;
+const toastElement = document.getElementById("appToast");
 const toast = toastElement ? new bootstrap.Toast(toastElement) : null;
 
 function showToast(title, message) {
@@ -52,7 +51,6 @@ function bindForm(formId, endpoint, successMessage, afterSave = loadAll)
 {
   
   const form = document.getElementById(formId);
- 
   if (!form) return;
 
   form.addEventListener("submit", async (event) => {
@@ -87,35 +85,19 @@ async function bindPublicationForm()
     console.log(formData.get("pdf_file"));
 
     try {
-     let url = "/publications/";
-let method = "POST";
-
-if (editingPublicationId !== null) {
-    url = `/publications/${editingPublicationId}`;
-    method = "PUT";
-}
-
-const response = await fetch(url, {
-    method: method,
-    body: formData,
-});
+      const response = await fetch("/publications/", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail);
-}
+        throw new Error("Failed to add publication");
+      }
 
       form.reset();
+      showToast("Success", "Publication added.");
+      await loadAll();
 
-if (editingPublicationId === null) {
-    showToast("Success", "Publication added.");
-} else {
-    showToast("Success", "Publication updated.");
-    editingPublicationId = null;
-}
-
-await loadAll();
-await loadPublications();
     } catch (error) {
       showToast("Error", error.message);
     }
@@ -182,80 +164,146 @@ function bindLogout() {
     window.location.href = "/";
   });
 }
+async function loadConferences() {
 
-async function loadAll() {
-  await Promise.all([
-    loadDashboard(),
-    loadReports(),
-    loadNetwork(),
-  ]);
+    const table = document.getElementById("conferenceTableBody");
+
+    if (!table) return;
+
+    const name = document.getElementById("conferenceSearch").value.trim();
+
+    const organizer = document.getElementById("organizerFilter").value.trim();
+
+    const location = document.getElementById("locationFilter").value.trim();
+
+    const sortBy = document.getElementById("sortBy").value;
+
+    const sortOrder = document.getElementById("sortOrder").value;
+
+    // Get filtered conferences
+   const skip = (currentPage - 1) * pageSize;
+
+let conferences = await api(
+    `/conferences/filter?name=${encodeURIComponent(name)}&organizer=${encodeURIComponent(organizer)}&location=${encodeURIComponent(location)}&skip=${skip}&limit=${pageSize}`
+);
+
+    // Sort conferences on frontend
+    conferences.sort((a, b) => {
+
+        let valueA = a[sortBy];
+        let valueB = b[sortBy];
+
+        if (valueA == null) valueA = "";
+        if (valueB == null) valueB = "";
+
+        if (sortBy === "start_date" || sortBy === "end_date") {
+            valueA = new Date(valueA);
+            valueB = new Date(valueB);
+        } else {
+            valueA = valueA.toString().toLowerCase();
+            valueB = valueB.toString().toLowerCase();
+        }
+
+        if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+        if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+
+        return 0;
+    });
+
+    table.innerHTML = conferences.map(conf => `
+
+        <tr>
+
+            <td>${conf.name ?? ""}</td>
+
+            <td>${conf.organizer ?? ""}</td>
+
+            <td>${conf.location ?? ""}</td>
+
+            <td>${conf.start_date ?? ""}</td>
+
+            <td>${conf.end_date ?? ""}</td>
+
+            <td>
+                ${
+                    conf.website
+                        ? `<a href="${conf.website}" target="_blank">Website</a>`
+                        : ""
+                }
+            </td>
+
+            <td class="text-center">
+
+                <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    onclick="registerConference(${conf.id}, '${(conf.name ?? "").replace(/'/g, "\\'")}')">
+                    Register
+                </button>
+
+            </td>
+
+        </tr>
+
+    `).join("");
+
 }
 
-async function loadPublications(page = currentPage) 
-{
-  try {
-    const publications = await api(
-      `/publications?page=${page}&limit=${pageSize}`
-    );
-    const prevBtn = document.getElementById("prevPage");
-const nextBtn = document.getElementById("nextPage");
+async function viewInstitution(id) {
 
-prevBtn.disabled = page === 1;
-nextBtn.disabled = publications.length < pageSize;
+    try {
 
-    const results = document.getElementById("searchResults");
+        const inst = await api(`/institutions/${id}`);
 
-    if (!results) return;
+        document.getElementById("viewName").textContent = inst.name ?? "";
+        document.getElementById("viewType").textContent = inst.institution_type ?? "";
+        document.getElementById("viewCountry").textContent = inst.country ?? "";
+        document.getElementById("viewCity").textContent = inst.city ?? "";
+        document.getElementById("viewWebsite").innerHTML =
+            inst.website
+                ? `<a href="${inst.website}" target="_blank">${inst.website}</a>`
+                : "";
 
-    if (publications.length === 0) {
-      results.innerHTML = "<p><strong>No publications found.</strong></p>";
-      return;
+        document.getElementById("viewEmail").textContent =
+            inst.contact_email ?? "";
+
+        const modal = new bootstrap.Modal(
+            document.getElementById("institutionModal")
+        );
+
+        modal.show();
+
     }
 
-    results.innerHTML = publications
-      .map
-      (
-        (publication) => `
-        <div class="panel" style="margin-top:10px;">
-          <h3>${publication.title}</h3>
+    catch (error) {
 
-          <p><strong>Authors:</strong> ${publication.authors}</p>
+        showToast("Error", error.message);
 
-          <p><strong>Abstract:</strong> ${publication.abstract}</p>
+    }
 
-          <p><strong>Citation Count:</strong> ${publication.citation_count}</p>
-
-          <p><strong>Publication Type:</strong> ${publication.publication_type}</p>
-
-          <p><strong>Publication Name:</strong> ${publication.publication_name}</p>
-
-          <p><strong>Status:</strong> ${publication.status}</p>
-
-          <p><strong>Year:</strong> ${publication.publication_year}</p>
-
-          <p><strong>DOI:</strong> ${publication.doi}</p>
-
-<div style="margin-top:10px;">
-    <button onclick="window.editPublication(${publication.id})">
-    Edit
-</button>
-
-    <button onclick="window.deletePublication(${publication.id})">
-    Delete
-</button>
-      
-</div>
-      
-</div>
-`
-      )
-      .join("");
-
-  } catch (error) {
-    showToast("Error", error.message);
-  }
 }
 
+function registerConference(id, name) {
+
+    document.getElementById("conference_id").value = id;
+
+    document.getElementById("conference_name").value = name;
+
+    document.getElementById("registrationForm").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+}
+
+async function loadAll() {
+    await Promise.all([
+        loadDashboard(),
+        loadReports(),
+        loadNetwork(),
+        loadConferences()
+    ]);
+}
 async function searchPublications() {
   console.log("Search button clicked");
   console.log("TEST APP.JS");
@@ -264,23 +312,15 @@ async function searchPublications() {
 
   const publicationType = document.getElementById("filterType").value;
   const status = document.getElementById("filterStatus").value;
-  const sortBy = document.getElementById("sortBy").value;
-const sortOrder = document.getElementById("sortOrder").value;
-  currentPage = 1;
-document.getElementById("pageNumber").textContent = "Page 1";
 
   try {
     let publications = [];
 
     // If title is entered, use Search API
     if (title) {
-      const params = new URLSearchParams();
-      params.append("sort_by", sortBy);
-params.append("order", sortOrder);
-
-publications = await api(
-  `/publications?${params.toString()}&page=1&limit=2`
-);
+      publications = await api(
+        `/publications/search?title=${encodeURIComponent(title)}`
+      );
     }
     // Otherwise use Filter API
     else {
@@ -342,47 +382,110 @@ results.innerHTML = publications
   }
 }
 
-bindForm("researcherForm", "/researchers/", "Researcher added.");
-bindForm("institutionForm", "/institutions/", "Institution added.");
-//bindForm("citationForm", "/citations/", "Citation added.");
-function bindCitationForm() {
-    const form = document.getElementById("citationForm");
+const conferenceForm = document.getElementById("conferenceForm");
 
-    if (!form) return;
+conferenceForm?.addEventListener("submit", async (e) => {
 
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    e.preventDefault();
 
-        const data = formDataToJson(form);
+    const data = formDataToJson(conferenceForm);
 
-        try {
-            if (editingCitationId === null) {
-                await api("/citations/", {
-                    method: "POST",
-                    body: JSON.stringify(data),
-                });
+    // Conference Name
+    if (!data.name || data.name.trim() === "") {
+        showToast("Validation Error", "Conference Name is required.");
+        return;
+    }
 
-                showToast("Success", "Citation added successfully.");
-            } else {
-                await api(`/citations/${editingCitationId}`, {
-                    method: "PUT",
-                    body: JSON.stringify(data),
-                });
+    // Organizer
+    if (!data.organizer || data.organizer.trim() === "") {
+        showToast("Validation Error", "Organizer is required.");
+        return;
+    }
 
-                showToast("Success", "Citation updated successfully.");
+    // Location
+    if (!data.location || data.location.trim() === "") {
+        showToast("Validation Error", "Location is required.");
+        return;
+    }
 
-                editingCitationId = null;
-            }
+    // Start Date
+    if (!data.start_date) {
+        showToast("Validation Error", "Please select Start Date.");
+        return;
+    }
 
-            form.reset();
-            await loadCitations();
+    // End Date
+    if (!data.end_date) {
+        showToast("Validation Error", "Please select End Date.");
+        return;
+    }
 
-        } catch (error) {
-            showToast("Error", error.message);
+    // Date Validation
+    if (new Date(data.end_date) < new Date(data.start_date)) {
+        showToast("Validation Error", "End Date must be after Start Date.");
+        return;
+    }
+
+    // Website Required
+    if (!data.website || data.website.trim() === "") {
+        showToast("Validation Error", "Website is required.");
+        return;
+    }
+
+    // Website Format
+    const urlPattern = /^https?:\/\/.+/;
+
+    if (!urlPattern.test(data.website)) {
+        showToast("Validation Error", "Enter a valid Website URL.");
+        return;
+    }
+
+    try {
+
+        if (editingConferenceId !== null) {
+
+            await api(`/conferences/${editingConferenceId}`, {
+                method: "PUT",
+                body: JSON.stringify(data),
+            });
+
+            showToast("Success", "Conference updated.");
+
+            editingConferenceId = null;
+
+            conferenceForm.querySelector("button").textContent =
+                "Add Conference";
+
+        } else {
+
+            await api("/conferences/", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+
+            showToast("Success", "Conference added.");
+
         }
-    });
-}
 
+        conferenceForm.reset();
+
+        await loadConferences();
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+});
+
+bindForm(
+    "registrationForm",
+    "/conferences/participations",
+    "Conference registration successful."
+);
+
+bindForm("institutionForm", "/institutions/", "Institution added.");
 //bindForm(
 //  "publicationForm",
  // "/publications/",
@@ -391,16 +494,7 @@ function bindCitationForm() {
 const searchBtn = document.getElementById("searchBtn");
 
 searchBtn?.addEventListener("click", searchPublications);
-const searchCitationBtn = document.getElementById("searchCitationBtn");
-
-searchCitationBtn?.addEventListener("click", searchCitations);
 const clearSearchBtn = document.getElementById("clearSearchBtn");
-const clearCitationBtn = document.getElementById("clearCitationBtn");
-
-clearCitationBtn?.addEventListener("click", () => {
-    document.getElementById("searchCitationText").value = "";
-    loadCitations();
-});
 
 clearSearchBtn?.addEventListener("click", () => {
   
@@ -414,211 +508,212 @@ clearSearchBtn?.addEventListener("click", () => {
   document.getElementById("filterStatus").value = "";
   document.getElementById("searchResults").innerHTML = "";
 });
-bindPublicationForm();
-bindCitationForm();
-document.getElementById("refreshReports")?.addEventListener("click", loadReports);
-bindLogout();
-loadCurrentUser();
+async function deleteConference(id) {
 
-loadAll().catch((error) => showToast("Load error", error.message));
-async function loadCitations() 
-{
+    if (!confirm("Are you sure you want to delete this conference?"))
+        return;
+
     try {
-        const citations = await api("/citations/");
 
-        const container = document.getElementById("citationResults");
-
-        if (!container) return;
-
-        if (citations.length === 0) {
-            container.innerHTML = "<p>No citations found.</p>";
-            return;
-        }
-
-        container.innerHTML = citations.map(citation => `
-            <div class="card" style="margin-bottom:10px; padding:10px; border:1px solid #ccc;">
-                <p><strong>ID:</strong> ${citation.id}</p>
-                <p><strong>Publication ID:</strong> ${citation.publication_id}</p>
-                <p><strong>Cited Publication ID:</strong> ${citation.cited_publication_id ?? "-"}</p>
-                <p><strong>Citation:</strong> ${citation.citation_text}</p>
-                <p><strong>DOI:</strong> ${citation.doi ?? "-"}</p>
-                <p><strong>Reference Order:</strong> ${citation.reference_order ?? "-"}</p>
-
-                <div style="margin-top:10px;">
-    <button
-        onclick="editCitation(${citation.id})">
-        Edit
-    </button>
-
-    <button
-        onclick="deleteCitation(${citation.id})">
-        Delete
-    </button>
-</div>
-            </div>
-        `).join("");
-
-    } catch (error) {
-        showToast("Error", error.message);
-    }
-}
-loadPublications();
-loadCitations();
-async function searchCitations() 
-{
-    try {
-        const text = document.getElementById("searchCitationText").value.trim();
-
-        if (!text) {
-            loadCitations();
-            return;
-        }
-
-        const citations = await api(
-            `/citations/search?citation_text=${encodeURIComponent(text)}`
-        );
-
-        const container = document.getElementById("citationResults");
-
-        if (citations.length === 0) {
-            container.innerHTML = "<p><strong>No citations found.</strong></p>";
-            return;
-        }
-
-        container.innerHTML = citations.map(citation => `
-            <div class="panel" style="margin-top:10px;">
-                <p><strong>ID:</strong> ${citation.id}</p>
-                <p><strong>Publication ID:</strong> ${citation.publication_id}</p>
-                <p><strong>Cited Publication ID:</strong> ${citation.cited_publication_id ?? "-"}</p>
-                <p><strong>Citation:</strong> ${citation.citation_text}</p>
-                <p><strong>DOI:</strong> ${citation.doi ?? "-"}</p>
-                <p><strong>Reference Order:</strong> ${citation.reference_order ?? "-"}</p>
-            </div>
-        `).join("");
-
-    } catch (error) {
-        showToast("Error", error.message);
-    }
-}
-window.deleteCitation = async function(citationId) 
-{
-  console.log("Delete clicked:", citationId);
-    try {
-        const confirmed = confirm("Are you sure you want to delete this citation?");
-
-        if (!confirmed) return;
-
-       await api(`/citations/${citationId}`, {
-    method: "DELETE"
-});
-
-        showToast("Success", "Citation deleted successfully.");
-
-        loadCitations();
-
-    } catch (error) {
-        showToast("Error", error.message);
-    }
-}
-window.deletePublication = async function(publicationId) 
-{
-    try {
-        const confirmed = confirm(
-            "Are you sure you want to delete this publication?"
-        );
-
-        if (!confirmed) return;
-
-        await api(`/publications/${publicationId}`, {
+        await api(`/conferences/${id}`, {
             method: "DELETE"
         });
 
-        showToast("Success", "Publication deleted successfully.");
+        showToast("Success", "Conference deleted.");
 
-        await loadPublications();
+        loadConferences();
 
     } catch (error) {
+
         showToast("Error", error.message);
+
     }
+
 }
-window.editPublication = async function(publicationId) {
+async function editConference(id) {
+
+    const conference = await api(`/conferences/${id}`);
+
+    editingConferenceId = id;
+
+    const form = document.getElementById("conferenceForm");
+
+    form.name.value = conference.name;
+    form.organizer.value = conference.organizer;
+    form.location.value = conference.location;
+    form.start_date.value = conference.start_date;
+    form.end_date.value = conference.end_date;
+    form.website.value = conference.website;
+
+    form.querySelector("button").textContent = "Update Conference";
+}
+
+async function searchInstitution() {
+
+    const name = document.getElementById("institutionSearch").value.trim();
+    const country = document.getElementById("countryFilter").value.trim();
+    const city = document.getElementById("cityFilter").value.trim();
+    const type = document.getElementById("typeFilter").value;
+
+   const institutions = await api(
+    `/institutions/search?name=${encodeURIComponent(name)}&country=${encodeURIComponent(country)}&city=${encodeURIComponent(city)}&institution_type=${encodeURIComponent(type)}`
+);
+
+    const table = document.getElementById("institutionTableBody");
+    const container = document.getElementById("institutionTableContainer");
+
+    container.style.display = "block";
+
+    if (institutions.length === 0) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    No institutions found.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    table.innerHTML = institutions.map(inst => `
+        <tr>
+            <td>${inst.name}</td>
+            <td>${inst.institution_type ?? ""}</td>
+            <td>${inst.country ?? ""}</td>
+            <td>${inst.city ?? ""}</td>
+            <td>
+                ${inst.website
+                    ? `<a href="${inst.website}" target="_blank">Website</a>`
+                    : ""}
+            </td>
+            <td>${inst.contact_email ?? ""}</td>
+            <td>
+                <button class="btn btn-primary btn-sm"
+                    onclick="viewInstitution(${inst.id})">
+                    View
+                </button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    bindPublicationForm();
+
+    document.getElementById("refreshReports")
+        ?.addEventListener("click", loadReports);
+
+    bindLogout();
+
+    await loadCurrentUser();
+
     try {
-        const publication = await api(`/publications/${publicationId}`);
-
-        // Store the publication ID
-        editingPublicationId = publication.id;
-
-        // Fill the form
-        document.querySelector("#publicationForm input[name='researcher_id']").value =
-            publication.researcher_id;
-
-        document.querySelector("#publicationForm input[name='title']").value =
-            publication.title;
-
-        document.querySelector("#publicationForm input[name='authors']").value =
-            publication.authors;
-
-        document.querySelector("#publicationForm textarea[name='abstract']").value =
-            publication.abstract ?? "";
-
-        document.querySelector("#publicationForm input[name='citation_count']").value =
-            publication.citation_count;
-
-        document.querySelector("#publicationForm select[name='publication_type']").value =
-            publication.publication_type;
-
-        document.querySelector("#publicationForm input[name='publication_name']").value =
-            publication.publication_name;
-
-        document.querySelector("#publicationForm input[name='publication_year']").value =
-            publication.publication_year;
-
-        document.querySelector("#publicationForm input[name='doi']").value =
-            publication.doi ?? "";
-
-        document.querySelector("#publicationForm select[name='status']").value =
-            publication.status;
-
+        await loadAll();
     } catch (error) {
-        showToast("Error", error.message);
+        showToast("Load error", error.message);
     }
-}
-console.log("Edit function loaded");
-window.editCitation = async function(citationId) {
-    console.log("Edit button clicked:", publicationId);
-    try {
-        const citation = await api(`/citations/${citationId}`);
-        editingCitationId = citation.id;
 
-        document.querySelector("#citationForm input[name='publication_id']").value =
-            citation.publication_id;
+    // Filter Button
+    const searchBtn = document.getElementById("conferenceSearchBtn");
 
-        document.querySelector("#citationForm input[name='cited_publication_id']").value =
-            citation.cited_publication_id ?? "";
-
-        document.querySelector("#citationForm input[name='citation_text']").value =
-            citation.citation_text;
-
-        document.querySelector("#citationForm input[name='doi']").value =
-            citation.doi ?? "";
-
-        document.querySelector("#citationForm input[name='reference_order']").value =
-            citation.reference_order ?? "";
-
-    } catch (error) {
-        showToast("Error", error.message);
+    if (searchBtn) {
+        searchBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            loadConferences();
+        });
     }
-}
-document.getElementById("nextPage")?.addEventListener("click", async () => {
-  currentPage++;
-  document.getElementById("pageNumber").textContent = `Page ${currentPage}`;
-  await loadPublications(currentPage);
+
+    // Sort Button
+    const sortBtn = document.getElementById("sortConferenceBtn");
+
+    if (sortBtn) {
+        sortBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            loadConferences();
+        });
+    }
+
+
+    // Auto Filter
+    const conferenceSearch = document.getElementById("conferenceSearch");
+    const organizerFilter = document.getElementById("organizerFilter");
+    const locationFilter = document.getElementById("locationFilter");
+    const today = new Date().toISOString().split("T")[0];
+
+
+    document.getElementById("start_date")?.setAttribute("min", today);
+    document.getElementById("end_date")?.setAttribute("min", today);
+    conferenceSearch?.addEventListener("input", loadConferences);
+    organizerFilter?.addEventListener("input", loadConferences);
+    locationFilter?.addEventListener("input", loadConferences);
+
+    // Auto Sort
+    document.getElementById("sortBy")
+        ?.addEventListener("change", loadConferences);
+
+    document.getElementById("sortOrder")
+        ?.addEventListener("change", loadConferences);
+    // Pagination
+
+document.getElementById("nextPage")
+    ?.addEventListener("click", function () {
+
+        currentPage++;
+        loadConferences();
+
+    });
+
+document.getElementById("prevPage")
+    ?.addEventListener("click", function () {
+
+        if (currentPage > 1) {
+            currentPage--;
+            loadConferences();
+        }
+
+    });
+
+    // Institution Search & Filter Buttons
+document.getElementById("institutionSearchBtn")
+    ?.addEventListener("click", function (e) {
+        e.preventDefault();
+        searchInstitution();
+    });
+
+
+// Clear Button
+document.getElementById("institutionClearBtn")
+    ?.addEventListener("click", function () {
+
+        document.getElementById("institutionSearch").value = "";
+        document.getElementById("countryFilter").value = "";
+        document.getElementById("cityFilter").value = "";
+        document.getElementById("typeFilter").value = "";
+
+        document.getElementById("institutionTableBody").innerHTML = "";
+        document.getElementById("institutionTableContainer").style.display = "none";
+    });
+
+// Auto Search (Optional)
+document.getElementById("institutionSearch")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("countryFilter")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("cityFilter")
+    ?.addEventListener("input", searchInstitution);
+
+document.getElementById("typeFilter")
+    ?.addEventListener("change", searchInstitution);
 });
 
-document.getElementById("prevPage")?.addEventListener("click", async () => {
-  if (currentPage > 1) {
-    currentPage--;
-    document.getElementById("pageNumber").textContent = `Page ${currentPage}`;
-    await loadPublications(currentPage);
-  }
-});
+window.loadConferences = loadConferences;
+window.registerConference = registerConference;
+window.deleteConference = deleteConference;
+window.editConference = editConference;
+window.viewInstitution = viewInstitution;
+window.searchInstitution = searchInstitution;
