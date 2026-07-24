@@ -12,6 +12,72 @@
 
     <section class="panel-grid">
       <div class="panel wide">
+  <div class="panel-heading">
+    <div>
+      <h2>Search Publications</h2>
+      <p>Search and filter publication records.</p>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <input
+      type="text"
+      id="searchTitle"
+      placeholder="Search by title"
+    >
+
+    <select id="filterType">
+      <option value="">All Types</option>
+      <option value="Journal">Journal</option>
+      <option value="Conference">Conference</option>
+      <option value="Book">Book</option>
+      <option value="Patent">Patent</option>
+      <option value="Technical Report">Technical Report</option>
+    </select>
+
+    <select id="filterStatus">
+      
+
+      <option value="">All Status</option>
+      <option value="Draft">Draft</option>
+      <option value="Submitted">Submitted</option>
+      <option value="Published">Published</option>
+      <option value="Archived">Archived</option>
+    </select>
+    <select id="sortBy">
+  <option value="id">Sort By</option>
+  <option value="title">Title (A-Z)</option>
+  <option value="publication_year">Publication Year</option>
+  <option value="citation_count">Citation Count</option>
+</select>
+
+<select id="sortOrder">
+  <option value="asc">Ascending</option>
+  <option value="desc">Descending</option>
+</select>
+
+    <button
+      type="button"
+      id="searchBtn">
+      Search
+    </button>
+    <button type="button" id="clearSearchBtn">Clear</button>
+
+
+  </div>
+  <div id="searchResults" style="margin-top:20px;"></div>
+
+<div style="margin-top:20px; text-align:center;">
+  <button type="button" id="prevPage">Previous</button>
+
+  <span id="pageNumber" style="margin:0 15px;">
+    Page 1
+  </span>
+
+  <button type="button" id="nextPage">Next</button>
+</div>
+</div>
+      <div class="panel wide">
         <div class="panel-heading">
           <div>
             <h2>Publication Repository</h2>
@@ -21,6 +87,23 @@
         <form class="form-grid" id="publicationForm">
           <input name="researcher_id" type="number" placeholder="Primary researcher ID" required>
           <input name="title" placeholder="Title" required>
+          <input
+    name="authors"
+    placeholder="Authors (comma separated)"
+    required
+>
+<textarea
+    name="abstract"
+    placeholder="Abstract"
+    rows="4">
+</textarea>
+<input
+    name="citation_count"
+    type="number"
+    placeholder="Citation Count"
+    value="0"
+    min="0"
+>
           <select name="publication_type" required>
             <option value="Journal">Journal</option>
             <option value="Conference">Conference</option>
@@ -37,7 +120,11 @@
             <option value="Published">Published</option>
             <option value="Archived">Archived</option>
           </select>
-          <input name="upload_path" placeholder="Upload path / file name">
+         <input
+    type="file"
+    name="pdf_file"
+    accept=".pdf"
+>
           <button type="submit">Add publication</button>
         </form>
       </div>
@@ -49,7 +136,23 @@
             <p>Citation records, DOI management, references, and publication linking.</p>
           </div>
         </div>
+        <div class="form-grid" style="margin-bottom:20px;">
+    <input
+        type="text"
+        id="searchCitationText"
+        placeholder="Search citation text"
+    >
+
+    <button type="button" id="searchCitationBtn">
+        Search
+    </button>
+
+    <button type="button" id="clearCitationBtn">
+        Clear
+    </button>
+</div>
         <form class="form-grid" id="citationForm">
+
           <input name="publication_id" type="number" placeholder="Publication ID" required>
           <input name="cited_publication_id" type="number" placeholder="Cited publication ID">
           <input name="citation_text" placeholder="Citation text" required>
@@ -57,6 +160,8 @@
           <input name="reference_order" type="number" placeholder="Reference order">
           <button type="submit">Add citation</button>
         </form>
+        <div id="citationResults" style="margin-top:20px;"></div>
+      
       </div>
     </section>
   </section>

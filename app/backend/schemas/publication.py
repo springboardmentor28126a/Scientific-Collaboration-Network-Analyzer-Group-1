@@ -4,6 +4,9 @@ from pydantic import BaseModel
 class PublicationCreate(BaseModel):
     researcher_id: int
     title: str
+    authors: str | None = None
+    abstract: str | None = None
+    citation_count: int = 0
     publication_type: str
     publication_name: str
     publication_year: int
@@ -16,6 +19,9 @@ class PublicationResponse(BaseModel):
     id: int
     researcher_id: int
     title: str
+    authors: str | None = None
+    abstract: str | None = None
+    citation_count: int = 0
     publication_type: str
     publication_name: str
     publication_year: int
