@@ -1,0 +1,170 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<section class="workspace">
+
+    <!-- ========================================= -->
+    <!-- Page Header -->
+    <!-- ========================================= -->
+
+    <section class="page-header">
+
+        <div>
+
+            <p class="eyebrow">
+                Search Researchers
+            </p>
+
+            <h1>
+                Search Results
+            </h1>
+
+            <p class="subtle">
+
+                {% if query %}
+
+                    Showing results for
+                    <strong>"{{ query }}"</strong>
+
+                {% else %}
+
+                    Search researchers stored in the Scientific Collaboration Network database.
+
+                {% endif %}
+
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ========================================= -->
+    <!-- Search Results -->
+    <!-- ========================================= -->
+
+    {% if researchers %}
+
+    <div class="search-results">
+
+        {% for researcher in researchers %}
+
+        <div class="panel search-card">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>{{ researcher.full_name }}</h2>
+
+                </div>
+
+            </div>
+
+            <table class="table table-borderless mb-0">
+
+                <tr>
+
+                    <th width="180">
+                        Institution
+                    </th>
+
+                    <td>
+                        {{ researcher.institution or "-" }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <th>
+                        Department
+                    </th>
+
+                    <td>
+                        {{ researcher.department or "-" }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <th>
+                        Research Interest
+                    </th>
+
+                    <td>
+                        {{ researcher.research_interest or "-" }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <th>
+                        Skills
+                    </th>
+
+                    <td>
+                        {{ researcher.skills or "-" }}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <th>
+                        Affiliations
+                    </th>
+
+                    <td>
+                        {{ researcher.affiliations or "-" }}
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="panel">
+
+        <div class="panel-heading">
+
+            <div>
+
+                <h2>
+                    No Results Found
+                </h2>
+
+                <p>
+
+                    No researchers matched your search.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="{{ url_for('static', path='js/search.js') }}"></script>
+
+{% endblock %}
