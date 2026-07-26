@@ -1,50 +1,296 @@
 {% extends "layout.html" %}
 
 {% block content %}
-  <section class="workspace">
+
+<section class="workspace">
+
+    <!-- ========================= -->
+    <!-- Page Header -->
+    <!-- ========================= -->
+
     <section class="page-header">
-      <div>
-        <p class="eyebrow">Reports and Audit</p>
-        <h1>Analytics, exports, and activity records</h1>
-        <p class="subtle">Review publication analytics, research summaries, collaboration statistics, and security activity.</p>
-      </div>
+
+        <div>
+
+            <p class="eyebrow">
+
+                Reports & Analytics
+
+            </p>
+
+            <h1>
+
+                Reports Dashboard
+
+            </h1>
+
+            <p class="subtle">
+
+                Research analytics, publication statistics and institutional insights.
+
+            </p>
+
+        </div>
+
+        <button
+            id="refreshDashboard"
+            class="panel-link">
+
+            Refresh Dashboard
+
+        </button>
+
     </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Summary Cards -->
+    <!-- ========================= -->
+
+    <section class="metric-grid">
+
+        <div class="metric">
+
+            <span>
+
+                Researchers
+
+            </span>
+
+            <strong id="researchersCount">
+
+                0
+
+            </strong>
+
+        </div>
+
+        <div class="metric">
+
+            <span>
+
+                Publications
+
+            </span>
+
+            <strong id="publicationsCount">
+
+                0
+
+            </strong>
+
+        </div>
+
+        <div class="metric">
+
+            <span>
+
+                Projects
+
+            </span>
+
+            <strong id="projectsCount">
+
+                0
+
+            </strong>
+
+        </div>
+
+        <div class="metric">
+
+            <span>
+
+                Collaborations
+
+            </span>
+
+            <strong id="collaborationsCount">
+
+                0
+
+            </strong>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Charts -->
+    <!-- ========================= -->
 
     <section class="panel-grid">
-      <div class="panel wide" id="reports">
-        <div class="panel-heading">
-          <div>
-            <h2>Reports</h2>
-            <p>Publication analytics, research summaries, and collaboration statistics.</p>
-          </div>
-          <button id="refreshReports" type="button">Refresh</button>
-        </div>
-        <div class="report-grid">
-          <pre id="publicationReport">Loading...</pre>
-          <pre id="researchReport">Loading...</pre>
-          <pre id="collaborationReport">Loading...</pre>
-        </div>
-      </div>
 
-      <div class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Audit Logs</h2>
-            <p>User activity, publication history, project logs, and security records.</p>
-          </div>
+        <!-- Publications by Year -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>
+
+                        Publications by Year
+
+                    </h2>
+
+                    <p>
+
+                        Publication distribution across years.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div style="height:300px;">
+
+                <canvas id="publicationYearChart"></canvas>
+
+            </div>
+
         </div>
-        <form class="form-grid" id="auditForm">
-          <input name="user_id" type="number" placeholder="User ID">
-          <input name="action" placeholder="Action" required>
-          <input name="module" placeholder="Module" required>
-          <input name="details" placeholder="Details">
-          <button type="submit">Add audit log</button>
-        </form>
-      </div>
+
+
+
+        <!-- Researchers by Institution -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>
+
+                        Researchers by Institution
+
+                    </h2>
+
+                    <p>
+
+                        Institution-wise researcher distribution.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div style="height:300px;">
+
+                <canvas id="institutionChart"></canvas>
+
+            </div>
+
+        </div>
+        <!-- ========================= -->
+        <!-- Publications by Status -->
+        <!-- ========================= -->
+
+        <div class="panel wide">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>
+
+                        Publications by Status
+
+                    </h2>
+
+                    <p>
+
+                        Current publication status distribution.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div style="height:250px;">
+
+                <canvas id="statusChart"></canvas>
+
+            </div>
+
+        </div>
+
     </section>
-  </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Top Institutions -->
+    <!-- ========================= -->
+
+    <section class="panel wide">
+
+        <div class="panel-heading">
+
+            <div>
+
+                <h2>
+
+                    Top Institutions
+
+                </h2>
+
+                <p>
+
+                    Institution-wise researcher distribution.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Institution</th>
+
+                        <th>Researchers</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="institutionTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</section>
+
 {% endblock content %}
 
+
+
 {% block scripts %}
-  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="{{ url_for('static', path='js/report.js') }}"></script>
+
 {% endblock scripts %}
