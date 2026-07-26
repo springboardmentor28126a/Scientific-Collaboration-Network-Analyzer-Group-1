@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.backend.database.database import get_db
-# from app.models.collaboration import Collaboration, PublicationAuthor
-# from app.models.conference import Conference, ConferenceParticipation
+# from app.backend.models.collaboration import Collaboration, PublicationAuthor
+# from app.backend.models.conference import Conference, ConferenceParticipation
 from app.backend.models.institution import Institution
-# from app.models.project import ProjectAssignment, ResearchProject
-# from app.models.publication import Publication
+# from app.backend.models.project import ProjectAssignment, ResearchProject
+# from app.backend.models.publication import Publication
 from app.backend.models.researcher import Researcher
 from app.backend.models.user import User
 

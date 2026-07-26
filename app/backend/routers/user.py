@@ -4,7 +4,7 @@ from app.backend.utils.security import verify_access_token
 
 
 from fastapi import HTTPException
-from app.backend.schemas.user import UserLogin, UserUpdate
+from app.backend.schemas.user import UserLogin
 from app.backend.utils.security import (
     verify_password,
     create_access_token,
@@ -86,57 +86,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             detail="Invalid or expired token"
         )
 
-    return _user_response(email)
-
-
-def _user_response(email: str, db: Session | None = None):
-    owns_session = db is None
-    db = db or SessionLocal()
-    try:
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        return {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "role": user.role,
-            "image_path": "/static/media/profile_pic.jpg",
-        }
-    finally:
-        if owns_session:
-            db.close()
-
-
-@router.patch("/{user_id}")
-def update_user(
-    user_id: int,
-    updated_user: UserUpdate,
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-):
-    email = verify_access_token(token)
-    user = db.query(User).filter(User.id == user_id).first()
-    if not email or not user or user.email != email:
-        raise HTTPException(status_code=403, detail="Not authorized to update this user")
-
-    user.username = updated_user.username
-    user.email = updated_user.email
-    db.commit()
-    db.refresh(user)
-    return _user_response(user.email, db)
-
-
-@router.delete("/{user_id}", status_code=204)
-def delete_user(
-    user_id: int,
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-):
-    email = verify_access_token(token)
-    user = db.query(User).filter(User.id == user_id).first()
-    if not email or not user or user.email != email:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this user")
-
-    db.delete(user)
-    db.commit()
+    return {
+        "message": "Token is valid",
+        "email": email
+    }
