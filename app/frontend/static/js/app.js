@@ -1,6 +1,10 @@
-let currentPage = 1;
+let conferenceCurrentPage = 1;
+let publicationCurrentPage = 1;
 const pageSize = 5;
+
 let editingConferenceId = null;
+let editingPublicationId = null;
+let editingCitationId = null;
 const toastElement = document.getElementById("appToast");
 const toast = toastElement ? new bootstrap.Toast(toastElement) : null;
 
@@ -85,18 +89,35 @@ async function bindPublicationForm()
     console.log(formData.get("pdf_file"));
 
     try {
-      const response = await fetch("/publications/", {
-        method: "POST",
-        body: formData,
+      let url = "/publications/";
+      let method = "POST";
+
+      if (editingPublicationId !== null) {
+      url = `/publications/${editingPublicationId}`;
+      method = "PUT";
+      }
+
+      const response = await fetch(url, {
+    method: method,
+    body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add publication");
-      }
+    const error = await response.json();
+    throw new Error(error.detail);
+}
 
       form.reset();
-      showToast("Success", "Publication added.");
-      await loadAll();
+
+if (editingPublicationId === null) {
+    showToast("Success", "Publication added.");
+} else {
+    showToast("Success", "Publication updated.");
+    editingPublicationId = null;
+}
+
+await loadAll();
+await loadPublications();
 
     } catch (error) {
       showToast("Error", error.message);
@@ -181,11 +202,26 @@ async function loadConferences() {
     const sortOrder = document.getElementById("sortOrder").value;
 
     // Get filtered conferences
-   const skip = (currentPage - 1) * pageSize;
+   const skip = (conferenceCurrentPage - 1) * pageSize;
 
 let conferences = await api(
     `/conferences/filter?name=${encodeURIComponent(name)}&organizer=${encodeURIComponent(organizer)}&location=${encodeURIComponent(location)}&skip=${skip}&limit=${pageSize}`
 );
+const prevBtn = document.getElementById("conferencePrevPage");
+const nextBtn = document.getElementById("conferenceNextPage");
+const pageNumber = document.getElementById("conferencePageNumber");
+
+if (prevBtn) {
+    prevBtn.disabled = conferenceCurrentPage === 1;
+}
+
+if (nextBtn) {
+    nextBtn.disabled = conferences.length < pageSize;
+}
+
+if (pageNumber) {
+    pageNumber.textContent = `Page ${conferenceCurrentPage}`;
+}
 
     // Sort conferences on frontend
     conferences.sort((a, b) => {
@@ -304,6 +340,74 @@ async function loadAll() {
         loadConferences()
     ]);
 }
+
+async function loadPublications(page = publicationCurrentPage) {
+    try {
+
+        const publications = await api(
+            `/publications?page=${page}&limit=${pageSize}`
+        );
+
+        const prevBtn = document.getElementById("publicationPrevPage");
+        const nextBtn = document.getElementById("publicationNextPage");
+        const pageNumber = document.getElementById("publicationPageNumber");
+
+        if (prevBtn) prevBtn.disabled = page === 1;
+        if (nextBtn) nextBtn.disabled = publications.length < pageSize;
+
+        if (pageNumber) {
+            pageNumber.textContent = `Page ${page}`;
+        }
+
+        const results = document.getElementById("searchResults");
+
+        if (!results) return;
+
+        if (publications.length === 0) {
+            results.innerHTML = "<p><strong>No publications found.</strong></p>";
+            return;
+        }
+
+        results.innerHTML = publications.map((publication) => `
+            <div class="panel" style="margin-top:10px;">
+
+                <h3>${publication.title}</h3>
+
+                <p><strong>Authors:</strong> ${publication.authors}</p>
+
+                <p><strong>Abstract:</strong> ${publication.abstract}</p>
+
+                <p><strong>Citation Count:</strong> ${publication.citation_count}</p>
+
+                <p><strong>Publication Type:</strong> ${publication.publication_type}</p>
+
+                <p><strong>Publication Name:</strong> ${publication.publication_name}</p>
+
+                <p><strong>Status:</strong> ${publication.status}</p>
+
+                <p><strong>Year:</strong> ${publication.publication_year}</p>
+
+                <p><strong>DOI:</strong> ${publication.doi}</p>
+
+                <div style="margin-top:10px;">
+                    <button onclick="window.editPublication(${publication.id})">
+                        Edit
+                    </button>
+
+                    <button onclick="window.deletePublication(${publication.id})">
+                        Delete
+                    </button>
+                </div>
+
+            </div>
+        `).join("");
+
+    } catch (error) {
+        showToast("Error", error.message);
+    }
+}
+
+
 async function searchPublications() {
   console.log("Search button clicked");
   console.log("TEST APP.JS");
@@ -530,6 +634,79 @@ async function deleteConference(id) {
     }
 
 }
+
+window.deletePublication = async function(publicationId) {
+
+    try {
+
+        const confirmed = confirm(
+            "Are you sure you want to delete this publication?"
+        );
+
+        if (!confirmed) return;
+
+        await api(`/publications/${publicationId}`, {
+            method: "DELETE"
+        });
+
+        showToast("Success", "Publication deleted successfully.");
+
+        await loadPublications();
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+}
+
+window.editPublication = async function(publicationId) {
+
+    try {
+
+        const publication = await api(`/publications/${publicationId}`);
+
+        editingPublicationId = publication.id;
+
+        document.querySelector("#publicationForm input[name='researcher_id']").value =
+            publication.researcher_id;
+
+        document.querySelector("#publicationForm input[name='title']").value =
+            publication.title;
+
+        document.querySelector("#publicationForm input[name='authors']").value =
+            publication.authors;
+
+        document.querySelector("#publicationForm textarea[name='abstract']").value =
+            publication.abstract ?? "";
+
+        document.querySelector("#publicationForm input[name='citation_count']").value =
+            publication.citation_count;
+
+        document.querySelector("#publicationForm select[name='publication_type']").value =
+            publication.publication_type;
+
+        document.querySelector("#publicationForm input[name='publication_name']").value =
+            publication.publication_name;
+
+        document.querySelector("#publicationForm input[name='publication_year']").value =
+            publication.publication_year;
+
+        document.querySelector("#publicationForm input[name='doi']").value =
+            publication.doi ?? "";
+
+        document.querySelector("#publicationForm select[name='status']").value =
+            publication.status;
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+}
+
 async function editConference(id) {
 
     const conference = await api(`/conferences/${id}`);
@@ -612,6 +789,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         await loadAll();
+        await loadPublications();
     } catch (error) {
         showToast("Load error", error.message);
     }
@@ -658,23 +836,50 @@ document.addEventListener("DOMContentLoaded", async () => {
         ?.addEventListener("change", loadConferences);
     // Pagination
 
-document.getElementById("nextPage")
-    ?.addEventListener("click", function () {
+// Conference pagination
+document.getElementById("conferenceNextPage")
+?.addEventListener("click", function () {
 
-        currentPage++;
+    conferenceCurrentPage++;
+    loadConferences();
+
+});
+
+document.getElementById("conferencePrevPage")
+?.addEventListener("click", function () {
+
+    if (conferenceCurrentPage > 1) {
+        conferenceCurrentPage--;
         loadConferences();
+    }
 
-    });
+});
 
-document.getElementById("prevPage")
-    ?.addEventListener("click", function () {
+// =========================
+// Publication pagination
+// =========================
 
-        if (currentPage > 1) {
-            currentPage--;
-            loadConferences();
-        }
+document.getElementById("publicationNextPage")
+?.addEventListener("click", async () => {
 
-    });
+    publicationCurrentPage++;
+
+    await loadPublications(publicationCurrentPage);
+
+});
+
+document.getElementById("publicationPrevPage")
+?.addEventListener("click", async () => {
+
+    if (publicationCurrentPage > 1) {
+
+        publicationCurrentPage--;
+
+        await loadPublications(publicationCurrentPage);
+
+    }
+
+});
 
     // Institution Search & Filter Buttons
 document.getElementById("institutionSearchBtn")
