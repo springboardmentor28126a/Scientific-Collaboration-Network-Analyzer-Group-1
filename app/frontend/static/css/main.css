@@ -280,24 +280,77 @@ pre {
     grid-template-columns: 1fr;
   }
 }
-.table {
-    border-radius: 10px;
-    overflow: hidden;
-    font-size: 15px;
+.search-box{
+    width:190px;
+    background:#ffffff;
+    border-radius:20px;
+    overflow:hidden;
+    border:1px solid #d9dee7;
 }
 
-.table th {
-    background: #198754;
-    color: white;
-    text-align: center;
-    padding: 12px;
+.search-box .form-control{
+    border:none;
+    box-shadow:none;
+    font-size:13px;
+    padding:6px 10px;
 }
 
-.table td {
-    padding: 12px;
-    vertical-align: middle;
+.search-box .form-control:focus{
+    box-shadow:none;
 }
 
-.table tbody tr:hover {
-    background: #f2fdf7;
+.search-box .input-group-text{
+    border:none;
+    background:#ffffff;
+    padding:6px 10px;
+}
+/* ==========================================
+   Search Module
+========================================== */
+
+.search-results{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+}
+
+.search-card{
+    padding:20px;
+}
+
+.search-card table{
+    margin-top:10px;
+}
+
+.search-card th{
+    width:170px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink);
+    padding:8px 0;
+}
+
+.search-card td{
+    font-size:14px;
+    color:var(--muted);
+    padding:8px 0;
+}
+
+.search-card h2{
+    margin:0;
+    font-size:22px;
+}
+
+.search-card:hover{
+    border-color:#0f766e;
+}
+
+@media(max-width:900px){
+
+.search-results{
+
+grid-template-columns:1fr;
+
+}
+
 }
