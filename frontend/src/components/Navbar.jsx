@@ -1,17 +1,66 @@
-function Navbar() {
-  return (
-    <nav>
-        
-      <h2>SciNexus</h2>
+import { Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  UserCheck,
+  Settings
+} from "lucide-react";
 
-      <div>
-        <a href="#">Home</a>
-        <a href="#">Dashboard</a>
-        <a href="#">Analysis</a>
-        <a href="#">About</a>
+
+function Navbar() {
+
+  return (
+
+    <aside className="sidebar">
+
+
+      <h2 className="logo">
+        SciNexus
+      </h2>
+
+
+      <div className="sidebar-links">
+
+
+        <Link to="/dashboard">
+          <LayoutDashboard size={20}/>
+          Dashboard
+        </Link>
+
+
+        <Link to="/researchers">
+          <Users size={20}/>
+          Researchers
+        </Link>
+
+
+        <Link to="/institutions">
+          <Building2 size={20}/>
+          Institutions
+        </Link>
+
+
+        <Link to="/reviewers">
+          <UserCheck size={20}/>
+          Reviewers
+        </Link>
+
+
+        <Link to="/admin">
+          <Settings size={20}/>
+          Admin
+        </Link>
+
+
       </div>
-    </nav>
+
+
+    </aside>
+
   );
+
 }
+
 
 export default Navbar;

@@ -992,3 +992,779 @@ button:hover {
     0 0 10px rgba(59,130,246,0.8);
 
 }
+/* ==============================
+   FULL SCREEN WIDE APP LAYOUT
+   ============================== */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+/* Main page container */
+.page-container,
+.dashboard-container,
+.content-container {
+  width: 100%;
+  max-width: none;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+
+/* Make cards spread instead of staying in center */
+.card-container,
+.cards-container,
+.grid-container {
+  width: 100%;
+}
+
+
+/* Responsive full width */
+@media (max-width: 768px) {
+
+  .page-container,
+  .dashboard-container,
+  .content-container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+}
+/* ==============================
+   INSTITUTION MANAGEMENT PAGE
+   ============================== */
+
+
+.institution-page {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  padding: 40px;
+}
+
+
+/* Header */
+
+.institution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+
+.institution-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+
+/* Add institution button */
+
+.add-institution-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+
+/* Institution cards grid */
+
+.institution-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+}
+
+
+/* Individual cards */
+
+.institution-card {
+
+  width: 100%;
+  padding: 25px;
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.05);
+
+  border: 1px solid rgba(255,255,255,0.1);
+
+  backdrop-filter: blur(10px);
+
+  transition: 0.3s ease;
+}
+
+
+.institution-card:hover {
+
+  transform: translateY(-5px);
+
+}
+
+
+/* Institution title */
+
+.institution-card h2 {
+
+  font-size: 22px;
+  margin-bottom: 15px;
+
+}
+
+
+/* Details */
+
+.institution-card p {
+
+  margin: 8px 0;
+  opacity: 0.85;
+
+}
+
+
+/* Empty state */
+
+.no-institution {
+
+  width:100%;
+  text-align:center;
+  padding:50px;
+  font-size:18px;
+
+}
+/* ==============================
+   NAVBAR DESIGN
+   ============================== */
+
+.navbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 20px 40px;
+
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(12px);
+
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+}
+
+
+.nav-links a {
+
+  color: white;
+  text-decoration: none;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  transition: 0.3s;
+}
+
+
+.nav-links a:hover {
+
+  opacity: 0.7;
+
+}
+/* ==============================
+   PROFESSIONAL LEFT SIDEBAR
+   ============================== */
+
+
+.sidebar {
+
+  position: fixed;
+  left: 0;
+  top: 0;
+
+  width: 240px;
+  height: 100vh;
+
+  background: #160b12;
+
+  padding: 25px 15px;
+
+  display: flex;
+  flex-direction: column;
+
+  border-right: 1px solid rgba(255,255,255,0.08);
+
+}
+
+
+/* Logo */
+
+.logo {
+
+  color: #f5d0d0;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  padding-left:15px;
+
+  margin-bottom:45px;
+
+}
+
+
+
+/* Menu */
+
+.sidebar-links {
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:8px;
+
+}
+
+
+
+/* Links */
+
+.sidebar-links a {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:15px;
+
+  padding:14px 18px;
+
+  color:#d1b8c0;
+
+  text-decoration:none;
+
+  font-size:16px;
+
+  border-radius:10px;
+
+  transition:0.3s;
+
+}
+
+
+/* Hover */
+
+.sidebar-links a:hover {
+
+  background:#5a1f35;
+
+  color:white;
+
+  transform:translateX(5px);
+
+}
+
+
+
+/* Active feeling */
+
+.sidebar-links a:focus {
+
+
+  background:#374151;
+
+  color:white;
+
+}
+
+
+
+/* Content area */
+
+.container {
+
+  margin-left:240px;
+
+  width:calc(100% - 240px);
+
+  min-height:100vh;
+
+  padding:40px;
+
+}
+/* =================================
+   SCI NEXUS INSTITUTION MANAGEMENT
+   ================================= */
+
+
+.institutions-page {
+
+    margin-left:240px;
+
+    padding:40px;
+
+    min-height:100vh;
+
+    background:#090909;
+
+    color:white;
+
+}
+
+
+/* HEADER */
+
+.page-header {
+
+    display:flex;
+
+    align-items:center;
+
+    gap:20px;
+
+    margin-bottom:35px;
+
+}
+
+
+.page-header svg {
+
+    color:#8b1e3f;
+
+}
+
+
+.page-header h1 {
+
+    margin:0;
+
+    font-size:36px;
+
+    color:#f5d0d0;
+
+}
+
+
+.page-header p {
+
+    color:#b9a5ac;
+
+    margin-top:8px;
+
+}
+
+
+
+/* FORM BOX */
+
+.institution-form {
+
+
+    background:#160b12;
+
+
+    padding:30px;
+
+
+    border-radius:18px;
+
+
+    border:1px solid rgba(255,255,255,0.08);
+
+
+    margin-bottom:30px;
+
+
+}
+
+
+
+.institution-form h2 {
+
+
+    color:#f5d0d0;
+
+
+    margin-bottom:25px;
+
+
+}
+
+
+
+.institution-form form {
+
+
+    display:grid;
+
+
+    grid-template-columns:repeat(2,1fr);
+
+
+    gap:18px;
+
+
+}
+
+
+
+.institution-form input {
+
+
+    background:#090909;
+
+
+    border:1px solid #3b1a27;
+
+
+    padding:14px;
+
+
+    border-radius:10px;
+
+
+    color:white;
+
+
+    font-size:15px;
+
+
+}
+
+
+
+.institution-form input:focus {
+
+
+    outline:none;
+
+
+    border-color:#8b1e3f;
+
+
+}
+
+
+
+.institution-form button {
+
+
+    grid-column:span 2;
+
+
+    background:#8b1e3f;
+
+
+    color:white;
+
+
+    border:none;
+
+
+    padding:14px;
+
+
+    border-radius:10px;
+
+
+    font-size:16px;
+
+
+    cursor:pointer;
+
+
+}
+
+
+
+.institution-form button:hover {
+
+
+    background:#b8325b;
+
+
+}
+
+
+
+
+
+/* SEARCH */
+
+
+.search-box {
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:12px;
+
+
+    background:#160b12;
+
+
+    padding:15px 20px;
+
+
+    border-radius:14px;
+
+
+    margin-bottom:25px;
+
+
+}
+
+
+
+.search-box svg {
+
+
+    color:#b8325b;
+
+
+}
+
+
+
+.search-box input {
+
+
+    flex:1;
+
+
+    background:none;
+
+
+    border:none;
+
+
+    color:white;
+
+
+    font-size:16px;
+
+
+}
+
+
+.search-box input:focus {
+
+
+    outline:none;
+
+
+}
+
+
+
+
+
+/* TABLE CONTAINER */
+
+
+.institution-table-container {
+
+
+    background:#160b12;
+
+
+    padding:25px;
+
+
+    border-radius:18px;
+
+
+    overflow-x:auto;
+
+
+}
+
+
+
+/* TABLE */
+
+
+.institution-table {
+
+
+    width:100%;
+
+
+    border-collapse:collapse;
+
+
+}
+
+
+
+.institution-table th {
+
+
+    text-align:left;
+
+
+    padding:15px;
+
+
+    color:#f5d0d0;
+
+
+    border-bottom:1px solid #3b1a27;
+
+
+}
+
+
+
+.institution-table td {
+
+
+    padding:15px;
+
+
+    color:#d6c2c8;
+
+
+    border-bottom:1px solid rgba(255,255,255,0.05);
+
+
+}
+
+
+
+.institution-table tr:hover {
+
+
+    background:#21121a;
+
+
+}
+
+
+
+
+
+/* ACTION BUTTONS */
+
+
+.action-buttons {
+
+
+    display:flex;
+
+
+    gap:10px;
+
+
+}
+
+
+
+.edit-btn,
+.delete-btn {
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:6px;
+
+
+    border:none;
+
+
+    padding:8px 14px;
+
+
+    border-radius:8px;
+
+
+    cursor:pointer;
+
+
+    color:white;
+
+
+}
+
+
+
+.edit-btn {
+
+
+    background:#5a1f35;
+
+
+}
+
+
+
+.delete-btn {
+
+
+    background:#8b1e3f;
+
+
+}
+
+
+
+.edit-btn:hover {
+
+
+    background:#7a2948;
+
+
+}
+
+
+
+.delete-btn:hover {
+
+
+    background:#b8325b;
+
+
+}
