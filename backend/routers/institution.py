@@ -74,7 +74,7 @@ def search_institutions(
             "address": inst.address,
             "city": inst.city,
             "district": inst.district,
-            "pincode": getattr(inst, "pincode", None),
+           # "pincode": getattr(inst, "pincode", None),
             "institution_type": inst.institution_type,
             "state": inst.state,
             "country": inst.country,
@@ -252,29 +252,23 @@ def institution_details(
         "conferences": conferences,
     }
 
-# ===========================
-# Get All Institutions
-# ===========================
-
-# ===========================
-# Get All Institutions
-# ===========================
-
 @router.get("/")
 def get_institutions(
     db: Session = Depends(get_db)
 ):
-    institutions = db.query(Institution).all()
+    print("1. Route entered")
+
+    print("2. Before query")
+    institution = db.query(Institution).limit(100).all()
+    print("3. After query")
 
     result = []
 
     for inst in institutions:
-
+        print(f"Processing {inst.id}")
         researcher_count = (
             db.query(User)
-            .filter(
-                User.institution_name.ilike(f"%{inst.name}%")
-            )
+            .filter(User.institution_name.ilike(f"%{inst.name}%"))
             .count()
         )
 
@@ -291,17 +285,17 @@ def get_institutions(
             "description": inst.description,
             "aishe_code": inst.aishe_code,
             "district": inst.district,
-            "pincode": inst.pincode,
             "institution_type": inst.institution_type,
             "researcher_count": researcher_count
         })
 
+    print("4. Returning response")
     return result
-
-
 # ===========================
 # Get Institution by ID
-# ===========================
+# ==========================
+
+
 
 @router.get(
     "/{institution_id}",
@@ -311,15 +305,13 @@ def get_institution(
     institution_id: int,
     db: Session = Depends(get_db)
 ):
-
-    institution = db.query(
-        Institution
-    ).filter(
-        Institution.id == institution_id
-    ).first()
+    institution = (
+        db.query(Institution)
+        .filter(Institution.id == institution_id)
+        .first()
+    )
 
     if not institution:
-
         raise HTTPException(
             status_code=404,
             detail="Institution not found"

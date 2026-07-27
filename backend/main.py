@@ -56,17 +56,9 @@ app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(search.router)
 
-app.include_router(
-    conference.router,
-    prefix="/conference",
-    tags=["Conference"]
-)
+app.include_router(conference.router,prefix="/conference",tags=["Conference"])
 
-app.include_router(
-    institution.router,
-    prefix="/institution",
-    tags=["Institution"]
-)
+app.include_router(institution.router,prefix="/institution",tags=["Institution"])
 
 
 @app.get("/")
