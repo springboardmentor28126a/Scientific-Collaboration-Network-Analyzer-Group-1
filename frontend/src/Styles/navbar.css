@@ -1,0 +1,46 @@
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+    height:75px;
+    padding:0 25px;
+    background:#111;
+    border-bottom:1px solid #2c2c2c;
+    box-sizing:border-box;
+}
+
+.navbar-logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:30px;
+    font-weight:700;
+    color:#ff3b3b;
+}
+
+.navbar-right{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-end;
+    gap:20px;
+}
+
+.status,
+.user,
+.date{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+    color:white;
+}
+
+.status{
+    color:#22c55e;
+}
+
+.date{
+    color:#9ca3af;
+}
