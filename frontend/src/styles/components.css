@@ -1,0 +1,109 @@
+/* ===============================
+   Card
+================================ */
+
+.app-card{
+
+    background:var(--card-color);
+
+    border-radius:var(--radius-lg);
+
+    box-shadow:var(--shadow-md);
+
+    border:none;
+
+    transition:var(--transition);
+
+}
+
+.app-card:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:var(--shadow-lg);
+
+}
+
+/* ===============================
+   Buttons
+================================ */
+
+.btn-primary{
+
+    background:var(--primary-color);
+
+    border:none;
+
+}
+
+.btn-primary:hover{
+
+    background:var(--primary-hover);
+
+}
+
+/* ===============================
+   Form Controls
+================================ */
+
+.form-control,
+
+.form-select{
+
+    border-radius:12px;
+
+    padding:12px;
+
+}
+
+.form-control:focus,
+
+.form-select:focus{
+
+    border-color:var(--primary-color);
+
+    box-shadow:0 0 0 .2rem rgba(37,99,235,.15);
+
+}
+
+/* ===============================
+   Tables
+================================ */
+
+.table{
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+}
+
+.table thead{
+
+    background:#eef4ff;
+
+}
+
+/* ==================================
+   Dashboard Statistics
+================================== */
+
+.app-card {
+
+    transition: all 0.3s ease;
+
+}
+
+.app-card:hover {
+
+    transform: translateY(-5px);
+
+}
+
+.app-card a {
+
+    color: var(--primary-color);
+
+    font-size: 14px;
+
+}

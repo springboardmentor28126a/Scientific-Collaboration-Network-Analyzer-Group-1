@@ -1,0 +1,39 @@
+body{
+
+    background:var(--background-color);
+
+    color:var(--text-color);
+
+    font-family:'Inter',sans-serif;
+
+}
+
+.page-title{
+
+    font-size:30px;
+
+    font-weight:700;
+
+    color:var(--heading-color);
+
+}
+
+.section-title{
+
+    font-size:20px;
+
+    font-weight:600;
+
+}
+
+.page-container{
+
+    padding:30px;
+
+}
+
+.content-card{
+
+    padding:30px;
+
+}
