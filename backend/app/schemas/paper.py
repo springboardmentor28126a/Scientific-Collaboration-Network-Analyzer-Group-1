@@ -8,6 +8,9 @@ class PaperCreate(BaseModel):
     keywords: str
     publication_year: int
     journal: str
+    publication_type: str
+    publication_status: str
+    pdf_file: str
 
 
 class PaperUpdate(BaseModel):
@@ -17,6 +20,9 @@ class PaperUpdate(BaseModel):
     keywords: str
     publication_year: int
     journal: str
+    publication_type: str
+    publication_status: str
+    pdf_file: str
 
 
 class PaperResponse(BaseModel):
@@ -27,6 +33,9 @@ class PaperResponse(BaseModel):
     keywords: str
     publication_year: int
     journal: str
+    publication_type: str
+    publication_status: str
+    pdf_file: str
 
     class Config:
         from_attributes = True

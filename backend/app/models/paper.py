@@ -19,3 +19,9 @@ class Paper(Base):
     publication_year = Column(Integer, nullable=False)
 
     journal = Column(String(255), nullable=True)
+
+    publication_type = Column(String(100), nullable=False)
+
+    publication_status = Column(String(50), nullable=False)
+
+    pdf_file = Column(String(255), nullable=True)
