@@ -32,13 +32,13 @@ def send_request(
             detail="You cannot send a request to yourself."
         )
 
-    existing = db.query(CollaborationRequest).filter(
-
-        CollaborationRequest.sender_id == request.sender_id,
-
-        CollaborationRequest.receiver_id == request.receiver_id
-
-    ).first()
+    existing = db.query(
+    CollaborationRequest
+).filter(
+    CollaborationRequest.sender_id == request.sender_id,
+    CollaborationRequest.receiver_id == request.receiver_id,
+    CollaborationRequest.status == "Pending"
+).first()
 
     if existing:
 
@@ -88,11 +88,11 @@ def received_requests(
         )
 
         .filter(
-            CollaborationRequest.receiver_id == user_id
-        )
-
-        .all()
-
+    CollaborationRequest.receiver_id == user_id,
+    CollaborationRequest.status == "Pending"
+)
+       .order_by(CollaborationRequest.created_at.desc())
+.all()
     )
 
     result = []
@@ -127,6 +127,108 @@ def received_requests(
         })
 
     return result
+@router.get("/sent/{user_id}")
+def sent_requests(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    requests = (
+        db.query(
+            CollaborationRequest,
+            User
+        )
+        .join(
+            User,
+            User.id == CollaborationRequest.receiver_id
+        )
+        .filter(
+    CollaborationRequest.sender_id == user_id,
+    CollaborationRequest.status == "Pending"
+)
+        .order_by(
+            CollaborationRequest.created_at.desc()
+        )
+        .all()
+    )
+
+    result = []
+
+    for request, user in requests:
+
+        result.append({
+
+            "id": request.id,
+
+            "receiver_id": request.receiver_id,
+
+            "receiver_name": user.name,
+
+            "receiver_email": user.email,
+
+            "institution": user.institution_name or "",
+
+            "department": user.department or "",
+
+            "research_interest": user.research_interests or "",
+
+            "status": request.status,
+
+            "message": request.message,
+
+            "created_at": request.created_at
+
+        })
+
+    return result
+@router.get("/sent/{user_id}")
+def sent_requests(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    requests = (
+        db.query(
+            CollaborationRequest,
+            User
+        )
+        .join(
+            User,
+            User.id == CollaborationRequest.receiver_id
+        )
+        .filter(
+    CollaborationRequest.sender_id == user_id
+)
+        .order_by(CollaborationRequest.created_at.desc())
+        .all()
+    )
+
+    result = []
+
+    for request, user in requests:
+
+        result.append({
+
+            "id": request.id,
+
+            "receiver_id": request.receiver_id,
+
+            "receiver_name": user.name,
+
+            "receiver_email": user.email,
+
+            "institution": user.institution_name or "",
+
+            "department": user.department or "",
+
+            "status": request.status,
+
+            "message": request.message,
+
+            "created_at": request.created_at
+
+        })
+
+    return result
+
 @router.put("/accept/{request_id}")
 def accept_request(
     request_id: int,
@@ -146,29 +248,64 @@ def accept_request(
             detail="Request not found"
         )
 
+    # Allow only pending requests
+    if request.status != "Pending":
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Request already {request.status.lower()}."
+        )
+
     # Update request status
     request.status = "Accepted"
 
-    # Create collaboration
-    collaboration = Collaboration(
+    # Check whether collaboration already exists
+    existing = db.query(
+        Collaboration
+    ).filter(
 
-        user1_id=request.sender_id,
+        (
+            (Collaboration.user1_id == request.sender_id) &
+            (Collaboration.user2_id == request.receiver_id)
+        ) |
 
-        user2_id=request.receiver_id
+        (
+            (Collaboration.user1_id == request.receiver_id) &
+            (Collaboration.user2_id == request.sender_id)
+        )
 
-    )
+    ).first()
 
-    db.add(collaboration)
+    # Create collaboration only if it doesn't already exist
+    if not existing:
 
-    db.commit()
+        collaboration = Collaboration(
 
-    db.refresh(collaboration)
+            user1_id=request.sender_id,
+
+            user2_id=request.receiver_id
+
+        )
+
+        db.add(collaboration)
+
+        db.commit()
+
+        db.refresh(collaboration)
+
+        collaboration_id = collaboration.id
+
+    else:
+
+        db.commit()
+
+        collaboration_id = existing.id
 
     return {
 
         "message": "Request Accepted Successfully",
 
-        "collaboration_id": collaboration.id
+        "collaboration_id": collaboration_id
 
     }
 @router.put("/reject/{request_id}")
@@ -190,13 +327,20 @@ def reject_request(
             detail="Request not found"
         )
 
+    if request.status != "Pending":
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Request already {request.status.lower()}."
+        )
+
     request.status = "Rejected"
 
     db.commit()
 
     return {
 
-        "message": "Request Rejected"
+        "message": "Request Rejected Successfully"
 
     }
 

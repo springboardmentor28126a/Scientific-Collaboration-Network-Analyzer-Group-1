@@ -6,7 +6,7 @@ from backend.database.models import Institution, Publication, User, Conference
 from backend.schemas.institution import (
     InstitutionCreate,
     InstitutionUpdate,
-    InstitutionResponse
+    InstitutionResponse,
 )
 
 router = APIRouter()

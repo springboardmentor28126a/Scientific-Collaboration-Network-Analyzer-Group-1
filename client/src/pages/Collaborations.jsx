@@ -8,43 +8,290 @@ function Collaborations() {
         localStorage.getItem("user")
     );
 
-    const [collaborations, setCollaborations] = useState([]);
+    const [sentRequests, setSentRequests] = useState([]);
+
+const [receivedRequests, setReceivedRequests] = useState([]);
+
+const [collaborations, setCollaborations] = useState([]);
 
     useEffect(() => {
 
-        loadCollaborations();
+    loadDashboard();
 
-    }, []);
+}, []);
 
-    const loadCollaborations = async () => {
+   const loadDashboard = async () => {
 
-        try {
+    try {
 
-            const response = await api.get(
-                `/collaboration/list/${user.id}`
-            );
+        const [sent, received, collabs] = await Promise.all([
 
-            setCollaborations(response.data);
+            api.get(`/collaboration/sent/${user.id}`),
 
-        }
+            api.get(`/collaboration/received/${user.id}`),
 
-        catch (error) {
+            api.get(`/collaboration/list/${user.id}`)
 
-            console.log(error);
+        ]);
 
-        }
+        setSentRequests(sent.data);
 
-    };
+        setReceivedRequests(received.data);
 
+        setCollaborations(collabs.data);
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
+    const acceptRequest = async (requestId) => {
+
+    try {
+
+        await api.put(
+            `/collaboration/accept/${requestId}`
+        );
+
+        loadDashboard();
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
+
+const rejectRequest = async (requestId) => {
+
+    try {
+
+        await api.put(
+            `/collaboration/reject/${requestId}`
+        );
+
+        loadDashboard();
+
+    }
+
+    catch (error) {
+
+        console.log(error);
+
+    }
+
+};
     return (
+    <div>
 
-        <div>
-            <h1 style={{ color: "var(--text)" }}>My Collaborations</h1>
+        <h1 style={{ color: "var(--text)", marginBottom: "30px" }}>
+            Collaboration Dashboard
+        </h1>
 
-            {collaborations.length === 0 ? (
-                <h3 style={{ color: "var(--muted)" }}>No Collaborations Yet</h3>
+        {/* ===================== SENT REQUESTS ===================== */}
+
+        <h2 style={{ color: "var(--text)" }}>
+            📤 Sent Requests
+        </h2>
+
+        {
+            sentRequests.length === 0 ? (
+
+                <p style={{ color: "var(--muted)" }}>
+                    No Sent Requests
+                </p>
+
             ) : (
+
+                sentRequests.map((request) => (
+
+                    <div
+                        key={request.id}
+                        style={{
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
+                            padding: "20px",
+                            borderRadius: "12px",
+                            marginBottom: "20px",
+                            boxShadow: "var(--shadow)",
+                            color: "var(--text)"
+                        }}
+                    >
+
+                        <h3>{request.receiver_name}</h3>
+
+                        <p>🏫 {request.institution}</p>
+
+                        <p>💻 {request.department}</p>
+
+                        <p>📨 {request.message}</p>
+
+                        <p>
+                            Status :
+                            <strong
+                                style={{
+                                    color:
+                                        request.status === "Pending"
+                                            ? "orange"
+                                            : request.status === "Accepted"
+                                            ? "green"
+                                            : "red",
+                                    marginLeft: "8px"
+                                }}
+                            >
+                                {request.status}
+                            </strong>
+                        </p>
+
+                    </div>
+
+                ))
+
+            )
+        }
+
+        {/* ===================== RECEIVED REQUESTS ===================== */}
+
+        <h2
+            style={{
+                color: "var(--text)",
+                marginTop: "40px"
+            }}
+        >
+            📥 Received Requests
+        </h2>
+
+        {
+            receivedRequests.length === 0 ? (
+
+                <p style={{ color: "var(--muted)" }}>
+                    No Incoming Requests
+                </p>
+
+            ) : (
+
+                receivedRequests.map((request) => (
+
+                    <div
+                        key={request.id}
+                        style={{
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
+                            padding: "20px",
+                            borderRadius: "12px",
+                            marginBottom: "20px",
+                            boxShadow: "var(--shadow)",
+                            color: "var(--text)"
+                        }}
+                    >
+
+                        <h3>{request.sender_name}</h3>
+
+                        <p>🏫 {request.institution}</p>
+
+                        <p>💻 {request.department}</p>
+
+                        <p>📨 {request.message}</p>
+
+                        <p>
+                            Status :
+                            <strong
+                                style={{
+                                    color:
+                                        request.status === "Pending"
+                                            ? "orange"
+                                            : request.status === "Accepted"
+                                            ? "green"
+                                            : "red",
+                                    marginLeft: "8px"
+                                }}
+                            >
+                                {request.status}
+                            </strong>
+                        </p>
+
+                        {/* Buttons will work in the next step */}
+
+                        {
+                            request.status === "Pending" && (
+
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: "10px",
+                                        marginTop: "15px"
+                                    }}
+                                >
+
+                                  <button
+    onClick={() => acceptRequest(request.id)}
+    style={{
+        background: "#16a34a",
+        color: "white",
+        border: "none",
+        padding: "10px 18px",
+        borderRadius: "8px",
+        cursor: "pointer"
+    }}
+>
+    Accept
+</button>
+
+                                   <button
+    onClick={() => rejectRequest(request.id)}
+    style={{
+        background: "#dc2626",
+        color: "white",
+        border: "none",
+        padding: "10px 18px",
+        borderRadius: "8px",
+        cursor: "pointer"
+    }}
+>
+    Reject
+</button>
+
+                                </div>
+
+                            )
+                        }
+
+                    </div>
+
+                ))
+
+            )
+        }
+
+        {/* ===================== MY COLLABORATIONS ===================== */}
+
+        <h2
+            style={{
+                color: "var(--text)",
+                marginTop: "40px"
+            }}
+        >
+            🤝 My Collaborations
+        </h2>
+
+        {
+            collaborations.length === 0 ? (
+
+                <h3 style={{ color: "var(--muted)" }}>
+                    No Collaborations Yet
+                </h3>
+
+            ) : (
+
                 collaborations.map((person) => (
+
                     <div
                         key={person.id}
                         style={{
@@ -54,24 +301,38 @@ function Collaborations() {
                             borderRadius: "12px",
                             marginBottom: "20px",
                             boxShadow: "var(--shadow)",
-                            color: "var(--text)",
+                            color: "var(--text)"
                         }}
                     >
-                        <h2 style={{ color: "var(--text)" }}>{person.name}</h2>
-                        <p style={{ color: "var(--muted)" }}>🏫 {person.institution}</p>
-                        <p style={{ color: "var(--muted)" }}>💻 {person.department}</p>
-                        <p style={{ color: "var(--muted)" }}>🔬 {person.research_interest}</p>
+
+                        <h2>{person.name}</h2>
+
+                        <p>🏫 {person.institution}</p>
+
+                        <p>💻 {person.department}</p>
+
+                        <p>🔬 {person.research_interest}</p>
+
                         <button
-                            onClick={() => navigate(`/workspace/${person.id}`)}
-                            style={{ marginTop: "12px" }}
+                            onClick={() =>
+                                navigate(`/workspace/${person.id}`)
+                            }
+                            style={{
+                                marginTop: "12px"
+                            }}
                         >
                             Open Workspace
                         </button>
+
                     </div>
+
                 ))
-            )}
-        </div>
-    );
+
+            )
+        }
+
+    </div>
+);
 
 }
 

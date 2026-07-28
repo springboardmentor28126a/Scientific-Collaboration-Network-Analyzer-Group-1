@@ -20,14 +20,25 @@ function SearchResearch() {
 
 
   useEffect(() => {
+    console.log("Institutions state:", institutions);
+  }, [institutions]);
+
+  useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
 
         const pubs = await API.get("/publications/");
         const researchersRes = await API.get("/researcher/all");
-        const institutionsRes = await API.get("/institution/");
-        const conferencesRes = await API.get("/conference/");
+        // const institutionsRes = await API.get("/institution/");
+        
+              const institutionsRes = await API.get("/institution/search", {
+        params: {
+          q: search,
+          limit: 20,
+        },
+      });
+      const conferencesRes = await API.get("/conference/");
 
         setPublications(pubs.data);
         setResearchers(researchersRes.data);
@@ -41,7 +52,7 @@ function SearchResearch() {
     };
 
     loadData();
-  }, []);
+  }, [search]);
 
   const normalizedSearch = search.toLowerCase().trim();
 
@@ -72,17 +83,34 @@ function SearchResearch() {
     });
   }, [activeSection, normalizedSearch, researchers]);
 
-  const filteredInstitutions = useMemo(() => {
-    if (activeSection !== "Institutions") return [];
-    if (!normalizedSearch) return institutions;
+  // const filteredInstitutions = useMemo(() => {
+  //   if (activeSection !== "Institutions") return [];
+  //   if (!normalizedSearch) return institutions;
 
-    return institutions.filter((i) => {
-      return (
-        i?.name?.toLowerCase().includes(normalizedSearch) ||
-        `${i?.city || ""} ${i?.country || ""}`.toLowerCase().includes(normalizedSearch)
-      );
-    });
-  }, [activeSection, normalizedSearch, institutions]);
+  //   return institutions.filter((i) => {
+  //     return (
+  //       i?.name?.toLowerCase().includes(normalizedSearch) ||
+  //       `${i?.city || ""} ${i?.country || ""}`.toLowerCase().includes(normalizedSearch)
+  //     );
+  //   });
+  // }, [activeSection, normalizedSearch, institutions]);
+
+  const filteredInstitutions = useMemo(() => {
+  if (activeSection !== "All" && activeSection !== "Institutions") {
+    return [];
+  }
+
+  if (!normalizedSearch) {
+    return institutions;
+  }
+
+  return institutions.filter((i) => (
+    i?.name?.toLowerCase().includes(normalizedSearch) ||
+    `${i?.city || ""} ${i?.country || ""}`
+      .toLowerCase()
+      .includes(normalizedSearch)
+  ));
+}, [activeSection, normalizedSearch, institutions]);
 
   const filteredConferences = useMemo(() => {
     if (activeSection !== "Conferences") return [];

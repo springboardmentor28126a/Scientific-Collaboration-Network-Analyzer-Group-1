@@ -192,7 +192,7 @@ class Institution(Base):
         DateTime,
         default=datetime.utcnow
     )
-
+    pincode = Column(String)
     researchers = relationship("User", back_populates="institution")
     publications = relationship("Publication", back_populates="institution")
 class CollaborationRequest(Base):

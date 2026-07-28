@@ -11,30 +11,25 @@ function InstitutionSearch({ value, onSelect, disabled }) {
     setInstitutions([]); // Don't show suggestions when profile loads
 }, [value]);
 
-    useEffect(() => {
-    console.log("Query changed:", query);
+  useEffect(() => {
+    const search = query.trim();
 
-    if (query.length < 2) {
-        console.log("Query too short");
+    if (search.length < 2) {
         setInstitutions([]);
         return;
     }
 
     const timer = setTimeout(async () => {
         try {
-            console.log("Calling institution search API...");
-
             setLoading(true);
 
             const res = await api.get(
-                `/institution/search?q=${query}&limit=10`
+                `/institution/search?q=${encodeURIComponent(search)}&limit=10`
             );
-
-            console.log("API Response:", res.data);
 
             setInstitutions(res.data);
         } catch (err) {
-            console.error("API Error:", err);
+            console.error(err);
             setInstitutions([]);
         } finally {
             setLoading(false);
@@ -44,7 +39,6 @@ function InstitutionSearch({ value, onSelect, disabled }) {
     return () => clearTimeout(timer);
 
 }, [query]);
-
     return (
         <div style={{ position: "relative" }}>
 
