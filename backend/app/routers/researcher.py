@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["Researcher Management"]
 )
 
-@router.post("/")
+@router.post("/", response_model=ResearcherResponse)
 def create_researcher(
     researcher: ResearcherCreate,
     db: Session = Depends(get_db)
@@ -31,31 +31,35 @@ def create_researcher(
         )
 
     new_researcher = Researcher(
-        name=researcher.name,
-        email=researcher.email,
-        university=researcher.university,
-        department=researcher.department,
-        research_interests=researcher.research_interests,
-        skills=researcher.skills,
-        bio=researcher.bio
-    )
+    name=researcher.name,
+    email=researcher.email,
+    university=researcher.university,
+    department=researcher.department,
+    designation=researcher.designation,
+    experience=researcher.experience,
+    phone=researcher.phone,
+    research_interests=researcher.research_interests,
+    skills=researcher.skills,
+    bio=researcher.bio
+)
 
     db.add(new_researcher)
     db.commit()
     db.refresh(new_researcher)
+    return new_researcher
 
     return {
         "message": "Researcher created successfully"
     }
 
-@router.get("/")
+@router.get("/", response_model=list[ResearcherResponse])
 def get_all_researchers(
     db: Session = Depends(get_db)
 ):
     researchers = db.query(Researcher).all()
     return researchers
 
-@router.get("/{researcher_id}")
+@router.get("/{researcher_id}", response_model=ResearcherResponse)
 def get_researcher(
     researcher_id: int,
     db: Session = Depends(get_db)
@@ -72,7 +76,7 @@ def get_researcher(
         )
 
     return researcher
-@router.put("/{researcher_id}")
+@router.put("/{researcher_id}", response_model=ResearcherResponse)
 def update_researcher(
     researcher_id: int,
     updated_researcher: ResearcherUpdate,
@@ -93,16 +97,17 @@ def update_researcher(
     researcher.email = updated_researcher.email
     researcher.university = updated_researcher.university
     researcher.department = updated_researcher.department
+    researcher.designation = updated_researcher.designation
+    researcher.experience = updated_researcher.experience
+    researcher.phone = updated_researcher.phone
     researcher.research_interests = updated_researcher.research_interests
     researcher.skills = updated_researcher.skills
     researcher.bio = updated_researcher.bio
 
     db.commit()
     db.refresh(researcher)
+    return researcher
 
-    return {
-        "message": "Researcher updated successfully"
-    }
 @router.delete("/{researcher_id}")
 def delete_researcher(
     researcher_id: int,

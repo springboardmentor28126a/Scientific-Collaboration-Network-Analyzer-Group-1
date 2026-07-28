@@ -6,6 +6,9 @@ class ResearcherCreate(BaseModel):
     email: EmailStr
     university: str
     department: str
+    designation: str
+    experience: int
+    phone: str
     research_interests: str
     skills: str
     bio: str
@@ -17,6 +20,9 @@ class ResearcherResponse(BaseModel):
     email: EmailStr
     university: str
     department: str
+    designation: str
+    experience: int
+    phone: str
     research_interests: str
     skills: str
     bio: str
@@ -30,6 +36,9 @@ class ResearcherUpdate(BaseModel):
     email: EmailStr
     university: str
     department: str
+    designation: str
+    experience: int
+    phone: str
     research_interests: str
     skills: str
     bio: str
