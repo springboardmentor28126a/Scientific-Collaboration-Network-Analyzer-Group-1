@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function Signup() {
-    console.log("Signup Loaded");
   const navigate = useNavigate();
 
   const [full_name, setFullName] = useState("");
@@ -11,7 +10,6 @@ function Signup() {
   const [password, setPassword] = useState("");
 
   const handleSignup = async () => {
-    console.log("Register button clicked");
     try {
       const response = await api.post("/auth/register", {
         full_name,
@@ -32,55 +30,131 @@ function Signup() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Scientific Collaboration Network Analyzer</h1>
+    <div
+      style={{
+        height: "100vh",
+        background: "linear-gradient(135deg,#2563eb,#1e3a8a)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "420px",
+          background: "white",
+          padding: "40px",
+          borderRadius: "15px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+          textAlign: "center",
+        }}
+      >
+        <h1
+          style={{
+            color: "#2563eb",
+            fontSize: "42px",
+            lineHeight: "1.2",
+            marginBottom: "10px",
+            fontWeight: "bold",
+          }}
+        >
+          Scientific
+          <br />
+          Collaboration
+        </h1>
 
-      <h2>Signup</h2>
+        <p
+          style={{
+            color: "#555",
+            marginBottom: "30px",
+            fontSize: "18px",
+          }}
+        >
+          Network Analyzer
+        </p>
 
-      <input
-        type="text"
-        placeholder="Full Name"
-        value={full_name}
-        onChange={(e) => setFullName(e.target.value)}
-      />
+        <h2 style={{ marginBottom: "25px" }}>
+          Create Account
+        </h2>
 
-      <br />
-      <br />
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={full_name}
+          onChange={(e) => setFullName(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "14px",
+            marginBottom: "15px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "15px",
+            boxSizing: "border-box",
+          }}
+        />
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <input
+          type="email"
+          placeholder="Enter Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "14px",
+            marginBottom: "15px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "15px",
+            boxSizing: "border-box",
+          }}
+        />
 
-      <br />
-      <br />
+        <input
+          type="password"
+          placeholder="Enter Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "14px",
+            marginBottom: "25px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "15px",
+            boxSizing: "border-box",
+          }}
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <button
+          onClick={handleSignup}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Register
+        </button>
 
-      <br />
-      <br />
-
-      <button
-  onClick={() => {
-    alert("Button Clicked");
-    console.log("Button Clicked");
-    handleSignup();
-  }}
->
-  Register
-</button>
-
-      <p>
-        Already have an account?{" "}
-        <Link to="/">Login</Link>
-      </p>
+        <p style={{ marginTop: "20px" }}>
+          Already have an account?{" "}
+          <Link
+            to="/"
+            style={{
+              color: "#2563eb",
+              textDecoration: "none",
+              fontWeight: "bold",
+            }}
+          >
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
