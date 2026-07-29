@@ -15,12 +15,6 @@ from backend.schemas.group_invitation import (
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 
-from models import (
-    ResearchGroup,
-    ResearchGroupMember,
-    GroupInvitation,
-    User
-)
 
 router = APIRouter(
     prefix="/group-invitations",

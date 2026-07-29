@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import joinedload
-from models import ResearchGroup, ResearchGroupMember, User
-from schemas.research_group import ResearchGroupDetailsResponse
+from sqlalchemy.orm import Session, joinedload
+
 from backend.database.database import get_db
 from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
 from backend.database.models import User
+
 from backend.schemas.research_group import (
     ResearchGroupCreate,
     ResearchGroupResponse,
     GroupMemberResponse,
-    MyGroupResponse
+    MyGroupResponse,
+    ResearchGroupDetailsResponse
 )
 
 router = APIRouter(
