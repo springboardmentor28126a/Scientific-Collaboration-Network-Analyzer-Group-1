@@ -346,7 +346,19 @@ def get_publication_details(publication_id: int, db: Session = Depends(get_db)):
         ]
     }
 
+@router.get("/user/{user_id}")
+def get_user_publications(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    publications = (
+        db.query(Publication)
+        .filter(Publication.researcher_id == user_id)
+        .order_by(Publication.uploaded_at.desc())
+        .all()
+    )
 
+    return publications
 # ---------------- DELETE ----------------
 @router.delete("/{publication_id}")
 def delete_publication(

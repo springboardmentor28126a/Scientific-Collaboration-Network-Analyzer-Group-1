@@ -1,12 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from backend.database.database import get_db
-from backend.database.models import (
-    Publication,
-    Collaboration,
-)
+from backend.database.models import Publication
+from backend.models.research_group_member import ResearchGroupMember
 
 router = APIRouter(
     prefix="/dashboard",
@@ -20,30 +17,36 @@ def dashboard_stats(
     db: Session = Depends(get_db)
 ):
 
-    publications = db.query(Publication).filter(
-        Publication.researcher_id == user_id
-    ).count()
+    # Total publications by the user
+    publications = (
+        db.query(Publication)
+        .filter(Publication.researcher_id == user_id)
+        .count()
+    )
 
-    collaborations = db.query(Collaboration).filter(
-        (Collaboration.user1_id == user_id) |
-        (Collaboration.user2_id == user_id)
-    ).count()
+    # Total research groups joined
+    groups = (
+        db.query(ResearchGroupMember)
+        .filter(ResearchGroupMember.user_id == user_id)
+        .count()
+    )
 
-    pending_reviews = db.query(Publication).filter(
-        Publication.researcher_id == user_id,
-        Publication.status == "Submitted"
-    ).count()
+    # Publications awaiting review
+    pending_reviews = (
+        db.query(Publication)
+        .filter(
+            Publication.researcher_id == user_id,
+            Publication.status == "Submitted"
+        )
+        .count()
+    )
 
+    # Placeholder until citation tracking is implemented
     citations = 0
 
     return {
-
         "publications": publications,
-
-        "collaborations": collaborations,
-
+        "groups": groups,
         "citations": citations,
-
         "pending_reviews": pending_reviews
-
     }

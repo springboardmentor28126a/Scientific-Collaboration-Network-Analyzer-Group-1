@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from backend.schemas.researcher import ResearcherCreate, ResearcherResponse
 from backend.database.database import get_db
-from backend.database.models import User, Publication, Conference, Collaboration
+from backend.database.models import User, Publication, Conference
 
 router = APIRouter(
     prefix="/researcher",
@@ -154,21 +154,7 @@ def get_profile(
         Conference.id.in_(conference_ids)
     ).all() if conference_ids else []
 
-    collaborations = db.query(Collaboration).filter(
-        (Collaboration.user1_id == user_id) |
-        (Collaboration.user2_id == user_id)
-    ).all()
-
-    collaborator_ids = {
-        collaboration.user2_id
-        if collaboration.user1_id == user_id
-        else collaboration.user1_id
-        for collaboration in collaborations
-    }
-
-    collaborators = db.query(User).filter(
-        User.id.in_(collaborator_ids)
-    ).all() if collaborator_ids else []
+    collaborators = []
 
     return {
         "id": user.id,
@@ -194,10 +180,10 @@ def get_profile(
         "google_scholar": user.google_scholar or "",
         "profile_photo": "",
         "statistics": {
-            "publications": len(publications),
-            "conferences": len(conferences),
-            "collaborations": len(collaborators)
-        },
+    "publications": len(publications),
+    "conferences": len(conferences),
+    "groups": 0
+},
         "publications": [
             {
                 "id": publication.id,
