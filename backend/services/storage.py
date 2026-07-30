@@ -1,0 +1,85 @@
+import os
+from pathlib import Path
+from uuid import uuid4
+
+from dotenv import load_dotenv
+from supabase import create_client
+
+# ---------------------------------------------------
+# Load backend/.env
+# ---------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / ".env"
+
+print(f"[Storage] Looking for .env at: {ENV_PATH}")
+print(f"[Storage] .env exists: {ENV_PATH.exists()}")
+
+load_dotenv(dotenv_path=ENV_PATH)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+print(f"[Storage] SUPABASE_URL Loaded: {SUPABASE_URL is not None}")
+print(f"[Storage] SUPABASE_KEY Loaded: {SUPABASE_KEY is not None}")
+
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL not found in backend/.env")
+
+if not SUPABASE_KEY:
+    raise ValueError("SUPABASE_KEY not found in backend/.env")
+
+# ---------------------------------------------------
+# Supabase Client
+# ---------------------------------------------------
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+BUCKET = "group-files"
+
+# ---------------------------------------------------
+# Upload File
+# ---------------------------------------------------
+
+def upload_file(folder: str, file):
+
+    extension = file.filename.split(".")[-1]
+
+    unique_name = f"{uuid4()}.{extension}"
+
+    storage_path = f"{folder}/{unique_name}"
+
+    file.file.seek(0)
+
+    supabase.storage.from_(BUCKET).upload(
+        path=storage_path,
+        file=file.file.read(),
+        file_options={
+            "content-type": file.content_type
+        }
+    )
+
+    return storage_path
+
+
+# ---------------------------------------------------
+# Delete File
+# ---------------------------------------------------
+
+def delete_file(storage_path: str):
+
+    supabase.storage.from_(BUCKET).remove([storage_path])
+
+
+# ---------------------------------------------------
+# Generate Signed URL
+# ---------------------------------------------------
+
+def get_signed_url(storage_path: str, expires_in: int = 3600):
+
+    response = supabase.storage.from_(BUCKET).create_signed_url(
+        storage_path,
+        expires_in
+    )
+
+    return response["signedURL"]

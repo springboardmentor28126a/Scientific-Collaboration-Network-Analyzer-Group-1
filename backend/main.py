@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-import os
+# from fastapi.staticfiles import StaticFiles
+# import os
 
 from backend.database.database import Base, engine
 import backend.database.models
@@ -18,12 +18,15 @@ from backend.routers import institution
 from backend.routers import meeting
 from backend.routers import research_group
 from backend.routers import group_invitation
-
+from backend.routers import group_file
 # Import models so SQLAlchemy creates tables
 from backend.models.meeting import Meeting
 from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
 from backend.models.group_invitation import GroupInvitation
+from backend.models.group_file import GroupFile
+
+
 
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer",
@@ -32,13 +35,13 @@ app = FastAPI(
 )
 
 # Upload folder
-os.makedirs("uploads/papers", exist_ok=True)
+# os.makedirs("uploads/papers", exist_ok=True)
 
-app.mount(
-    "/uploads",
-    StaticFiles(directory="uploads"),
-    name="uploads"
-)
+# app.mount(
+#     "/uploads",
+#     StaticFiles(directory="uploads"),
+#     name="uploads"
+# )
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -94,7 +97,7 @@ app.include_router(
     prefix="/institution",
     tags=["Institution"]
 )
-
+app.include_router(group_file.router)
 # Home
 @app.get("/")
 def home():

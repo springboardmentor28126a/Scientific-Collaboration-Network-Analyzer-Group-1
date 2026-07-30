@@ -46,6 +46,11 @@ class ResearchGroup(Base):
         back_populates="group",
         cascade="all, delete-orphan"
     )
+    files = relationship(
+    "GroupFile",
+    back_populates="group",
+    cascade="all, delete-orphan"
+)
 
     chats = relationship(
         "ChatMessage",

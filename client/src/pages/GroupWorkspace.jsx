@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 
-function GroupWorkspace() {
+import GroupOverview from "../components/groupWorkspace/GroupOverview";
+import GroupMembers from "../components/groupWorkspace/GroupMembers";
+import GroupChat from "../components/groupWorkspace/GroupChat";
+import GroupMeetings from "../components/groupWorkspace/GroupMeetings";
+import GroupFiles from "../components/groupWorkspace/GroupFiles";
+import GroupAnalytics from "../components/groupWorkspace/GroupAnalytics";
+
+export default function GroupWorkspace() {
 
     const { groupId } = useParams();
 
@@ -14,7 +21,7 @@ function GroupWorkspace() {
 
         loadGroup();
 
-    }, []);
+    }, [groupId]);
 
     const loadGroup = async () => {
 
@@ -34,98 +41,99 @@ function GroupWorkspace() {
 
     };
 
-    if (!group)
-        return <h2>Loading...</h2>;
+    if (!group) return <h2>Loading...</h2>;
 
     return (
 
-        <div style={{ padding: "30px" }}>
+        <div
+            style={{
+                padding: "30px",
+                maxWidth: "1200px",
+                margin: "0 auto"
+            }}
+        >
 
-            <h1>{group.name}</h1>
+            <div
+                style={{
+                    background: "#fff",
+                    borderRadius: "15px",
+                    padding: "25px",
+                    boxShadow: "0 5px 15px rgba(0,0,0,.08)"
+                }}
+            >
 
-            <p>{group.description}</p>
+                <h1>{group.name}</h1>
 
-            <p><b>Created By:</b> {group.created_by_name}</p>
+                <p>{group.description}</p>
 
-            <p><b>Members:</b> {group.member_count}</p>
+                <div
+                    style={{
+                        display: "flex",
+                        gap: "30px",
+                        marginTop: "20px"
+                    }}
+                >
+                    <span>👤 {group.created_by_name}</span>
 
-            <hr />
+                    <span>👥 {group.member_count} Members</span>
+
+                    <span>
+                        📅 {new Date(group.created_at).toLocaleDateString()}
+                    </span>
+
+                </div>
+
+            </div>
 
             <div
                 style={{
                     display: "flex",
                     gap: "15px",
-                    marginBottom: "20px"
+                    marginTop: "30px",
+                    marginBottom: "25px"
                 }}
             >
 
-                <button onClick={() => setActiveTab("overview")}>
-                    Overview
-                </button>
+                <button onClick={() => setActiveTab("overview")}>Overview</button>
 
-                <button onClick={() => setActiveTab("members")}>
-                    Members
-                </button>
+                <button onClick={() => setActiveTab("members")}>Members</button>
 
-                <button onClick={() => setActiveTab("chat")}>
-                    Chat
-                </button>
+                <button onClick={() => setActiveTab("chat")}>Chat</button>
 
-                <button onClick={() => setActiveTab("meetings")}>
-                    Meetings
-                </button>
+                <button onClick={() => setActiveTab("meetings")}>Meetings</button>
 
-                <button onClick={() => setActiveTab("files")}>
-                    Files
-                </button>
+                <button onClick={() => setActiveTab("files")}>Files</button>
 
-                <button onClick={() => setActiveTab("analytics")}>
-                    Analytics
-                </button>
+                <button onClick={() => setActiveTab("analytics")}>Analytics</button>
 
             </div>
 
-            {activeTab === "overview" && (
-                <div>
-                    <h2>Group Overview</h2>
+            {activeTab === "overview" &&
+                <GroupOverview group={group} />
+            }
 
-                    <p>{group.description}</p>
-                </div>
-            )}
+            {activeTab === "members" &&
+                <GroupMembers groupId={groupId} />
+            }
 
-            {activeTab === "members" && (
-                <div>
-                    Members page coming next...
-                </div>
-            )}
+            {activeTab === "chat" &&
+                <GroupChat groupId={groupId} />
+            }
 
-            {activeTab === "chat" && (
-                <div>
-                    Chat page coming next...
-                </div>
-            )}
+            {activeTab === "meetings" &&
+                <GroupMeetings groupId={groupId} />
+            }
 
-            {activeTab === "meetings" && (
-                <div>
-                    Meetings page coming next...
-                </div>
-            )}
+            {activeTab === "files" &&
+                <GroupFiles groupId={groupId} />
+            }
 
-            {activeTab === "files" && (
-                <div>
-                    Files page coming next...
-                </div>
-            )}
-
-            {activeTab === "analytics" && (
-                <div>
-                    Analytics page coming next...
-                </div>
-            )}
+            {activeTab === "analytics" &&
+                <GroupAnalytics groupId={groupId} />
+            }
 
         </div>
 
     );
-}
 
-export default GroupWorkspace;
+}

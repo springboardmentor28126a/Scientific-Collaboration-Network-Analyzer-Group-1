@@ -4,7 +4,6 @@ import { useState } from "react";
 function ResearcherCard({ researcher }) {
     const [showInviteModal, setShowInviteModal] = useState(false);
 const [groupStatus, setGroupStatus] = useState([]);
-const [selectedGroup, setSelectedGroup] = useState("");
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
 const loadAvailableGroups = async () => {
@@ -139,37 +138,7 @@ const sendInvitation = async (groupId) => {
                     Invite <b>{researcher.name}</b> to one of your groups.
                 </p>
 
-                <select
-                    value={selectedGroup}
-                    onChange={(e) =>
-                        setSelectedGroup(e.target.value)
-                    }
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        marginTop: "15px",
-                        marginBottom: "20px"
-                    }}
-                >
-
-                    <option value="">
-                        Select Research Group
-                    </option>
-
-                    {
-                        myGroups.map(group => (
-
-                            <option
-                                key={group.id}
-                                value={group.id}
-                            >
-                                {group.name}
-                            </option>
-
-                        ))
-                    }
-
-                </select>
+            
 
                 <div
     style={{

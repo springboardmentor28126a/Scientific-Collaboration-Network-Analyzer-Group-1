@@ -57,10 +57,23 @@ class User(Base):
     publications = relationship("Publication", back_populates="researcher")
     skills = Column(String, nullable=True)
     bio = Column(String, nullable=True)
+
     created_groups = relationship(
-    "ResearchGroup",
-    back_populates="creator"
-)
+        "ResearchGroup",
+        back_populates="creator"
+    )
+
+    meetings_created = relationship(
+        "Meeting",
+        back_populates="creator"
+    )
+
+    uploaded_files = relationship(
+        "GroupFile",
+        back_populates="uploader",
+        cascade="all, delete-orphan"
+    )
+
 class Publication(Base):
     __tablename__ = "publications"
 

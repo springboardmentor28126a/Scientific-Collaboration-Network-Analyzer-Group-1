@@ -23,9 +23,7 @@ import ConferenceOrganization from "./pages/ConferenceOrganization";
 import InstitutionManagement from "./pages/InstitutionManagement";
 import InstitutionDetails from "./pages/InstitutionDetails";
 import InstitutionDashboard from "./pages/InstitutionDashboard";
-import GroupChat from "./pages/GroupChat";
 import ResearchGroups from "./pages/ResearchGroups";
-import GroupDetails from "./pages/GroupDetails";
 import Invitations from "./pages/Invitations";
 import GroupWorkspace from "./pages/GroupWorkspace";
 
@@ -73,15 +71,8 @@ function App() {
                     <Route path="/collaborations" element={<Collaborations />} />
                     <Route path="/workspace/:id" element={<Workspace />} />
                     <Route path="/chat/:id" element={<Chat />} />
-                    <Route path="/groups/:groupId/chat" element={<GroupChat />} />
-                    <Route
-    path="/groups"
-    element={<ResearchGroups />}
-/>
-<Route
-    path="/groups/:groupId"
-    element={<GroupDetails />}
-/>
+                    
+                    <Route path="/groups"element={<ResearchGroups />}/>
 <Route
     path="/invitations"
     element={<Invitations />}

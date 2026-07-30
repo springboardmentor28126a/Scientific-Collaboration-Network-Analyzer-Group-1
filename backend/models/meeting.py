@@ -15,6 +15,11 @@ class Meeting(Base):
         ForeignKey("research_groups.id", ondelete="CASCADE"),
         nullable=False
     )
+    created_by = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
 
     title = Column(String, nullable=False)
 
@@ -28,6 +33,7 @@ class Meeting(Base):
 
     status = Column(
         String,
+
         default="Scheduled"
     )
 
@@ -35,8 +41,12 @@ class Meeting(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
-
+    
     group = relationship(
         "ResearchGroup",
         back_populates="meetings"
     )
+    creator = relationship(
+    "User",
+    back_populates="meetings_created"
+)
