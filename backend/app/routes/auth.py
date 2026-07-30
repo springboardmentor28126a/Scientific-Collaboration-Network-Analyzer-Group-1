@@ -1,6 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from ..database import get_db
 from ..models import User, UserRole
 from fastapi.security import OAuth2PasswordRequestForm
@@ -12,8 +13,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    normalized_email = str(user.email).strip().lower()
+    normalized_username = user.username.strip()
+    if not normalized_username:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Username cannot be blank")
     db_user = db.query(User).filter(
-        (User.email == user.email) | (User.username == user.username)
+        (User.email == normalized_email) | (User.username == normalized_username)
     ).first()
     
     if db_user:
@@ -27,16 +32,20 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     # Self-registration never grants an elevated role. The request is reviewed
     # by a system administrator after registration.
     db_user = User(
-        email=user.email,
-        username=user.username,
-        full_name=user.full_name,
+        email=normalized_email,
+        username=normalized_username,
+        full_name=user.full_name.strip(),
         hashed_password=hashed_password,
         role=UserRole.RESEARCHER,
         requested_role=requested_role.value if requested_role != UserRole.RESEARCHER else None,
         role_request_status="pending" if requested_role != UserRole.RESEARCHER else "approved",
     )
     db.add(db_user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
     db.refresh(db_user)
     
     return db_user

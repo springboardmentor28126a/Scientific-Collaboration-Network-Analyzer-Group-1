@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .config import settings
 from .database import get_db
-from .models import User
+from .models import User, UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -57,3 +57,12 @@ async def get_current_user(
             detail="This account has been deactivated",
         )
     return user
+
+
+def require_roles(*roles: UserRole):
+    """Dependency factory used by routers to keep role checks consistent."""
+    async def role_guard(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission for this action")
+        return current_user
+    return role_guard

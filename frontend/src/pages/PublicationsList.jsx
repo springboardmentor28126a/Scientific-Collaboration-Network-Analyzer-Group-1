@@ -1,109 +1,14 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import api, { API_BASE_URL } from '../config/api';
+import api from '../config/api';
 import { AuthContext } from '../context/AuthContext';
 
-const normalizeRole = (role) => {
-  if (!role) return '';
-  if (typeof role === 'string') return role.toLowerCase();
-  if (typeof role === 'object' && role?.value) return String(role.value).toLowerCase();
-  return String(role).toLowerCase();
-};
-
-const canAccess = (userRole, allowedRoles = []) => {
-  if (!userRole) return false;
-  if (!allowedRoles || allowedRoles.length === 0) return true;
-  const normalized = normalizeRole(userRole);
-  return allowedRoles.map((r) => normalizeRole(r)).includes(normalized);
-};
-
-const PublicationsList = () => {
-  const [publications, setPublications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const { user } = useContext(AuthContext);
-  const role = user ? normalizeRole(user.role) : null;
-
-  useEffect(() => {
-    const fetchPublications = async () => {
-      try {
-        const response = await api.get('/publications/');
-        setPublications(response.data);
-      } catch (err) {
-        console.error('Failed to fetch publications:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPublications();
-  }, []);
-
-  const updateStatus = async (pub, status) => {
-    try {
-      await api.put(`/publications/${pub.id}`, { ...pub, status });
-      setPublications((items) => items.map((item) => item.id === pub.id ? { ...item, status } : item));
-    } catch (err) { alert(err.response?.data?.detail || 'Unable to update publication'); }
-  };
-  const deletePublication = async (id) => {
-    if (!window.confirm('Delete this publication?')) return;
-    try { await api.delete(`/publications/${id}`); setPublications((items) => items.filter((item) => item.id !== id)); }
-    catch (err) { alert(err.response?.data?.detail || 'Unable to delete publication'); }
-  };
-  const viewReviews = async (id) => {
-    try {
-      const { data } = await api.get(`/reviews/publication/${id}`);
-      alert(data.length ? data.map((review) => `${review.rating || 'No'} stars · ${review.recommendation || 'undecided'}\n${review.comments || 'No comments'}`).join('\n\n') : 'No completed reviews yet.');
-    } catch (err) { alert(err.response?.data?.detail || 'Unable to load reviews'); }
-  };
-
-  if (loading) return <div className="container mt-5"><div className="spinner-border" /></div>;
-
-  const filtered = publications.filter((pub) => (!statusFilter || pub.status === statusFilter) && (!typeFilter || pub.publication_type === typeFilter));
-  const owns = (pub) => role === 'system_admin' || (role === 'researcher' && pub.created_by_id === user?.id);
-  return (
-    <div className="container mt-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Publications</h2>
-        {canAccess(role, ['researcher', 'system_admin']) && (
-          <Link to="/publications/create" className="btn btn-primary">
-            <i className="bi bi-plus-circle"></i> New Publication
-          </Link>
-        )}
-      </div>
-
-      <div className="d-flex gap-2 mb-3">
-        <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="published">Published</option></select>
-        <select className="form-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}><option value="">All types</option><option value="journal">Journal</option><option value="conference">Conference</option><option value="book">Book</option></select>
-      </div>
-      <div className="row">
-        {filtered.length === 0 ? (
-          <p>No publications found.</p>
-        ) : (
-          filtered.map(pub => (
-            <div key={pub.id} className="col-md-6 mb-4">
-              <div className="card h-100 shadow-sm border-0">
-                <div className="card-body">
-                  <h5 className="card-title text-primary">{pub.title}</h5>
-                  <h6 className="card-subtitle mb-2 text-muted">{pub.publication_type} • {pub.status}</h6>
-                  <p className="card-text">{pub.abstract?.substring(0, 100)}...</p>
-                  {pub.file_path && (
-                    <a href={`${API_BASE_URL}${pub.file_path.startsWith('/') ? pub.file_path : `/${pub.file_path.replace(/\\/g, '/')}`}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-secondary">
-                      <i className="bi bi-file-earmark-pdf"></i> View PDF
-                    </a>
-                  )}
-                  {owns(pub) && <div className="mt-3 d-flex gap-2 align-items-center"><select className="form-select form-select-sm" value={pub.status} onChange={(e) => updateStatus(pub, e.target.value)}><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="published">Published</option></select><button className="btn btn-sm btn-outline-secondary" onClick={() => viewReviews(pub.id)}>Reviews</button><button className="btn btn-sm btn-outline-danger" onClick={() => deletePublication(pub.id)}>Delete</button></div>}
-                </div>
-                <div className="card-footer bg-white text-muted small">
-                  Published: {pub.published_date ? new Date(pub.published_date).toLocaleDateString() : 'N/A'}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default PublicationsList;
+export default function PublicationsList() {
+  const [publications,setPublications]=useState([]),[loading,setLoading]=useState(true),[statusFilter,setStatusFilter]=useState(''),[typeFilter,setTypeFilter]=useState(''),[editing,setEditing]=useState(null); const {user}=useContext(AuthContext);
+  const load=async()=>{try{setPublications((await api.get('/publications/')).data)}catch(e){alert(e.response?.data?.detail||'Failed to load publications')}finally{setLoading(false)}};useEffect(()=>{load()},[]);
+  const owns=p=>p.created_by_id===user?.id||user?.role==='system_admin'; const remove=async id=>{if(window.confirm('Delete this publication?'))try{await api.delete(`/publications/${id}`);load()}catch(e){alert(e.response?.data?.detail||'Unable to delete publication')}};
+  const save=async e=>{e.preventDefault();try{await api.put(`/publications/${editing.id}`,{title:editing.title,abstract:editing.abstract,publication_type:editing.publication_type,status:editing.status,published_date:editing.published_date||null});setEditing(null);load()}catch(e){alert(e.response?.data?.detail||'Unable to update publication')}};
+  const viewFile=async p=>{try{const r=await api.get(p.file_path,{responseType:'blob'});window.open(URL.createObjectURL(r.data),'_blank','noopener,noreferrer')}catch(e){alert(e.response?.data?.detail||'Unable to open this file')}};
+  if(loading)return <div className="container mt-5"><div className="spinner-border"/></div>; const filtered=publications.filter(p=>(!statusFilter||p.status===statusFilter)&&(!typeFilter||p.publication_type===typeFilter));
+  return <div className="container mt-5"><div className="d-flex justify-content-between align-items-center mb-4"><h2>Publications</h2>{['researcher','system_admin'].includes(user?.role)&&<Link to="/publications/create" className="btn btn-primary">New Publication</Link>}</div><div className="d-flex gap-2 mb-3"><select className="form-select" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="published">Published</option></select><select className="form-select" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}><option value="">All types</option><option value="journal">Journal</option><option value="conference">Conference</option><option value="book">Book</option></select></div><div className="row">{filtered.map(p=><div key={p.id} className="col-md-6 mb-4"><div className="card h-100 shadow-sm border-0"><div className="card-body"><h5 className="text-primary">{p.title}</h5><div className="text-muted mb-2">{p.publication_type} · {p.status} · {p.citation_count||0} citations</div><p>{p.abstract?.substring(0,150)}...</p>{p.file_path&&<button onClick={()=>viewFile(p)} className="btn btn-sm btn-outline-secondary me-2">View PDF</button>}{owns(p)&&<><button className="btn btn-sm btn-outline-primary me-2" onClick={()=>setEditing({...p,published_date:p.published_date ? p.published_date.slice(0,10):''})}>Edit</button><button className="btn btn-sm btn-outline-danger" onClick={()=>remove(p.id)}>Delete</button></>}</div><div className="card-footer small text-muted">Published: {p.published_date?new Date(p.published_date).toLocaleDateString():'N/A'}</div></div></div>)}{!filtered.length&&<p>No publications found.</p>}</div>{editing&&<div className="modal d-block" style={{background:'rgba(0,0,0,.4)'}}><div className="modal-dialog"><form className="modal-content" onSubmit={save}><div className="modal-header"><h5>Edit publication</h5><button type="button" className="btn-close" onClick={()=>setEditing(null)}/></div><div className="modal-body"><input className="form-control mb-2" value={editing.title} onChange={e=>setEditing({...editing,title:e.target.value})} required/><textarea className="form-control mb-2" rows="5" value={editing.abstract} onChange={e=>setEditing({...editing,abstract:e.target.value})} required/><select className="form-select mb-2" value={editing.publication_type} onChange={e=>setEditing({...editing,publication_type:e.target.value})}><option value="journal">Journal</option><option value="conference">Conference</option><option value="book">Book</option></select><select className="form-select mb-2" value={editing.status} onChange={e=>setEditing({...editing,status:e.target.value})}><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="published">Published</option></select><input type="date" className="form-control" value={editing.published_date||''} onChange={e=>setEditing({...editing,published_date:e.target.value})}/></div><div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="btn btn-primary">Save changes</button></div></form></div></div>}</div>;
+}

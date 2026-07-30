@@ -3,52 +3,10 @@ import { Link } from 'react-router-dom';
 import api from '../config/api';
 
 const AdminDashboard = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await api.get('/admin/users');
-        setUsers(res.data || []);
-      } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to load users');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h3 className="mb-1">Admin Dashboard</h3>
-          <p className="text-muted mb-0">Manage platform users and their access roles.</p>
-        </div>
-        <Link to="/admin/users" className="btn btn-primary"><i className="bi bi-people" /> User Management</Link>
-      </div>
-      {loading && <p>Loading...</p>}
-      {error && <div className="alert alert-danger">{error}</div>}
-      {!loading && !error && (
-        <div>
-          <h5>Users</h5>
-          <ul className="list-group">
-            {users.map((u) => (
-              <li key={u.id} className="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>{u.full_name}</strong> — {u.email}
-                  <div className="text-muted">Role: {u.role}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
+  const [stats, setStats] = useState(null); const [error, setError] = useState('');
+  useEffect(() => { api.get('/dashboard/stats').then((res) => setStats(res.data)).catch((err) => setError(err.response?.data?.detail || 'Failed to load dashboard')); }, []);
+  const cards = [['Total users', stats?.users_count], ['Researchers', stats?.researchers_count], ['Institution admins', stats?.institution_admins_count], ['Reviewers', stats?.reviewers_count], ['Institutions', stats?.institutions_count], ['Publications', stats?.publications_count], ['Conferences', stats?.conferences_count]];
+  return <div className="container py-4"><div className="d-flex justify-content-between align-items-center mb-4"><div><h3 className="mb-1">System administration</h3><p className="text-muted mb-0">Platform overview, access control, and research activity.</p></div><Link to="/admin/users" className="btn btn-primary">User Management</Link></div>
+    {error && <div className="alert alert-danger">{error}</div>}{!stats ? <div className="text-center py-5"><div className="spinner-border" /></div> : <><div className="row g-3 mb-4">{cards.map(([label, value]) => <div className="col-6 col-md-3" key={label}><div className="card h-100 shadow-sm"><div className="card-body"><small className="text-muted">{label}</small><h3 className="mb-0">{value ?? 0}</h3></div></div></div>)}</div><div className="row g-3"><div className="col-md-7"><div className="card"><div className="card-header">Publications by institution</div><ul className="list-group list-group-flush">{stats.publications_by_institution?.length ? stats.publications_by_institution.map((item) => <li className="list-group-item d-flex justify-content-between" key={item.name}>{item.name}<span className="badge bg-primary">{item.count}</span></li>) : <li className="list-group-item text-muted">No publication activity yet.</li>}</ul></div></div><div className="col-md-5"><div className="card"><div className="card-header">Recently joined</div><ul className="list-group list-group-flush">{stats.recent_users?.map((item) => <li className="list-group-item" key={item.id}><strong>{item.name}</strong><br/><small>{item.role.replace('_', ' ')}</small></li>)}</ul></div></div></div></>}</div>;
 };
-
 export default AdminDashboard;

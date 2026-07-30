@@ -149,13 +149,14 @@ const ProfileCreate = () => {
           </div>
 
           <div className="mb-3">
-            <label className="form-label"><i className="bi bi-building"></i> Institution (Optional)</label>
+            <label className="form-label"><i className="bi bi-building"></i> Institution {requestedRole === 'institution_admin' ? '*' : '(Optional)'}</label>
             <select
               className="form-control"
               name="institution_id"
               value={formData.institution_id || ''}
               onChange={handleChange}
               disabled={loading}
+              required={requestedRole === 'institution_admin'}
             >
               <option value="">-- Select Institution --</option>
               {institutions.map((inst) => (

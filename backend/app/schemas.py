@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime, date
-from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus
+from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus, ProjectStatus
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -11,7 +11,14 @@ class UserBase(BaseModel):
     requested_role: Optional[UserRole] = None
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("password")
+    @classmethod
+    def password_not_blank(cls, value: str):
+        if not value.strip():
+            raise ValueError("Password cannot be blank")
+        return value
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -81,11 +88,18 @@ class ResearcherProfileResponse(ResearcherProfileBase):
         from_attributes = True
 
 class PublicationBase(BaseModel):
-    title: str
-    abstract: Optional[str] = None
+    title: str = Field(min_length=3, max_length=500)
+    abstract: str = Field(min_length=10)
     publication_type: PublicationType = PublicationType.JOURNAL
     status: PublicationStatus = PublicationStatus.DRAFT
     published_date: Optional[datetime] = None
+
+    @field_validator("title", "abstract")
+    @classmethod
+    def non_blank(cls, value: str):
+        if not value.strip():
+            raise ValueError("This field cannot be blank")
+        return value.strip()
 
 class PublicationCreate(PublicationBase):
     pass
@@ -95,6 +109,9 @@ class PublicationResponse(PublicationBase):
     file_path: Optional[str] = None
     created_by_id: int
     created_at: datetime
+    updated_at: Optional[datetime] = None
+    creator_name: Optional[str] = None
+    citation_count: int = 0
     
     class Config:
         from_attributes = True
@@ -113,19 +130,24 @@ class ConferenceResponse(ConferenceBase):
     id: int
     created_by_id: int
     created_at: datetime
+    updated_at: Optional[datetime] = None
+    creator_name: Optional[str] = None
     
     class Config:
         from_attributes = True
 
 class ConferenceRegistrationCreate(BaseModel):
-    presentation_title: Optional[str] = None
-    presentation_abstract: Optional[str] = None
+    pass
 
-class ConferenceRegistrationResponse(ConferenceRegistrationCreate):
+class ConferenceRegistrationResponse(BaseModel):
     id: int
     conference_id: int
     user_id: int
     registered_at: datetime
+    full_name: Optional[str] = None
+    institution_name: Optional[str] = None
+    department: Optional[str] = None
+    designation: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -148,6 +170,12 @@ class DashboardStats(BaseModel):
     completed_reviews: int = 0
     researchers_count: int = 0
     collaboration_count: int = 0
+    users_count: int = 0
+    institution_admins_count: int = 0
+    reviewers_count: int = 0
+    institutions_count: int = 0
+    publications_by_institution: List[dict] = []
+    recent_users: List[dict] = []
 
 class Token(BaseModel):
     access_token: str
@@ -173,5 +201,115 @@ class ReviewResponse(ReviewBase):
     status: str
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+
+class ProjectBase(BaseModel):
+    title: str = Field(min_length=3, max_length=500)
+    description: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    status: ProjectStatus = ProjectStatus.PLANNING
+    institution_id: Optional[int] = None
+
+    @field_validator("end_date")
+    @classmethod
+    def valid_dates(cls, end_date, info):
+        start_date = info.data.get("start_date")
+        if start_date and end_date and end_date < start_date:
+            raise ValueError("end_date cannot be earlier than start_date")
+        return end_date
+
+class ProjectCreate(ProjectBase):
+    pass
+
+class ProjectUpdate(ProjectBase):
+    title: Optional[str] = Field(default=None, min_length=3, max_length=500)
+
+class ProjectResponse(ProjectBase):
+    id: int
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    creator_name: Optional[str] = None
+    member_count: int = 0
+    class Config:
+        from_attributes = True
+
+class ProjectMemberCreate(BaseModel):
+    researcher_id: int
+    role: str = Field(default="Contributor", pattern="^(Principal Investigator|Co-author|Contributor)$")
+
+class ProjectMemberResponse(ProjectMemberCreate):
+    id: int
+    project_id: int
+    joined_at: datetime
+    researcher_name: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class CollaborationBase(BaseModel):
+    project_id: Optional[int] = None
+    researcher1_id: Optional[int] = None
+    researcher2_id: int
+    institution_id: Optional[int] = None
+    collaboration_type: str = Field(default="Research", min_length=2, max_length=100)
+    status: str = Field(default="pending", pattern="^(pending|active|rejected|completed)$")
+
+class CollaborationCreate(CollaborationBase):
+    pass
+
+class CollaborationUpdate(BaseModel):
+    collaboration_type: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    status: Optional[str] = Field(default=None, pattern="^(pending|active|rejected|completed)$")
+
+class CollaborationResponse(CollaborationBase):
+    id: int
+    researcher1_id: int
+    created_at: datetime
+    researcher1_name: Optional[str] = None
+    researcher2_name: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class CoAuthorCreate(BaseModel):
+    researcher_id: int
+    author_order: int = Field(ge=1)
+    contribution: Optional[str] = Field(default=None, max_length=255)
+
+class CoAuthorResponse(CoAuthorCreate):
+    id: int
+    publication_id: int
+    researcher_name: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class CitationCreate(BaseModel):
+    citing_publication_id: int
+    cited_publication_id: int
+
+class CitationResponse(CitationCreate):
+    id: int
+    citation_date: datetime
+    citing_title: Optional[str] = None
+    cited_title: Optional[str] = None
+    class Config:
+        from_attributes = True
+
+class ReferenceBase(BaseModel):
+    title: str = Field(min_length=2, max_length=500)
+    authors: Optional[str] = Field(default=None, max_length=1000)
+    journal: Optional[str] = Field(default=None, max_length=255)
+    year: Optional[int] = Field(default=None, ge=1000, le=2100)
+    doi: Optional[str] = Field(default=None, max_length=255)
+    url: Optional[str] = Field(default=None, max_length=1000)
+
+class ReferenceCreate(ReferenceBase):
+    pass
+
+class ReferenceResponse(ReferenceBase):
+    id: int
+    publication_id: int
     class Config:
         from_attributes = True

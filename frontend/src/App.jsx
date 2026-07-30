@@ -23,6 +23,8 @@ import ConferenceCreate from './pages/ConferenceCreate';
 import ReviewQueue from './pages/ReviewQueue';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
+import CollaborationHub from './pages/CollaborationHub';
+import Citations from './pages/Citations';
 import './App.css';
 
 import { AuthContext } from './context/AuthContext';
@@ -175,6 +177,8 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/collaborations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><CollaborationHub /></PrivateRoute>} />
+          <Route path="/citations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><Citations /></PrivateRoute>} />
           <Route
             path="/access-denied"
             element={

@@ -3,6 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../config/api';
 import '../styles/forms.css';
 
+const errorMessage = (detail) => {
+  if (Array.isArray(detail)) return detail.map((item) => item.msg || 'Invalid input').join('. ');
+  return typeof detail === 'string' ? detail : 'Registration failed';
+};
+
 const Register = () => {
   const [formData, setFormData] = useState({
     full_name: '',
@@ -39,7 +44,7 @@ const Register = () => {
       alert(formData.requested_role === 'researcher' ? 'Registration successful! Please login.' : 'Registration successful. You can use researcher features while your requested role is awaiting administrator approval.');
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed');
+      setError(errorMessage(err.response?.data?.detail));
     } finally {
       setLoading(false);
     }

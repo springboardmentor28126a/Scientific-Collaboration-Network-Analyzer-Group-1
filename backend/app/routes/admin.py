@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, UserRole
+from ..models import User, UserRole, Institution, ResearcherProfile
 from ..schemas import UserCreate, UserResponse
 from ..auth import get_current_user, hash_password
 from ..config import settings
@@ -42,6 +42,10 @@ def decide_role_request(user_id: int, approved: bool, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pending role request not found")
     if approved:
         user.role = UserRole(user.requested_role)
+        # An institution chosen during profile creation becomes the approved
+        # administrator's scope; no second manual assignment is required.
+        if user.role == UserRole.INSTITUTION_ADMIN and user.researcher_profile:
+            user.assigned_institution_id = user.researcher_profile.institution_id
         user.requested_role = None
         user.role_request_status = "approved"
     else:
@@ -83,8 +87,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if user.id == current_user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot delete your own account")
+    if user.role == UserRole.SYSTEM_ADMIN:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="System administrator accounts cannot be deleted")
     db.delete(user)
     db.commit()
     return {"detail": "User deleted"}

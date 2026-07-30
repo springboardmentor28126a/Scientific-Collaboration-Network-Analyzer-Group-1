@@ -12,7 +12,7 @@ router = APIRouter(prefix="/institutions", tags=["institutions"])
 
 def admin_institution_id(current_user: User) -> int | None:
     profile = current_user.researcher_profile
-    return profile.institution_id if profile else None
+    return current_user.assigned_institution_id or (profile.institution_id if profile else None)
 
 @router.post("/", response_model=InstitutionResponse)
 def create_institution(

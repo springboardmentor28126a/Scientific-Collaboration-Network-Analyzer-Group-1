@@ -18,6 +18,8 @@ def request_role_change(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="System administrator access cannot be requested")
     if request.requested_role == current_user.role:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already have this role")
+    if request.requested_role == UserRole.INSTITUTION_ADMIN and (not current_user.researcher_profile or not current_user.researcher_profile.institution_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Select your institution in your profile before requesting institution administrator access")
     current_user.requested_role = request.requested_role.value
     current_user.role_request_status = "pending"
     db.commit()
@@ -64,6 +66,8 @@ def create_researcher_profile(
             detail="Researcher profile already exists"
         )
     
+    if current_user.requested_role == UserRole.INSTITUTION_ADMIN.value and not profile.institution_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An institution is required for an Institution Admin application")
     db_profile = ResearcherProfile(
         user_id=current_user.id,
         **profile.dict()

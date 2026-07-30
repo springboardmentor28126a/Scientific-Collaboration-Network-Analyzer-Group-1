@@ -32,7 +32,8 @@ const Login = () => {
       login(response.data.access_token, userData);
       navigate('/dashboard');
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Login failed';
+      const errorMessage = err.response?.data?.detail
+        || (err.request ? 'Cannot connect to the server. Start the backend at http://localhost:8000 and try again.' : 'Login failed');
       setError(errorMessage);
       console.error('Login error:', err);
     } finally {
