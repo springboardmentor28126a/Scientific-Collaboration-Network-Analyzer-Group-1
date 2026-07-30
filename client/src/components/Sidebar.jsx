@@ -7,11 +7,11 @@ import {
     FaChartBar,
     FaProjectDiagram,
     FaPeopleArrows,
-    FaUniversity,
     FaSchool,
-    FaCalendarAlt
+    FaCalendarAlt,
+    FaComments
 } from "react-icons/fa";
-
+import { FaEnvelope } from "react-icons/fa";
 function Sidebar() {
 
     const navigate = useNavigate();
@@ -91,13 +91,25 @@ function Sidebar() {
                 active={location.pathname === "/network"}
                 onClick={() => navigate("/network")}
             />
+            <MenuItem
+    icon={<FaEnvelope />}
+    text="Invitations"
+    active={location.pathname === "/invitations"}
+    onClick={() => navigate("/invitations")}
+/>
 
             <MenuItem
-                icon={<FaPeopleArrows />}
-                text="Collaborations"
-                active={location.pathname === "/collaborations"}
-                onClick={() => navigate("/collaborations")}
-            />
+    icon={<FaPeopleArrows />}
+    text="Research Groups"
+    active={location.pathname.startsWith("/groups")}
+    onClick={() => navigate("/groups")}
+/>
+            <MenuItem
+    icon={<FaComments />}
+    text="Group Chat"
+    active={location.pathname.startsWith("/groups")}
+    onClick={() => navigate("/groups/1/chat")}
+/>
 
             <MenuItem
                 icon={<FaCalendarAlt />}

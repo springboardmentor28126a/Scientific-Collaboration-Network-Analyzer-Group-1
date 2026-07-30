@@ -23,6 +23,9 @@ import ConferenceOrganization from "./pages/ConferenceOrganization";
 import InstitutionManagement from "./pages/InstitutionManagement";
 import InstitutionDetails from "./pages/InstitutionDetails";
 import InstitutionDashboard from "./pages/InstitutionDashboard";
+import ResearchGroups from "./pages/ResearchGroups";
+import Invitations from "./pages/Invitations";
+import GroupWorkspace from "./pages/GroupWorkspace";
 
 
 function App() {
@@ -68,6 +71,17 @@ function App() {
                     <Route path="/collaborations" element={<Collaborations />} />
                     <Route path="/workspace/:id" element={<Workspace />} />
                     <Route path="/chat/:id" element={<Chat />} />
+                    
+                    <Route path="/groups"element={<ResearchGroups />}/>
+<Route
+    path="/invitations"
+    element={<Invitations />}
+/>
+<Route
+    path="/groups/:groupId"
+    element={<GroupWorkspace />}
+/>
+
                 </Route>
             </Routes>
         </BrowserRouter>

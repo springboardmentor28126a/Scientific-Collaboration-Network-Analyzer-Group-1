@@ -58,6 +58,22 @@ class User(Base):
     skills = Column(String, nullable=True)
     bio = Column(String, nullable=True)
 
+    created_groups = relationship(
+        "ResearchGroup",
+        back_populates="creator"
+    )
+
+    meetings_created = relationship(
+        "Meeting",
+        back_populates="creator"
+    )
+
+    uploaded_files = relationship(
+        "GroupFile",
+        back_populates="uploader",
+        cascade="all, delete-orphan"
+    )
+
 class Publication(Base):
     __tablename__ = "publications"
 
@@ -228,82 +244,9 @@ class Institution(Base):
         DateTime,
         default=datetime.utcnow
     )
-
+    pincode = Column(String)
     researchers = relationship("User", back_populates="institution")
     publications = relationship("Publication", back_populates="institution")
-class CollaborationRequest(Base):
-    __tablename__ = "collaboration_requests"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    sender_id = Column(
-        Integer,
-        ForeignKey("users.id"),
-        nullable=False
-    )
-
-    receiver_id = Column(
-        Integer,
-        ForeignKey("users.id"),
-        nullable=False
-    )
-
-    message = Column(Text, nullable=True)
-
-    status = Column(
-        String,
-        default="Pending"
-    )
-
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
-
-    sender = relationship(
-        "User",
-        foreign_keys=[sender_id]
-    )
-
-    receiver = relationship(
-        "User",
-        foreign_keys=[receiver_id]
-    )
-class Collaboration(Base):
-
-    __tablename__ = "collaborations"
-
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
-
-    user1_id = Column(
-        Integer,
-        ForeignKey("users.id")
-    )
-
-    user2_id = Column(
-        Integer,
-        ForeignKey("users.id")
-    )
-
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
-
-    user1 = relationship(
-        "User",
-        foreign_keys=[user1_id]
-    )
-
-    user2 = relationship(
-        "User",
-        foreign_keys=[user2_id]
-    )
-
 class ChatMessage(Base):
 
     __tablename__ = "chat_messages"
@@ -314,14 +257,16 @@ class ChatMessage(Base):
         index=True
     )
 
-    collaboration_id = Column(
+    group_id = Column(
         Integer,
-        ForeignKey("collaborations.id")
+        ForeignKey("research_groups.id", ondelete="CASCADE"),
+        nullable=False
     )
 
     sender_id = Column(
         Integer,
-        ForeignKey("users.id")
+        ForeignKey("users.id"),
+        nullable=False
     )
 
     message = Column(
@@ -338,7 +283,8 @@ class ChatMessage(Base):
         "User"
     )
 
-    collaboration = relationship(
-        "Collaboration"
+    group = relationship(
+        "ResearchGroup",
+        back_populates="chats"
     )
 
