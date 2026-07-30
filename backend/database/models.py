@@ -106,6 +106,42 @@ class Publication(Base):
     institution = relationship("Institution", back_populates="publications")
     conference = relationship("Conference", back_populates="publications")
 
+class Citation(Base):
+    __tablename__ = "citations"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    citing_publication_id = Column(
+        Integer,
+        ForeignKey("publications.id"),
+        nullable=False
+    )
+
+    cited_publication_id = Column(
+        Integer,
+        ForeignKey("publications.id"),
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    citing_publication = relationship(
+        "Publication",
+        foreign_keys=[citing_publication_id]
+    )
+
+    cited_publication = relationship(
+        "Publication",
+        foreign_keys=[cited_publication_id]
+    )
+
 class Conference(Base):
 
     __tablename__ = "conferences"
