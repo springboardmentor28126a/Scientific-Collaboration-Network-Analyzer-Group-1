@@ -11,7 +11,8 @@ function EditPublication() {
     title: "",
     author: "",
     journal: "",
-    year: ""
+    year: "",
+    status: "Draft"
   });
 
   useEffect(() => {
@@ -26,7 +27,8 @@ function EditPublication() {
           title: response.data.title,
           author: response.data.author,
           journal: response.data.journal,
-          year: response.data.year
+          year: response.data.year,
+          status: response.data.status
         });
 
       } catch (error) {
@@ -111,6 +113,24 @@ function EditPublication() {
           onChange={handleChange}
           placeholder="Year"
         />
+
+        <br /><br />
+
+        <label>Status</label>
+
+        <br />
+
+        <select
+          name="status"
+          value={publication.status}
+          onChange={handleChange}
+        >
+          <option value="Draft">Draft</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Under Review">Under Review</option>
+          <option value="Published">Published</option>
+          <option value="Rejected">Rejected</option>
+        </select>
 
         <br /><br />
 

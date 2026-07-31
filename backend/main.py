@@ -17,6 +17,12 @@ from project import router as project_router
 from review import router as review_router
 from institution import router as institution_router
 from file_upload import router as file_router
+from dashboard import router as dashboard_router
+from analytics import router as analytics_router
+from search import router as search_router
+from export import router as export_router
+from citation import router as citation_router
+import report
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -84,6 +90,7 @@ app.add_middleware(
 # -----------------------------
 
 app.include_router(auth_router)
+app.include_router(analytics_router)
 
 app.include_router(researcher_router)
 
@@ -101,8 +108,12 @@ app.include_router(institution_router)
 
 app.include_router(file_router)
 
+app.include_router(dashboard_router)
 
-
+app.include_router(search_router)
+app.include_router(export_router)
+app.include_router(citation_router)
+app.include_router(report.router)
 # -----------------------------
 # Home
 # -----------------------------

@@ -59,6 +59,8 @@ class PublicationCreate(BaseModel):
     author: str
     journal: str
     year: int
+    type: str
+    status: str
 
 
 class PublicationUpdate(BaseModel):
@@ -66,6 +68,8 @@ class PublicationUpdate(BaseModel):
     author: str
     journal: str
     year: int
+    type: str
+    status: str
 
 class PublicationResponse(BaseModel):
     id: int
@@ -73,7 +77,9 @@ class PublicationResponse(BaseModel):
     author: str
     journal: str
     year: int
+    type: str
     status: str
+    file_path: str | None = None
 
     class Config:
         from_attributes = True
@@ -198,6 +204,21 @@ class ReviewResponse(BaseModel):
     comments: Optional[str]
     score: Optional[int]
     review_status: str
+
+    class Config:
+        from_attributes = True
+
+class CitationCreate(BaseModel):
+    publication_id: int
+    author: str
+    title: str
+    journal: str
+    year: int
+    doi: str | None = None
+
+
+class CitationResponse(CitationCreate):
+    id: int
 
     class Config:
         from_attributes = True

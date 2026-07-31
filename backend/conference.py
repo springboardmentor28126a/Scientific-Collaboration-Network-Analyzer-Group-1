@@ -13,8 +13,14 @@ from schemas import (
 router = APIRouter(tags=["Conference"])
 
 
+# -----------------------------
+# CREATE Conference
+# -----------------------------
 @router.post("/conference")
-def create_conference(conference: ConferenceCreate, db: Session = Depends(get_db)):
+def create_conference(
+    conference: ConferenceCreate,
+    db: Session = Depends(get_db)
+):
 
     new_conference = models.Conference(
         name=conference.name,
@@ -33,24 +39,83 @@ def create_conference(conference: ConferenceCreate, db: Session = Depends(get_db
     }
 
 
+# -----------------------------
+# GET All Conferences
+# -----------------------------
 @router.get("/conference", response_model=list[ConferenceResponse])
 def get_all_conferences(db: Session = Depends(get_db)):
     return db.query(models.Conference).all()
 
 
-@router.get("/conference/{conference_id}", response_model=ConferenceResponse)
-def get_conference(conference_id: int, db: Session = Depends(get_db)):
+# -----------------------------
+# SEARCH Conference
+# -----------------------------
+@router.get("/conference/search")
+def search_conference(
+    name: str,
+    db: Session = Depends(get_db)
+):
+    conferences = (
+        db.query(models.Conference)
+        .filter(models.Conference.name.ilike(f"%{name}%"))
+        .all()
+    )
 
-    conference = db.query(models.Conference).filter(
-        models.Conference.id == conference_id
-    ).first()
+    return conferences
+
+
+# -----------------------------
+# SORT Conference
+# -----------------------------
+@router.get("/conference/sort")
+def sort_conference(
+    order: str = "asc",
+    db: Session = Depends(get_db)
+):
+
+    if order.lower() == "desc":
+        conferences = (
+            db.query(models.Conference)
+            .order_by(models.Conference.name.desc())
+            .all()
+        )
+    else:
+        conferences = (
+            db.query(models.Conference)
+            .order_by(models.Conference.name.asc())
+            .all()
+        )
+
+    return conferences
+
+
+# -----------------------------
+# GET Conference By ID
+# -----------------------------
+@router.get("/conference/{conference_id}", response_model=ConferenceResponse)
+def get_conference(
+    conference_id: int,
+    db: Session = Depends(get_db)
+):
+
+    conference = (
+        db.query(models.Conference)
+        .filter(models.Conference.id == conference_id)
+        .first()
+    )
 
     if not conference:
-        raise HTTPException(status_code=404, detail="Conference not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Conference not found"
+        )
 
     return conference
 
 
+# -----------------------------
+# UPDATE Conference
+# -----------------------------
 @router.put("/conference/{conference_id}")
 def update_conference(
     conference_id: int,
@@ -58,12 +123,17 @@ def update_conference(
     db: Session = Depends(get_db)
 ):
 
-    db_conference = db.query(models.Conference).filter(
-        models.Conference.id == conference_id
-    ).first()
+    db_conference = (
+        db.query(models.Conference)
+        .filter(models.Conference.id == conference_id)
+        .first()
+    )
 
     if not db_conference:
-        raise HTTPException(status_code=404, detail="Conference not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Conference not found"
+        )
 
     db_conference.name = conference.name
     db_conference.location = conference.location
@@ -79,15 +149,26 @@ def update_conference(
     }
 
 
+# -----------------------------
+# DELETE Conference
+# -----------------------------
 @router.delete("/conference/{conference_id}")
-def delete_conference(conference_id: int, db: Session = Depends(get_db)):
+def delete_conference(
+    conference_id: int,
+    db: Session = Depends(get_db)
+):
 
-    conference = db.query(models.Conference).filter(
-        models.Conference.id == conference_id
-    ).first()
+    conference = (
+        db.query(models.Conference)
+        .filter(models.Conference.id == conference_id)
+        .first()
+    )
 
     if not conference:
-        raise HTTPException(status_code=404, detail="Conference not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Conference not found"
+        )
 
     db.delete(conference)
     db.commit()

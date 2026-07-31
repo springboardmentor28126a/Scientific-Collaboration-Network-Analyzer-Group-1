@@ -3,19 +3,24 @@ import API from "../api";
 import { Link } from "react-router-dom";
 
 function Researcher() {
-
   const [researchers, setResearchers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchResearchers();
   }, []);
 
   const fetchResearchers = async () => {
+    setLoading(true);
+
     try {
       const response = await API.get("/researcher");
       setResearchers(response.data);
     } catch (error) {
       console.log("Failed to load researchers", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,77 +41,112 @@ function Researcher() {
     }
   };
 
+  const filteredResearchers = researchers.filter((researcher) =>
+    researcher.username.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div style={{ textAlign: "center", marginTop: "40px" }}>
+    <div style={{ width: "90%", margin: "40px auto" }}>
+      <h1 style={{ textAlign: "center" }}>Researchers</h1>
 
-      <h1>Researchers</h1>
-
-      <Link to="/addresearcher">
-        <button
-          style={{
-            padding: "10px 20px",
-            marginBottom: "20px",
-            cursor: "pointer"
-          }}
-        >
-          Add Researcher
-        </button>
-      </Link>
-
-      <table
-        border="1"
+      <div
         style={{
-          width: "80%",
-          margin: "auto",
-          borderCollapse: "collapse"
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "20px",
         }}
       >
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+        <input
+          type="text"
+          placeholder="Search Researcher..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: "300px",
+            padding: "8px",
+          }}
+        />
 
-        <tbody>
-          {researchers.map((researcher) => (
-            <tr key={researcher.id}>
-              <td>{researcher.id}</td>
-              <td>{researcher.username}</td>
-              <td>{researcher.email}</td>
-              <td>{researcher.role}</td>
+        <Link to="/add-researcher">
+          <button
+            style={{
+              padding: "10px 20px",
+              cursor: "pointer",
+            }}
+          >
+            Add Researcher
+          </button>
+        </Link>
+      </div>
 
-              <td>
+      {loading ? (
+        <h3 style={{ textAlign: "center" }}>Loading...</h3>
+      ) : (
+        <table
+          border="1"
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+          }}
+        >
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-                <Link to={`/editresearcher/${researcher.id}`}>
-                  <button
-                    style={{
-                      marginRight: "10px",
-                      cursor: "pointer"
-                    }}
-                  >
-                    Edit
-                  </button>
-                </Link>
+          <tbody>
+            {filteredResearchers.length > 0 ? (
+              filteredResearchers.map((researcher) => (
+                <tr key={researcher.id}>
+                  <td>{researcher.id}</td>
+                  <td>{researcher.username}</td>
+                  <td>{researcher.email}</td>
+                  <td>{researcher.role}</td>
 
-                <button
-                  onClick={() => deleteResearcher(researcher.id)}
+                  <td>
+                    <Link to={`/edit-researcher/${researcher.id}`}>
+                      <button
+                        style={{
+                          marginRight: "10px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </Link>
+
+                    <button
+                      onClick={() => deleteResearcher(researcher.id)}
+                      style={{
+                        cursor: "pointer",
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="5"
                   style={{
-                    cursor: "pointer"
+                    textAlign: "center",
+                    padding: "15px",
                   }}
                 >
-                  Delete
-                </button>
-
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
+                  No Researchers Found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

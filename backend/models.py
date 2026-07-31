@@ -23,6 +23,7 @@ class Publication(Base):
     author = Column(String(100), nullable=False)
     journal = Column(String(100), nullable=False)
     year = Column(Integer, nullable=False)
+    type = Column(String(50), nullable=False)
 
     file_path = Column(String(255), nullable=True)
 
@@ -90,4 +91,17 @@ class Institution(Base):
     name = Column(String(255), nullable=False)
     location = Column(String(100))
     website = Column(String(255))
-    
+
+    # -----------------------------
+# Citation Model
+# -----------------------------
+class Citation(Base):
+    __tablename__ = "citations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    publication_id = Column(Integer, nullable=False)
+    author = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False)
+    journal = Column(String(255), nullable=False)
+    year = Column(Integer, nullable=False)
+    doi = Column(String(255), nullable=True)

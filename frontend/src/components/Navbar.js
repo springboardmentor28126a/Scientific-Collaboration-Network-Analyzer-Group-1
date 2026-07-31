@@ -13,6 +13,10 @@ function NavigationBar() {
 
       {" | "}
 
+      <Link to="/dashboard">Dashboard</Link>
+
+      {" | "}
+
       <Link to="/login">Login</Link>
 
       {" | "}
@@ -47,6 +51,12 @@ function NavigationBar() {
 
       <Link to="/institution">Institutions</Link>
 
+      {" | "}
+      
+      <Link to="/search">Search</Link>
+
+      {" | "}
+      <Link to="/citation">Citations</Link>
     </nav>
   );
 }
