@@ -17,7 +17,7 @@ SECRET_KEY = "scientific_collaboration_secret_key"
 
 ALGORITHM = "HS256"
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24   # 24 hours
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -44,6 +44,8 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
+    print("=" * 60)
+    print("TOKEN:", token)
 
     credentials_exception = HTTPException(
         status_code=401,
@@ -51,26 +53,28 @@ def get_current_user(
     )
 
     try:
-
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
 
+        print("PAYLOAD:", payload)
+
         email = payload.get("sub")
+        print("EMAIL:", email)
 
         if email is None:
             raise credentials_exception
 
-    except JWTError:
+    except JWTError as e:
+        print("JWT ERROR:", str(e))
         raise credentials_exception
 
-    user = (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
+    user = db.query(User).filter(User.email == email).first()
+
+    print("USER:", user)
+    print("=" * 60)
 
     if user is None:
         raise credentials_exception

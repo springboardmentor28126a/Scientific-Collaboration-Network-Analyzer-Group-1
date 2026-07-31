@@ -1,12 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-
+import { createGroup,updateGroup,deleteGroup,leaveGroup } from "../services/groupService";
 export default function ResearchGroups() {
 
     const navigate = useNavigate();
 
     const [groups, setGroups] = useState([]);
+    const [openCreateModal, setOpenCreateModal] = useState(false);
+    const [groupData, setGroupData] = useState({
+    name: "",
+    description: "",
+    visibility: "Private",
+    // created_by: user.id
+});
+
+const [creating, setCreating] = useState(false);
+const [openEditModal, setOpenEditModal] = useState(false);
+
+const [editing, setEditing] = useState(false);
+
+const [selectedGroup, setSelectedGroup] = useState(null);
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -29,6 +43,173 @@ export default function ResearchGroups() {
         }
 
     };
+const handleCreateGroup = async () => {
+
+    if (!groupData.name.trim()) {
+        alert("Group name is required.");
+        return;
+    }
+
+    try {
+
+        setCreating(true);
+
+        const payload = {
+            ...groupData,
+            created_by: user.id
+        };
+
+        const newGroup = await createGroup(payload);
+
+        await loadGroups();
+
+        setOpenCreateModal(false);
+
+        setGroupData({
+            name: "",
+            description: "",
+            visibility: "Private"
+        });
+
+        navigate(`/groups/${newGroup.id}`);
+
+    }  catch (err) {
+
+    console.error("Create Group Error:", err);
+
+    if (err.response) {
+        console.log("Status:", err.response.status);
+        console.log("Data:", err.response.data);
+        alert(err.response.data.detail || "Failed to create group.");
+    } else {
+        alert("Network error.");
+    }
+
+    } finally {
+
+    setCreating(false);
+
+}
+
+};
+const handleEditClick = (group) => {
+
+    setSelectedGroup({
+        ...group
+    });
+
+    setOpenEditModal(true);
+
+};
+const handleUpdateGroup = async () => {
+
+    if (!selectedGroup.name.trim()) {
+        alert("Group name is required.");
+        return;
+    }
+
+    try {
+
+        setEditing(true);
+
+        await updateGroup(
+            selectedGroup.id,
+            {
+                name: selectedGroup.name,
+                description: selectedGroup.description,
+                visibility: selectedGroup.visibility,
+                requester_id: user.id
+            }
+        );
+
+        await loadGroups();
+
+        setOpenEditModal(false);
+
+        setSelectedGroup(null);
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert("Failed to update group.");
+
+    } finally {
+
+        setEditing(false);
+
+    }
+
+};
+const handleDeleteGroup = async (groupId) => {
+
+    const confirmed = window.confirm(
+        "Are you sure you want to permanently delete this research group?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await deleteGroup(
+            groupId,
+            user.id
+        );
+
+        await loadGroups();
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(
+            err.response?.data?.detail ||
+            "Failed to delete group."
+        );
+
+    }
+
+};
+const handleLeaveGroup = async (groupId) => {
+
+    const confirmed = window.confirm(
+        "Are you sure you want to leave this research group?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await leaveGroup(
+            groupId,
+            user.id
+        );
+
+        await loadGroups();
+
+        alert("You left the group successfully.");
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(
+            err.response?.data?.detail ||
+            "Failed to leave group."
+        );
+
+    }
+
+};
+    const inputStyle = {
+        width: "100%",
+        padding: "12px 14px",
+        borderRadius: "10px",
+        border: "1px solid #d1d5db",
+        fontSize: "15px",
+        outline: "none",
+        boxSizing: "border-box"
+    };
 
     return (
 
@@ -40,9 +221,32 @@ export default function ResearchGroups() {
             }}
         >
 
-            <h1 style={{ marginBottom: "30px" }}>
-                My Research Groups
-            </h1>
+            <div
+    style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "30px"
+    }}
+>
+    <h1>My Research Groups</h1>
+
+    <button
+        onClick={() => setOpenCreateModal(true)}
+        style={{
+            background: "#2563eb",
+            color: "#fff",
+            border: "none",
+            padding: "12px 22px",
+            borderRadius: "10px",
+            cursor: "pointer",
+            fontWeight: "600",
+            fontSize: "15px"
+        }}
+    >
+        + Create Group
+    </button>
+</div>
 
             {
                 groups.length === 0 ? (
@@ -115,21 +319,74 @@ export default function ResearchGroups() {
 
                             </div>
 
-                            <button
-                                onClick={() =>
-                                    navigate(`/groups/${group.id}`)
-                                }
-                                style={{
-                                    background: "#2563eb",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "10px 20px",
-                                    borderRadius: "8px",
-                                    cursor: "pointer"
-                                }}
-                            >
-                                Open Workspace
-                            </button>
+      <div
+    style={{
+        display: "flex",
+        gap: "10px",
+        marginTop: "15px",
+        flexWrap: "wrap"
+    }}
+>
+    <button
+        onClick={() => navigate(`/groups/${group.id}`)}
+        style={{
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            cursor: "pointer"
+        }}
+    >
+        Open Workspace
+    </button>
+
+    {group.role === "Owner" ? (
+    <>
+        <button
+            onClick={() => handleEditClick(group)}
+            style={{
+                background: "#16a34a",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                cursor: "pointer"
+            }}
+        >
+            ✏ Edit
+        </button>
+
+        <button
+            onClick={() => handleDeleteGroup(group.id)}
+            style={{
+                background: "#dc2626",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                cursor: "pointer"
+            }}
+        >
+            🗑 Delete Group
+        </button>
+    </>
+) : (
+    <button
+        onClick={() => handleLeaveGroup(group.id)}
+        style={{
+            background: "#f59e0b",
+            color: "white",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            cursor: "pointer"
+        }}
+    >
+        🚪 Leave Group
+    </button>
+)}
+</div>
 
                         </div>
 
@@ -137,6 +394,260 @@ export default function ResearchGroups() {
 
                 )
             }
+            {
+openCreateModal && (
+
+<div
+    style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.55)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 999
+    }}
+>
+
+<div
+    style={{
+        background: "#fff",
+        width: "600px",
+        borderRadius: "18px",
+        padding: "35px",
+        boxShadow: "0 20px 50px rgba(0,0,0,.25)"
+    }}
+>
+
+<h2 style={{marginBottom:"25px"}}>
+    Create Research Group
+</h2>
+
+<div style={{display:"flex",flexDirection:"column",gap:"18px"}}>
+
+<input
+    placeholder="Group Name"
+    value={groupData.name}
+    onChange={(e)=>
+        setGroupData({
+            ...groupData,
+            name:e.target.value
+        })
+    }
+    style={inputStyle}
+/>
+
+<textarea
+    rows={4}
+    placeholder="Description"
+    value={groupData.description}
+    onChange={(e)=>
+        setGroupData({
+            ...groupData,
+            description:e.target.value
+        })
+    }
+    style={{
+        ...inputStyle,
+        resize:"none"
+    }}
+/>
+
+
+<select
+    value={groupData.visibility}
+    onChange={(e)=>
+        setGroupData({
+            ...groupData,
+            visibility:e.target.value
+        })
+    }
+    style={inputStyle}
+>
+
+<option>Private</option>
+
+<option>Public</option>
+
+</select>
+
+
+</div>
+
+<div
+style={{
+display:"flex",
+justifyContent:"flex-end",
+gap:"15px",
+marginTop:"30px"
+}}
+>
+
+<button
+onClick={()=>setOpenCreateModal(false)}
+style={{
+padding:"10px 20px",
+borderRadius:"10px",
+border:"1px solid #ddd",
+background:"#fff",
+cursor:"pointer"
+}}
+>
+Cancel
+</button>
+
+<button
+    onClick={handleCreateGroup}
+    disabled={creating}
+    style={{
+        padding:"10px 22px",
+        borderRadius:"10px",
+        border:"none",
+        background:"#2563eb",
+        color:"white",
+        cursor:"pointer",
+        opacity: creating ? 0.7 : 1
+    }}
+>
+    {creating ? "Creating..." : "Create Group"}
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)
+}
+{
+openEditModal && selectedGroup && (
+
+<div
+    style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.55)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 999
+    }}
+>
+
+<div
+    style={{
+        background: "#fff",
+        width: "600px",
+        borderRadius: "18px",
+        padding: "35px",
+        boxShadow: "0 20px 50px rgba(0,0,0,.25)"
+    }}
+>
+
+<h2 style={{ marginBottom: "25px" }}>
+    Edit Research Group
+</h2>
+
+<div
+    style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "18px"
+    }}
+>
+
+<input
+    value={selectedGroup.name}
+    onChange={(e) =>
+        setSelectedGroup({
+            ...selectedGroup,
+            name: e.target.value
+        })
+    }
+    style={inputStyle}
+/>
+
+<textarea
+    rows={4}
+    value={selectedGroup.description || ""}
+    onChange={(e) =>
+        setSelectedGroup({
+            ...selectedGroup,
+            description: e.target.value
+        })
+    }
+    style={{
+        ...inputStyle,
+        resize: "none"
+    }}
+/>
+
+<select
+    value={selectedGroup.visibility}
+    onChange={(e) =>
+        setSelectedGroup({
+            ...selectedGroup,
+            visibility: e.target.value
+        })
+    }
+    style={inputStyle}
+>
+    <option>Private</option>
+    <option>Public</option>
+</select>
+
+</div>
+
+<div
+    style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "15px",
+        marginTop: "30px"
+    }}
+>
+
+<button
+    onClick={() => {
+        setOpenEditModal(false);
+        setSelectedGroup(null);
+    }}
+    style={{
+        padding: "10px 20px",
+        borderRadius: "10px",
+        border: "1px solid #ddd",
+        background: "#fff",
+        cursor: "pointer"
+    }}
+>
+    Cancel
+</button>
+
+<button
+    onClick={handleUpdateGroup}
+    disabled={editing}
+    style={{
+        padding: "10px 22px",
+        borderRadius: "10px",
+        border: "none",
+        background: "#16a34a",
+        color: "#fff",
+        cursor: "pointer",
+        opacity: editing ? 0.7 : 1
+    }}
+>
+    {editing ? "Saving..." : "Save Changes"}
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)
+}
 
         </div>
 
