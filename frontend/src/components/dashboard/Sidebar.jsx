@@ -21,7 +21,8 @@ const NAV_BY_ROLE = {
   RESEARCHER: [
     { label: "Overview", path: "/researcher/dashboard" },
     { label: "Browse Publications", path: "/publications" },
-    { label: "Conferences", path: "/conferences" } 
+    { label: "Conferences", path: "/conferences" } ,
+    { label: "Collaborations", path: "/collaborations" },
   ],
   REVIEWER: [
     { label: "Overview", path: "/reviewer/dashboard" },

@@ -21,6 +21,8 @@ def create_conference(
         end_date=conference.end_date,
         submission_deadline=conference.submission_deadline,
         website=conference.website,
+        mode=conference.mode,
+        meeting_link=conference.meeting_link,
         status=conference.status,
     )
 
@@ -72,6 +74,8 @@ def update_conference(
     conference.end_date = conference_data.end_date
     conference.submission_deadline = conference_data.submission_deadline
     conference.website = conference_data.website
+    conference.mode = conference_data.mode
+    conference.meeting_link = conference_data.meeting_link
     conference.status = conference_data.status
 
     db.commit()

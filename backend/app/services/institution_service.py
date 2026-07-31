@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models.institution import Institution
 from app.schemas.institution import InstitutionCreate
@@ -69,7 +70,6 @@ def update_institution(
 
     return institution
 
-
 def delete_institution(
     db: Session,
     institution_id: int,
@@ -79,8 +79,18 @@ def delete_institution(
         institution_id,
     )
 
-    db.delete(institution)
-    db.commit()
+    try:
+        db.delete(institution)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Cannot delete this institution — it still has departments, "
+                "researchers, or users linked to it. Remove or reassign those first."
+            ),
+        )
 
     return {
         "message": "Institution deleted successfully"

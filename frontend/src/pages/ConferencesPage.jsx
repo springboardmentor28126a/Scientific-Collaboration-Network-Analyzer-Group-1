@@ -25,6 +25,8 @@ const emptyForm = {
   end_date: "",
   submission_deadline: "",
   website: "",
+  mode: "IN_PERSON",
+  meeting_link: "",
   status: "Upcoming",
 };
 
@@ -117,6 +119,8 @@ function ConferencesPage() {
       end_date: conf.end_date ? conf.end_date.slice(0, 10) : "",
       submission_deadline: conf.submission_deadline ? conf.submission_deadline.slice(0, 10) : "",
       website: conf.website || "",
+      mode: conf.mode || "IN_PERSON",
+      meeting_link: conf.meeting_link || "",
       status: conf.status || "Upcoming",
     });
     setEditingId(conf.id);
@@ -201,6 +205,7 @@ function ConferencesPage() {
                   <label className="form-label">Venue</label>
                   <input className="form-control" name="venue" value={form.venue} onChange={handleChange} />
                 </div>
+
               </div>
 
               <div className="row">
@@ -234,6 +239,18 @@ function ConferencesPage() {
                   <label className="form-label">Website</label>
                   <input className="form-control" name="website" value={form.website} onChange={handleChange} placeholder="https://..." />
                 </div>
+                <div className="col-md-6 mb-3">
+  <label className="form-label">Mode</label>
+  <select className="form-select" name="mode" value={form.mode} onChange={handleChange}>
+    <option value="IN_PERSON">In-person</option>
+    <option value="ONLINE">Online</option>
+    <option value="HYBRID">Hybrid</option>
+  </select>
+</div>
+<div className="col-md-6 mb-3">
+  <label className="form-label">Meeting link (if online/hybrid)</label>
+  <input className="form-control" name="meeting_link" value={form.meeting_link} onChange={handleChange} placeholder="https://zoom.us/..." />
+</div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Status</label>
                   <select className="form-select" name="status" value={form.status} onChange={handleChange}>
@@ -286,6 +303,13 @@ function ConferencesPage() {
                       </td>
                       <td>{c.venue}{c.city ? `, ${c.city}` : ""}</td>
                       <td>
+  {c.mode === "ONLINE" && c.meeting_link ? (
+    <a href={c.meeting_link} target="_blank" rel="noreferrer">Join online</a>
+  ) : (
+    c.mode?.replace("_", "-") || "In-person"
+  )}
+</td>
+                      <td>
                         {c.start_date && new Date(c.start_date).toLocaleDateString()}
                         {" – "}
                         {c.end_date && new Date(c.end_date).toLocaleDateString()}
@@ -293,12 +317,16 @@ function ConferencesPage() {
                       <td>{c.status}</td>
 
                       {isResearcher && (
-                        <td className="text-center">
-                          <button className="btn btn-outline-primary btn-sm" onClick={() => setRegisteringFor(c)}>
-                            Register
-                          </button>
-                        </td>
-                      )}
+  <td className="text-center">
+    {new Date(c.end_date) < new Date() ? (
+      <span className="text-muted small">Ended</span>
+    ) : (
+      <button className="btn btn-outline-primary btn-sm" onClick={() => setRegisteringFor(c)}>
+        Register
+      </button>
+    )}
+  </td>
+)}
 
                       {canViewParticipants && (
                         <td className="text-center">

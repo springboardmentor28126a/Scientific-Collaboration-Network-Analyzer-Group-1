@@ -18,6 +18,8 @@ import ResearcherPage from "../pages/ResearcherPage";
 import UserManagementPage from "../pages/UserManagementPage";
 import BrowsePublicationsPage from "../pages/BrowsePublicationsPage";
 import ConferencesPage from "../pages/ConferencesPage";
+import CollaborationsPage from "../pages/CollaborationsPage";
+
 
 function AppRoutes() {
   return (
@@ -126,6 +128,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/collaborations"
+  element={
+    <ProtectedRoute allowedRoles={["RESEARCHER"]}>
+      <CollaborationsPage />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

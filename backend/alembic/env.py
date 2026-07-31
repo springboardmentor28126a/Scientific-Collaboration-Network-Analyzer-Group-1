@@ -16,6 +16,7 @@ from app.models.department import Department
 from app.models.publication import Publication
 from app.models.conference import Conference
 from app.models.conference_registration import ConferenceRegistration
+from app.models.collaboration import Collaboration
 config = context.config
 
 if config.config_file_name is not None:

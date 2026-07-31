@@ -1,0 +1,20 @@
+                                         Table "public.collaborations"
+     Column     |           Type           | Collation | Nullable |                  Default                   
+----------------+--------------------------+-----------+----------+--------------------------------------------
+ id             | integer                  |           | not null | nextval('collaborations_id_seq'::regclass)
+ requester_id   | integer                  |           | not null | 
+ recipient_id   | integer                  |           | not null | 
+ publication_id | integer                  |           |          | 
+ status         | character varying(20)    |           | not null | 
+ message        | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ responded_at   | timestamp with time zone |           |          | 
+Indexes:
+    "collaborations_pkey" PRIMARY KEY, btree (id)
+    "ix_collaborations_id" btree (id)
+    "uq_collaboration_pair" UNIQUE CONSTRAINT, btree (requester_id, recipient_id)
+Foreign-key constraints:
+    "collaborations_publication_id_fkey" FOREIGN KEY (publication_id) REFERENCES publications(id)
+    "collaborations_recipient_id_fkey" FOREIGN KEY (recipient_id) REFERENCES researchers(id)
+    "collaborations_requester_id_fkey" FOREIGN KEY (requester_id) REFERENCES researchers(id)
+
