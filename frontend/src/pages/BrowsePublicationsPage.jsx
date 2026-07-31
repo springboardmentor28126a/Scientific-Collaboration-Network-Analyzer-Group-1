@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import { fetchPublishedPublications, downloadPublicationFile } from "../services/publicationService";
+import CitationPanel from "../components/publication/CitationPanel";
 import "../styles/publications.css";
 
 function BrowsePublicationsPage() {
@@ -112,17 +113,19 @@ function BrowsePublicationsPage() {
                       type="button"
                       className="btn-ghost-outline btn-sm"
                       onClick={async () => {
-  try {
-    await downloadPublicationFile(pub.id);
-  } catch (err) {
-    toast.error("Could not download file.");
-  }
-}}
+                        try {
+                          await downloadPublicationFile(pub.id);
+                        } catch (err) {
+                          toast.error("Could not download file.");
+                        }
+                      }}
                     >
                       Download
                     </button>
                   </div>
                 )}
+
+                <CitationPanel publicationId={pub.id} canEdit={false} />
               </div>
             );
           })}
