@@ -9,7 +9,7 @@ import DashboardHome from "./pages/DashboardHome";
 import Profile from "./pages/Profile";
 import MyPublications from "./pages/MyPublications";
 import SearchPublications from "./pages/SearchPublications";
-import SearchResearch from "./pages/SearchResearch";
+import Search from "./pages/Search";
 import ResearcherProfile from "./pages/ResearcherProfile";
 import PublicationDetails from "./pages/PublicationDetails";
 import ConferenceDetails from "./pages/ConferenceDetails";
@@ -57,7 +57,10 @@ function App() {
                     <Route path="/publications" element={<MyPublications />} />
                     <Route path="/my-publications" element={<MyPublications />} />
                     <Route path="/search-publications" element={<SearchPublications />} />
-                    <Route path="/search" element={<SearchResearch />} />
+                    <Route
+    path="/search"
+    element={<Search />}
+/>
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/network" element={<NetworkGraph />} />
                     <Route path="/publication/:id" element={<PublicationDetails />} />

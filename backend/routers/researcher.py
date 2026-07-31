@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import or_
 from backend.schemas.researcher import ResearcherCreate, ResearcherResponse
 from backend.database.database import get_db
 from backend.database.models import User, Publication, Conference
@@ -61,7 +61,27 @@ def get_all_researchers(
         })
 
     return result
+@router.get("/search")
+def search_researchers(
+    q: str,
+    db: Session = Depends(get_db)
+):
+    researchers = (
+        db.query(User)
+        .filter(
+            or_(
+                User.name.ilike(f"%{q}%"),
+                User.email.ilike(f"%{q}%"),
+                User.research_interests.ilike(f"%{q}%"),
+                User.department.ilike(f"%{q}%"),
+                User.institution_name.ilike(f"%{q}%")
+            )
+        )
+        .limit(20)
+        .all()
+    )
 
+    return researchers
 # CREATE PROFILE
 @router.post("/create", response_model=ResearcherResponse)
 def create_profile(

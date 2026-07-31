@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import or_
 from backend.database.database import get_db
 from backend.database.models import Publication
 from backend.schemas.publication import PublicationCreate
@@ -59,6 +59,44 @@ def get_publications(db: Session = Depends(get_db)):
     return db.query(Publication).all()
 
 
+@router.get("/search")
+def search_publications(
+    q: str = Query(None),
+    publication_type: str = Query(None),
+    year: int = Query(None),
+    status: str = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Publication)
+
+    if q:
+        query = query.filter(
+            or_(
+                Publication.title.ilike(f"%{q}%"),
+                Publication.authors.ilike(f"%{q}%"),
+                Publication.journal.ilike(f"%{q}%"),
+                Publication.keywords.ilike(f"%{q}%"),
+                Publication.abstract.ilike(f"%{q}%"),
+                Publication.doi.ilike(f"%{q}%")
+            )
+        )
+
+    if publication_type:
+        query = query.filter(
+            Publication.publication_type == publication_type
+        )
+
+    if year:
+        query = query.filter(
+            Publication.publication_year == year
+        )
+
+    if status:
+        query = query.filter(
+            Publication.status == status
+        )
+
+    return query.limit(20).all()
 # ---------------- GET BY ID ----------------
 @router.get("/{publication_id}")
 def get_publication(publication_id: int, db: Session = Depends(get_db)):
@@ -71,111 +109,135 @@ def get_publication(publication_id: int, db: Session = Depends(get_db)):
 
     return publication
 
+from fastapi import Query, Depends
+from sqlalchemy import or_
+
 @router.get("/search")
 def search_publications(
-
-    title: str = Query(None),
-
-    author: str = Query(None),
-
-    journal: str = Query(None),
-
-    publication_type: str = Query(None),
-
-    keyword: str = Query(None),
-
-    year: int = Query(None),
-
-    status: str = Query(None),
-
-    doi: str = Query(None),
-
+    q: str = Query(..., description="Search text"),
     db: Session = Depends(get_db)
-
 ):
-
-    query = db.query(Publication)
-
-    if title:
-
-        query = query.filter(
-
-            Publication.title.ilike(f"%{title}%")
-
+    return (
+        db.query(Publication)
+        .filter(
+            or_(
+                Publication.title.ilike(f"%{q}%"),
+                Publication.authors.ilike(f"%{q}%"),
+                Publication.journal.ilike(f"%{q}%"),
+                Publication.keywords.ilike(f"%{q}%"),
+                Publication.abstract.ilike(f"%{q}%"),
+                Publication.doi.ilike(f"%{q}%"),
+            )
         )
+        .limit(20)
+        .all()
+    )
 
-    if author:
+# @router.get("/search")
+# def search_publications(
 
-        query = query.filter(
+#     title: str = Query(None),
 
-            Publication.authors.ilike(f"%{author}%")
+#     author: str = Query(None),
 
-        )
+#     journal: str = Query(None),
 
-    if journal:
+#     publication_type: str = Query(None),
 
-        query = query.filter(
+#     keyword: str = Query(None),
 
-            Publication.journal.ilike(f"%{journal}%")
+#     year: int = Query(None),
 
-        )
+#     status: str = Query(None),
 
-    if publication_type:
+#     doi: str = Query(None),
 
-        query = query.filter(
+#     db: Session = Depends(get_db)
 
-            Publication.publication_type == publication_type
+# ):
 
-        )
+#     query = db.query(Publication)
 
-    if keyword:
+#     if title:
 
-        query = query.filter(
+#         query = query.filter(
 
-            Publication.keywords.ilike(f"%{keyword}%")
+#             Publication.title.ilike(f"%{title}%")
 
-        )
+#         )
 
-    if year:
+#     if author:
 
-        query = query.filter(
+#         query = query.filter(
 
-            Publication.publication_year == year
+#             Publication.authors.ilike(f"%{author}%")
 
-        )
+#         )
 
-    if status:
+#     if journal:
 
-        query = query.filter(
+#         query = query.filter(
 
-            Publication.status == status
+#             Publication.journal.ilike(f"%{journal}%")
 
-        )
+#         )
 
-    if doi:
+#     if publication_type:
 
-        query = query.filter(
+#         query = query.filter(
 
-            Publication.doi.ilike(f"%{doi}%")
+#             Publication.publication_type == publication_type
 
-        )
+#         )
 
-    return query.all()
+#     if keyword:
 
-# ---------------- SEARCH BY TITLE ----------------
-@router.get("/search/{title}")
-def search_publication(title: str, db: Session = Depends(get_db)):
-    publications = db.query(Publication).filter(
-        Publication.title.ilike(f"%{title}%")
-    ).all()
+#         query = query.filter(
 
-    if not publications:
-        raise HTTPException(
-            status_code=404,
-            detail="No publications found"
-        )
+#             Publication.keywords.ilike(f"%{keyword}%")
 
-    return publications
+#         )
+
+#     if year:
+
+#         query = query.filter(
+
+#             Publication.publication_year == year
+
+#         )
+
+#     if status:
+
+#         query = query.filter(
+
+#             Publication.status == status
+
+#         )
+
+#     if doi:
+
+#         query = query.filter(
+
+#             Publication.doi.ilike(f"%{doi}%")
+
+#         )
+
+#     return query.all()
+
+# # ---------------- SEARCH BY TITLE ----------------
+# @router.get("/search/{title}")
+# def search_publication(title: str, db: Session = Depends(get_db)):
+#     publications = db.query(Publication).filter(
+#         Publication.title.ilike(f"%{title}%")
+#     ).all()
+
+#     if not publications:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="No publications found"
+#         )
+
+#     return publications
 
 
 # ---------------- FILTER BY YEAR ----------------

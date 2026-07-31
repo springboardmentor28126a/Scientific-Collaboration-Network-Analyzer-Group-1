@@ -51,12 +51,12 @@ function Sidebar() {
                 onClick={() => navigate("/dashboard")}
             />
 
-            <MenuItem
+            {/* <MenuItem
                 icon={<FaUsers />}
                 text="Researchers"
                 active={location.pathname === "/researchers"}
                 onClick={() => navigate("/researchers")}
-            />
+            /> */}
 
             <MenuItem
                 icon={<FaBookOpen />}
@@ -69,14 +69,14 @@ function Sidebar() {
             />
 
             <MenuItem
-                icon={<FaSearch />}
-                text="Search Research"
-                active={
-                    location.pathname === "/search" ||
-                    location.pathname === "/search-publications"
-                }
-                onClick={() => navigate("/search")}
-            />
+    icon={<FaSearch />}
+    text="Search"
+    active={
+        location.pathname === "/search" ||
+        location.pathname === "/search-publications"
+    }
+    onClick={() => navigate("/search")}
+/>
 
             <MenuItem
                 icon={<FaChartBar />}

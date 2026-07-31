@@ -79,6 +79,27 @@ def get_conferences(
     return [conference_to_response(conference) for conference in conference_list]
 
 
+from sqlalchemy import or_
+
+@router.get("/search")
+def search_conferences(
+    q: str,
+    db: Session = Depends(get_db)
+):
+    conferences = (
+        db.query(Conference)
+        .filter(
+            or_(
+                Conference.name.ilike(f"%{q}%"),
+                Conference.location.ilike(f"%{q}%"),
+                Conference.description.ilike(f"%{q}%")
+            )
+        )
+        .limit(20)
+        .all()
+    )
+
+    return conferences
 @router.get(
     "/{conference_id}",
     response_model=ConferenceResponse

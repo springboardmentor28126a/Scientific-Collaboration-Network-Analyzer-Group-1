@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-
+from sqlalchemy import or_
 from backend.database.database import get_db
 from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
@@ -179,7 +179,79 @@ def delete_group(
     return {
         "message": "Research group deleted successfully."
     }
+@router.get("/")
+def get_all_groups(
+    db: Session = Depends(get_db)
+):
+    groups = (
+        db.query(ResearchGroup)
+        .all()
+    )
 
+    result = []
+
+    for group in groups:
+
+        member_count = (
+            db.query(ResearchGroupMember)
+            .filter(
+                ResearchGroupMember.group_id == group.id
+            )
+            .count()
+        )
+
+        result.append({
+            "id": group.id,
+            "name": group.name,
+            "description": group.description,
+            "visibility": group.visibility,
+            "created_by": group.created_by,
+            "member_count": member_count,
+            "created_at": group.created_at
+        })
+
+    return result
+
+@router.get("/search")
+def search_groups(
+    q: str,
+    db: Session = Depends(get_db)
+):
+    groups = (
+        db.query(ResearchGroup)
+        .filter(
+            or_(
+                ResearchGroup.name.ilike(f"%{q}%"),
+                ResearchGroup.description.ilike(f"%{q}%")
+            )
+        )
+        .limit(20)
+        .all()
+    )
+
+    result = []
+
+    for group in groups:
+
+        member_count = (
+            db.query(ResearchGroupMember)
+            .filter(
+                ResearchGroupMember.group_id == group.id
+            )
+            .count()
+        )
+
+        result.append({
+            "id": group.id,
+            "name": group.name,
+            "description": group.description,
+            "visibility": group.visibility,
+            "created_by": group.created_by,
+            "member_count": member_count,
+            "created_at": group.created_at
+        })
+
+    return result
 @router.get(
     "/{group_id}/members",
     response_model=list[GroupMemberResponse]
