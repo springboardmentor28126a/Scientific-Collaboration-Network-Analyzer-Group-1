@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  CalendarDays,
   UserCheck,
   Settings
 } from "lucide-react";
@@ -40,6 +41,10 @@ function Navbar() {
           Institutions
         </Link>
 
+        <Link to="/conference">
+          <CalendarDays size={20}/>
+          Conferences
+        </Link>
 
         <Link to="/reviewers">
           <UserCheck size={20}/>

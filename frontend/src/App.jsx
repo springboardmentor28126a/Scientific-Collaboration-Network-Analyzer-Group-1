@@ -3,58 +3,18 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import UserRoles from "./components/UserRoles";
 import NetworkGraph from "./components/NetworkGraph";
+import Dashboard from "./components/Dashboard";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Researchers from "./pages/Researchers";
 import Institutions from "./pages/Institutions";
+import Conference from "./pages/Conference";
 import Reviewers from "./pages/Reviewers";
 import Admin from "./pages/Admin";
 
 import Login from "./Login";
 import SignIn from "./SignIn";
-
-
-function Dashboard() {
-  return (
-    <div className="container">
-
-      <Navbar />
-
-      <h1>
-        <span>Scientific Collaboration</span><br />
-        <span>Network Analyzer</span>
-      </h1>
-
-
-      <p className="subtitle">
-        Visualizing scientific collaborations through intelligent network analysis.
-      </p>
-
-
-      <div className="hero">
-
-        <div className="hero-content">
-
-          <button className="launch-btn">
-            Start Analysis
-          </button>
-
-        </div>
-
-
-        <NetworkGraph />
-
-      </div>
-
-
-      <UserRoles />
-
-
-    </div>
-  );
-}
-
 
 
 function App() {
@@ -86,7 +46,7 @@ function App() {
         />
 
 
-        {/* After login */}
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={<Dashboard />}
@@ -103,6 +63,12 @@ function App() {
         <Route
           path="/institutions"
           element={<Institutions />}
+        />
+
+
+        <Route
+          path="/conference"
+          element={<Conference />}
         />
 
 

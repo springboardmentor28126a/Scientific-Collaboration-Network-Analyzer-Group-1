@@ -1022,13 +1022,207 @@ body {
 
 
 /* Main page container */
-.page-container,
-.dashboard-container,
-.content-container {
-  width: 100%;
-  max-width: none;
-  padding-left: 40px;
-  padding-right: 40px;
+/* Dashboard Layout */
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #080808;
+}
+
+
+/* Main dashboard area */
+
+.dashboard-content {
+
+    flex: 1;
+    padding: 40px;
+    background: #080808;
+    color: white;
+
+}
+
+
+
+/* Heading */
+
+.dashboard-content h1 {
+
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 10px;
+
+}
+
+
+.dashboard-content .subtitle {
+
+    color: #b8b8b8;
+    font-size: 16px;
+}
+
+
+
+/* Cards container */
+
+.dashboard-cards {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 400px);
+
+    gap: 40px;
+
+    margin-top: 30px;
+
+}
+
+
+.dashboard-card {
+
+    background: linear-gradient(
+        145deg,
+        #1a1a1a,
+        #111111
+    );
+
+    border: 1px solid #3b111d;
+
+    width: 400px;
+
+    height: 200px;
+
+    padding: 30px;
+
+    border-radius: 15px;
+
+}
+
+
+.dashboard-card h3 {
+
+    font-size: 17px;
+    margin-top: 10px;
+
+}
+
+
+.dashboard-card h2 {
+
+    font-size: 35px;
+    margin-top: 10px;
+
+}
+
+
+.icon {
+
+    color: #c2185b;
+
+}
+
+
+
+/* Individual cards */
+
+.dashboard-card {
+
+    background: linear-gradient(
+        145deg,
+        #1a1a1a,
+        #111111
+    );
+
+    border: 1px solid #3b111d;
+
+    padding: 28px;
+
+    border-radius: 18px;
+
+    transition: 0.3s;
+
+}
+
+
+.dashboard-card:hover {
+
+    transform: translateY(-5px);
+
+    border-color: #9b174d;
+
+}
+
+
+
+/* Icons */
+
+.icon {
+
+    color: #c2185b;
+
+    margin-bottom: 15px;
+
+}
+
+
+
+/* Card titles */
+
+.dashboard-card h3 {
+
+    color: #d0d0d0;
+
+    font-size:18px;
+
+}
+
+
+
+/* Numbers */
+
+.dashboard-card h2 {
+
+    color:white;
+
+    font-size:42px;
+
+    margin-top:15px;
+
+}
+
+
+
+/* Activity section */
+
+.activity-box {
+
+    margin-top:40px;
+
+    background:#111111;
+
+    border:1px solid #30101a;
+
+    border-radius:18px;
+
+    padding:30px;
+
+}
+
+
+
+.activity-box h2 {
+
+    color:white;
+
+}
+
+
+.activity-box p {
+
+    color:#c7c7c7;
+
+    padding:8px 0;
+
 }
 
 
@@ -1766,5 +1960,233 @@ body {
 
     background:#b8325b;
 
+
+}
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+
+/* Sidebar space */
+.dashboard-content {
+
+    margin-left: 250px;
+
+    padding: 40px 60px;
+
+    width: calc(100% - 250px);
+
+    background:#080808;
+
+    color:white;
+
+}
+
+
+/* Move cards toward center */
+
+.dashboard-cards {
+
+    display:grid;
+
+    grid-template-columns: repeat(2, 400px);
+
+    gap:40px;
+
+    justify-content:center;
+
+    margin-top:40px;
+
+}
+
+
+
+/* Cards */
+
+.dashboard-card {
+
+    width:350px;
+
+    min-height:170px;
+
+    padding:25px;
+
+    background:linear-gradient(
+        145deg,
+        #1a1a1a,
+        #111111
+    );
+
+    border:5px solid #3b111d;
+
+    border-radius:18px;
+
+}
+
+
+
+/* Title */
+
+.dashboard-card h3 {
+
+    font-size:20px;
+
+}
+
+
+
+/* Number */
+
+.dashboard-card h2 {
+
+    font-size:42px;
+
+}
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 600px);
+    gap: 40px;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+
+.dashboard-card {
+    width: 500px;
+    height: 220px;
+    padding: 35px;
+    border-radius: 20px;
+}
+
+
+.dashboard-card h3 {
+    font-size: 24px;
+}
+
+
+.dashboard-card h2 {
+    font-size: 55px;
+}
+/* Dashboard wide sections */
+.dashboard-box {
+  width: 100%;
+  margin-top: 25px;
+  padding: 25px;
+  border-radius: 16px;
+
+  background: linear-gradient(
+    145deg,
+    #1b1115,
+    #120c0f
+  );
+
+  border: 1px solid #6b2639;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+
+  box-sizing: border-box;
+}
+
+
+.dashboard-box h2 {
+  color: #f1d7df;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+
+
+/* Quick overview layout */
+.overview-grid {
+
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 18px;
+
+}
+
+
+.overview-grid p {
+
+  background: #24151b;
+
+  padding: 18px;
+
+  border-radius: 12px;
+
+  border: 5px solid #542033;
+
+  color: #e8c6d1;
+
+  font-size: 15px;
+
+}
+
+
+
+
+
+/* Chart box text */
+.recharts-text {
+
+  fill: #e8c6d1 !important;
+
+}
+
+
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+
+  stroke: #6b2639 !important;
+
+}
+
+
+.recharts-tooltip-wrapper {
+
+  color: #ffffff;
+
+}
+
+
+.recharts-default-tooltip {
+
+  background: #1b1115 !important;
+
+  border: 5px solid #6b2639 !important;
+
+  border-radius: 8px;
+
+}
+
+
+
+
+
+/* Activity items */
+.activity-item,
+.dashboard-box p {
+
+  color: #e8c6d1;
+
+  font-size: 15px;
+
+  line-height: 1.8;
+
+}
+
+
+
+
+/* Conference/activity hover effect */
+.dashboard-box p:hover,
+.overview-grid p:hover {
+
+  border-color: #a64d6a;
+
+  transform: translateX(5px);
+
+  transition: 0.3s ease;
 
 }

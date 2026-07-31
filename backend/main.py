@@ -4,7 +4,7 @@ sys.path.append("src")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routes import users,researcher,institution,department
+from routes import users, researcher, institution, department, conference
 import models
 
 load_dotenv()
@@ -28,6 +28,8 @@ app.include_router(researcher.router)
 app.include_router(institution.router)
 
 app.include_router(department.router)
+
+app.include_router(conference.router)
 
 @app.get("/")
 def root():

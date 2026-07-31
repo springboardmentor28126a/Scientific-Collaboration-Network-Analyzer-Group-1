@@ -32,6 +32,8 @@ function Institutions() {
 
       const response = await api.get("/institutions");
 
+      console.log("Institutions from API:", response.data);
+
       setInstitutions(response.data);
 
     }
