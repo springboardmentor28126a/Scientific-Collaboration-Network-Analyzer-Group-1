@@ -34,7 +34,7 @@ def create_publication(db: Session, user_id: int, payload: PublicationCreate) ->
         conference_id=payload.conference_id,
         title=payload.title,
         publication_type=payload.publication_type.value,
-        conference_id=payload.conference_id,
+        
         abstract=payload.abstract,
         authors_text=payload.authors_text,
         publish_date=payload.publish_date,
