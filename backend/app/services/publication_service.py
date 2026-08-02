@@ -10,6 +10,8 @@ from app.models.researcher import Researcher
 from app.schemas.publication import PublicationCreate, PublicationUpdate, ReviewDecision
 from app.models.publication import publication_coauthors
 from app.utils.constants import PublicationStatus
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import create_notification
 
 
 def _get_researcher_for_user(db: Session, user_id: int) -> Researcher:
@@ -220,7 +222,12 @@ def claim_for_review(db: Session, reviewer_user_id: int, publication_id: int) ->
     return publication
 
 
-def decide_review(db: Session, reviewer_user_id: int, publication_id: int, decision: ReviewDecision) -> Publication:
+def decide_review(
+    db: Session,
+    reviewer_user_id: int,
+    publication_id: int,
+    decision: ReviewDecision,
+) -> Publication:
     publication = get_publication(db, publication_id)
 
     if publication.reviewer_id != reviewer_user_id:
@@ -240,7 +247,40 @@ def decide_review(db: Session, reviewer_user_id: int, publication_id: int, decis
         if decision.approve
         else PublicationStatus.REJECTED
     )
+
     publication.review_comments = decision.comments
+
+    from sqlalchemy.sql import func as sa_func
+    publication.reviewed_at = sa_func.now()
+
+    db.commit()
+    db.refresh(publication)
+
+    # Get publication owner
+    owner = (
+        db.query(Researcher)
+        .filter(Researcher.id == publication.owner_researcher_id)
+        .first()
+    )
+
+    # Create notification for the owner
+    if owner:
+        create_notification(
+            db,
+            NotificationCreate(
+                user_id=owner.user_id,
+                title="Publication Status Updated",
+                message=(
+                    f'Your publication "{publication.title}" has been approved.'
+                    if decision.approve
+                    else f'Your publication "{publication.title}" has been rejected.'
+                ),
+                notification_type="PUBLICATION",
+                reference_id=publication.id,
+            ),
+        )
+
+    return publication
 
     from sqlalchemy.sql import func as sa_func
 

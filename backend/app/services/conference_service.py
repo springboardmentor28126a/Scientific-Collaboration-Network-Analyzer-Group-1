@@ -2,7 +2,11 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.conference import Conference
+from app.models.user import User
 from app.schemas.conference import ConferenceCreate, ConferenceUpdate
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import create_notification
+from app.utils.constants import UserRole
 
 
 def create_conference(
@@ -29,6 +33,25 @@ def create_conference(
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+
+    # Notify Institution Admins
+    admins = (
+        db.query(User)
+        .filter(User.role == UserRole.INSTITUTION_ADMIN.value)
+        .all()
+    )
+
+    for admin in admins:
+        create_notification(
+            db,
+            NotificationCreate(
+                user_id=admin.id,
+                title="New Conference Created",
+                message=f"{db_conference.title} has been created.",
+                notification_type="CONFERENCE",
+                reference_id=db_conference.id,
+            ),
+        )
 
     return db_conference
 
@@ -80,6 +103,25 @@ def update_conference(
 
     db.commit()
     db.refresh(conference)
+
+    # Notify Institution Admins
+    admins = (
+        db.query(User)
+        .filter(User.role == UserRole.INSTITUTION_ADMIN.value)
+        .all()
+    )
+
+    for admin in admins:
+        create_notification(
+            db,
+            NotificationCreate(
+                user_id=admin.id,
+                title="Conference Updated",
+                message=f"{conference.title} has been updated.",
+                notification_type="CONFERENCE",
+                reference_id=conference.id,
+            ),
+        )
 
     return conference
 
