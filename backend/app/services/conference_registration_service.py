@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
 
 from app.models.conference_registration import ConferenceRegistration
 from app.models.conference import Conference
@@ -23,6 +24,9 @@ def register_for_conference(db: Session, user_id: int, conference_id: int, paylo
     conference = db.query(Conference).filter(Conference.id == conference_id).first()
     if conference is None:
         raise HTTPException(status_code=404, detail="Conference not found.")
+
+    if conference.end_date < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="This conference has already ended. Registration is closed.")
 
     existing = (
         db.query(ConferenceRegistration)

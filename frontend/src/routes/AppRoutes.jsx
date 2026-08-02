@@ -18,6 +18,10 @@ import ResearcherPage from "../pages/ResearcherPage";
 import UserManagementPage from "../pages/UserManagementPage";
 import BrowsePublicationsPage from "../pages/BrowsePublicationsPage";
 import ConferencesPage from "../pages/ConferencesPage";
+import CollaborationsPage from "../pages/CollaborationsPage";
+import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
+import ReportsPage from "../pages/ReportsPage";
+
 
 function AppRoutes() {
   return (
@@ -80,7 +84,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+  path="/analytics"
+  element={
+    <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "INSTITUTION_ADMIN"]}>
+      <AnalyticsDashboardPage />
+    </ProtectedRoute>
+  }
+/>
         <Route
           path="/reviewer/dashboard"
           element={
@@ -126,6 +137,22 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/reports"
+  element={
+    <ProtectedRoute allowedRoles={["SYSTEM_ADMIN", "INSTITUTION_ADMIN"]}>
+      <ReportsPage />
+    </ProtectedRoute>
+  }
+/>
+        <Route
+  path="/collaborations"
+  element={
+    <ProtectedRoute allowedRoles={["RESEARCHER"]}>
+      <CollaborationsPage />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

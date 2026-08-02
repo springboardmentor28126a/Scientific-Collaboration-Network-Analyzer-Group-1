@@ -1,0 +1,20 @@
+                                         Table "public.citations"
+     Column     |           Type           | Collation | Nullable |                Default                
+----------------+--------------------------+-----------+----------+---------------------------------------
+ id             | integer                  |           | not null | nextval('citations_id_seq'::regclass)
+ publication_id | integer                  |           | not null | 
+ cited_title    | character varying(500)   |           | not null | 
+ cited_authors  | character varying(500)   |           |          | 
+ cited_year     | integer                  |           |          | 
+ cited_source   | character varying(300)   |           |          | 
+ cited_doi      | character varying(255)   |           |          | 
+ cited_url      | character varying(500)   |           |          | 
+ notes          | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "citations_pkey" PRIMARY KEY, btree (id)
+    "ix_citations_id" btree (id)
+Foreign-key constraints:
+    "citations_publication_id_fkey" FOREIGN KEY (publication_id) REFERENCES publications(id)
+
