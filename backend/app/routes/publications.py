@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime, date
 import os
 import shutil
 from uuid import uuid4
@@ -18,6 +19,33 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
+
+def normalize_publication_payload(payload: PublicationCreate | dict):
+    data = payload.model_dump() if hasattr(payload, "model_dump") else dict(payload)
+    published_date = data.get("published_date")
+    if published_date is None:
+        return data
+
+    if isinstance(published_date, datetime):
+        return data
+
+    if isinstance(published_date, date) and not isinstance(published_date, datetime):
+        data["published_date"] = datetime.combine(published_date, datetime.min.time())
+        return data
+
+    if isinstance(published_date, str):
+        value = published_date.strip()
+        if value:
+            try:
+                data["published_date"] = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                try:
+                    data["published_date"] = datetime.combine(date.fromisoformat(value), datetime.min.time())
+                except ValueError:
+                    pass
+
+    return data
+
 
 def serialize_publication(publication: Publication):
     data = {column.name: getattr(publication, column.name) for column in Publication.__table__.columns}
@@ -36,7 +64,8 @@ def create_publication(
     if current_user.role not in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to create publications")
         
-    db_pub = Publication(**pub.model_dump(), created_by_id=current_user.id)
+    payload = normalize_publication_payload(pub)
+    db_pub = Publication(**payload, created_by_id=current_user.id)
     # Add current user as author automatically
     db_pub.authors.append(current_user)
     db.add(db_pub)
@@ -160,7 +189,7 @@ def update_publication(pub_id: int, pub: PublicationCreate, db: Session = Depend
     if not can_manage_publication(db_pub, current_user):
         raise HTTPException(status_code=403, detail="Not authorized to edit this publication")
 
-    for key, value in pub.model_dump().items():
+    for key, value in normalize_publication_payload(pub).items():
         setattr(db_pub, key, value)
 
     db.commit()

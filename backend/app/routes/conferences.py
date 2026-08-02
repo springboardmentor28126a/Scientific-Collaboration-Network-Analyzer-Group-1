@@ -6,6 +6,7 @@ from ..database import get_db
 from ..models import User, Conference, ConferenceRegistration, UserRole
 from ..schemas import ConferenceCreate, ConferenceResponse, ConferenceRegistrationCreate, ConferenceRegistrationResponse
 from ..auth import get_current_user
+from ..notification_service import create_notification
 
 router = APIRouter(prefix="/conferences", tags=["conferences"])
 
@@ -49,8 +50,11 @@ def register_for_conference(conf_id: int, reg: ConferenceRegistrationCreate, db:
     if not db.get(Conference, conf_id): raise HTTPException(status_code=404, detail="Conference not found")
     if db.query(ConferenceRegistration).filter_by(conference_id=conf_id, user_id=current_user.id).first():
         raise HTTPException(status_code=400, detail="Already registered for this conference")
+    conference = db.get(Conference, conf_id)
     registration = ConferenceRegistration(conference_id=conf_id, user_id=current_user.id)
-    db.add(registration); db.commit(); db.refresh(registration)
+    db.add(registration)
+    create_notification(db, current_user.id, "Conference registration completed", f"Your registration for '{conference.name}' is confirmed.", "conference_registration")
+    db.commit(); db.refresh(registration)
     return serialize_registration(registration)
 
 @router.get("/registrations/me", response_model=List[ConferenceRegistrationResponse])

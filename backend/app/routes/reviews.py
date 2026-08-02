@@ -9,6 +9,7 @@ from ..database import get_db
 from ..models import User, Publication, Review, UserRole
 from ..schemas import ReviewCreate, ReviewResponse
 from ..auth import get_current_user
+from ..notification_service import create_notification
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -65,6 +66,11 @@ def submit_review(publication_id: int, review: ReviewCreate = Depends(), file: U
         status='completed'
     )
     db.add(db_review)
+    recommendation = (review.recommendation or "").lower()
+    if recommendation in {"accept", "approve", "approved"}:
+        create_notification(db, pub.created_by_id, "Publication approved", f"Your publication '{pub.title}' received an approving review.", "publication_approved")
+    elif recommendation in {"reject", "rejected"}:
+        create_notification(db, pub.created_by_id, "Publication rejected", f"Your publication '{pub.title}' received a rejecting review.", "publication_rejected")
     db.commit()
     db.refresh(db_review)
     return db_review

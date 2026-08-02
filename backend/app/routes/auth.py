@@ -2,7 +2,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from ..database import get_db
+from ..database import get_db, ensure_database_sequences
 from ..models import User, UserRole
 from fastapi.security import OAuth2PasswordRequestForm
 from ..schemas import UserCreate, Token, UserResponse
@@ -28,7 +28,14 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         )
     
     hashed_password = hash_password(user.password)
-    requested_role = user.requested_role or UserRole.RESEARCHER
+    requested_role_value = (user.requested_role or "researcher").strip().lower()
+    normalized_requested_role = None
+    role_request_status = "approved"
+
+    if requested_role_value in {UserRole.REVIEWER.value, UserRole.INSTITUTION_ADMIN.value}:
+        normalized_requested_role = requested_role_value
+        role_request_status = "pending"
+
     # Self-registration never grants an elevated role. The request is reviewed
     # by a system administrator after registration.
     db_user = User(
@@ -37,14 +44,33 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         full_name=user.full_name.strip(),
         hashed_password=hashed_password,
         role=UserRole.RESEARCHER,
-        requested_role=requested_role.value if requested_role != UserRole.RESEARCHER else None,
-        role_request_status="pending" if requested_role != UserRole.RESEARCHER else "approved",
+        requested_role=normalized_requested_role,
+        role_request_status=role_request_status,
     )
     db.add(db_user)
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as exc:
         db.rollback()
+        if "users_pkey" in str(exc.orig).lower():
+            ensure_database_sequences()
+            retry_user = User(
+                email=normalized_email,
+                username=normalized_username,
+                full_name=user.full_name.strip(),
+                hashed_password=hash_password(user.password),
+                role=UserRole.RESEARCHER,
+                requested_role=normalized_requested_role,
+                role_request_status=role_request_status,
+            )
+            db.add(retry_user)
+            try:
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
+            db.refresh(retry_user)
+            return retry_user
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
     db.refresh(db_user)
     

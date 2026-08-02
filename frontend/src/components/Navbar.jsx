@@ -59,6 +59,10 @@ const Navbar = () => {
                   <li className="nav-item mx-1"><Link className="nav-link" to="/collaborations" onClick={closeMenu}><i className="bi bi-diagram-3"></i> Collaborations</Link></li>
                 )}
 
+                {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
+                  <li className="nav-item mx-1"><Link className="nav-link" to="/notifications" onClick={closeMenu}><i className="bi bi-bell"></i> Notifications</Link></li>
+                )}
+
                 {canAccess(role, ['researcher', 'reviewer', 'system_admin']) && (
                   <li className="nav-item mx-1"><Link className="nav-link" to="/citations" onClick={closeMenu}><i className="bi bi-quote"></i> Citations</Link></li>
                 )}

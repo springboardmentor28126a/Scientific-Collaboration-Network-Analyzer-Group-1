@@ -72,8 +72,8 @@ const Register = () => {
             <label className="form-label">Requested role</label>
             <select className="form-select" name="requested_role" value={formData.requested_role} onChange={handleChange} disabled={loading}>
               <option value="researcher">Researcher</option>
-              <option value="reviewer">Reviewer (administrator approval required)</option>
-              <option value="institution_admin">Institution administrator (administrator approval required)</option>
+             {/* <option value="reviewer">Reviewer (administrator approval required)</option> */}
+             {/*} <option value="institution_admin">Institution administrator (administrator approval required)</option>*/}
             </select>
             <small className="text-muted">Every new account starts as a researcher. Elevated access is granted only after approval.</small>
           </div>

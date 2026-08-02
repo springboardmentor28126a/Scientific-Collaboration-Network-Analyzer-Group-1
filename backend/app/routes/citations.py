@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..auth import get_current_user
+from ..notification_service import create_notification
 from ..database import get_db
 from ..models import Citation, Publication, Reference, User, UserRole, ResearcherProfile, publication_author
 from ..schemas import CitationCreate, CitationResponse, ReferenceCreate, ReferenceResponse
@@ -40,6 +41,8 @@ def create_citation(payload: CitationCreate, db: Session = Depends(get_db), curr
     if not citing or not cited: raise HTTPException(status_code=404, detail="Publication not found")
     if not can_edit_publication(citing, current_user): raise HTTPException(status_code=403, detail="You can add citations only to your own publications")
     item = Citation(**payload.model_dump()); db.add(item)
+    if cited.created_by_id != current_user.id:
+        create_notification(db, cited.created_by_id, "New citation added", f"Your publication '{cited.title}' was cited by '{citing.title}'.", "citation_added")
     try: db.commit()
     except Exception: db.rollback(); raise HTTPException(status_code=409, detail="This citation already exists")
     db.refresh(item); return citation_data(item)

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..auth import get_current_user
+from ..notification_service import create_notification
 from ..database import get_db
 from ..models import Collaboration, CoAuthor, ProjectMember, ResearchProject, User, UserRole, Publication
 from ..schemas import (CollaborationCreate, CollaborationResponse, CollaborationUpdate, CoAuthorCreate,
@@ -89,7 +90,10 @@ def add_member(project_id: int, payload: ProjectMemberCreate, db: Session = Depe
     assert_project_manager(project, current_user)
     if not db.get(User, payload.researcher_id): raise HTTPException(status_code=404, detail="Researcher not found")
     if db.query(ProjectMember).filter_by(project_id=project_id, researcher_id=payload.researcher_id).first(): raise HTTPException(status_code=409, detail="Researcher is already a project member")
-    member = ProjectMember(project_id=project_id, **payload.model_dump()); db.add(member); db.commit(); db.refresh(member); return member_data(member)
+    member = ProjectMember(project_id=project_id, **payload.model_dump())
+    db.add(member)
+    create_notification(db, payload.researcher_id, "Added to a research project", f"You were added to the project '{project.title}' as {payload.role}.", "project_member_added")
+    db.commit(); db.refresh(member); return member_data(member)
 
 @router.delete("/projects/{project_id}/members/{member_id}")
 def remove_member(project_id: int, member_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -117,7 +121,9 @@ def create_collaboration(payload: CollaborationCreate, db: Session = Depends(get
     if first_id == payload.researcher2_id: raise HTTPException(status_code=400, detail="A collaboration needs two different researchers")
     if not db.get(User, payload.researcher2_id): raise HTTPException(status_code=404, detail="Second researcher not found")
     item = Collaboration(**payload.model_dump(exclude={"researcher1_id"}), researcher1_id=first_id)
-    db.add(item); db.commit(); db.refresh(item); return collaboration_data(item)
+    db.add(item)
+    create_notification(db, payload.researcher2_id, "New collaboration request", f"{current_user.full_name} invited you to collaborate on {payload.collaboration_type}.", "collaboration_request")
+    db.commit(); db.refresh(item); return collaboration_data(item)
 
 @router.put("/{collaboration_id}", response_model=CollaborationResponse)
 def update_collaboration(collaboration_id: int, payload: CollaborationUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

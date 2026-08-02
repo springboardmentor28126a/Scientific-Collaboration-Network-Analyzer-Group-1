@@ -64,6 +64,7 @@ class User(Base):
     project_memberships = relationship("ProjectMember", back_populates="researcher", cascade="all, delete-orphan")
     collaborations_as_first = relationship("Collaboration", foreign_keys="Collaboration.researcher1_id", back_populates="researcher1")
     collaborations_as_second = relationship("Collaboration", foreign_keys="Collaboration.researcher2_id", back_populates="researcher2")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User {self.username}>"
@@ -281,3 +282,17 @@ class Reference(Base):
     url = Column(String(1000), nullable=True)
 
     publication = relationship("Publication", back_populates="references")
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String(50), nullable=False, default="system")
+    is_read = Column(Boolean, default=False, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="notifications")
