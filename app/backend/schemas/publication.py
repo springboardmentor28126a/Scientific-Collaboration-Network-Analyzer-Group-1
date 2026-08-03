@@ -1,7 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class PublicationCreate(BaseModel):
+# ---------------------------------------------------------
+# Base Schema
+# ---------------------------------------------------------
+
+class PublicationBase(BaseModel):
     researcher_id: int
     title: str
     authors: str | None = None
@@ -15,19 +19,39 @@ class PublicationCreate(BaseModel):
     upload_path: str | None = None
 
 
-class PublicationResponse(BaseModel):
-    id: int
-    researcher_id: int
-    title: str
+# ---------------------------------------------------------
+# Create Schema
+# ---------------------------------------------------------
+
+class PublicationCreate(PublicationBase):
+    pass
+
+
+# ---------------------------------------------------------
+# Update Schema
+# ---------------------------------------------------------
+
+class PublicationUpdate(BaseModel):
+    researcher_id: int | None = None
+    title: str | None = None
     authors: str | None = None
     abstract: str | None = None
-    citation_count: int = 0
-    publication_type: str
-    publication_name: str
-    publication_year: int
+    citation_count: int | None = None
+    publication_type: str | None = None
+    publication_name: str | None = None
+    publication_year: int | None = None
     doi: str | None = None
-    status: str
+    status: str | None = None
     upload_path: str | None = None
 
-    class Config:
-        from_attributes = True
+
+# ---------------------------------------------------------
+# Response Schema
+# ---------------------------------------------------------
+
+class PublicationResponse(PublicationBase):
+    id: int
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )

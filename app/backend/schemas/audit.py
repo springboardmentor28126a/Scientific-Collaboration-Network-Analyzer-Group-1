@@ -1,16 +1,45 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
 
 
-class AuditLogCreate(BaseModel):
+# ---------------------------------------------------------
+# Base Schema
+# ---------------------------------------------------------
+
+class AuditLogBase(BaseModel):
     user_id: int | None = None
     action: str
     module: str
     details: str | None = None
-    created_at: str | None = None
 
 
-class AuditLogResponse(AuditLogCreate):
+# ---------------------------------------------------------
+# Create Schema
+# ---------------------------------------------------------
+
+class AuditLogCreate(AuditLogBase):
+    pass
+
+
+# ---------------------------------------------------------
+# Update Schema
+# ---------------------------------------------------------
+
+class AuditLogUpdate(BaseModel):
+    user_id: int | None = None
+    action: str | None = None
+    module: str | None = None
+    details: str | None = None
+
+
+# ---------------------------------------------------------
+# Response Schema
+# ---------------------------------------------------------
+
+class AuditLogResponse(AuditLogBase):
     id: int
+    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )

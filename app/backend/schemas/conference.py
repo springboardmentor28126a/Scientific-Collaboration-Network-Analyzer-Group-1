@@ -1,32 +1,72 @@
-from pydantic import BaseModel
+from datetime import date
+from pydantic import BaseModel, ConfigDict
 
 
-class ConferenceCreate(BaseModel):
+# ---------------------------------------------------------
+# Conference
+# ---------------------------------------------------------
+
+class ConferenceBase(BaseModel):
     name: str
-    organizer: str | None = None
-    location: str | None = None
-    start_date: str | None = None
-    end_date: str | None = None
+    organizer: str
+    location: str
+    start_date: date
+    end_date: date
     website: str | None = None
 
 
-class ConferenceResponse(ConferenceCreate):
+class ConferenceCreate(ConferenceBase):
+    pass
+
+
+class ConferenceUpdate(BaseModel):
+    name: str | None = None
+    organizer: str | None = None
+    location: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    website: str | None = None
+
+
+class ConferenceResponse(ConferenceBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-class ConferenceParticipationCreate(BaseModel):
+# ---------------------------------------------------------
+# Conference Participation
+# ---------------------------------------------------------
+
+class ConferenceParticipationBase(BaseModel):
     conference_id: int
     researcher_id: int
     presentation_title: str | None = None
+    participation_type: str
+    status: str
+
+
+class ConferenceParticipationCreate(
+    ConferenceParticipationBase
+):
+    pass
+
+
+class ConferenceParticipationUpdate(BaseModel):
+    conference_id: int | None = None
+    researcher_id: int | None = None
+    presentation_title: str | None = None
     participation_type: str | None = None
-    status: str = "Registered"
+    status: str | None = None
 
 
-class ConferenceParticipationResponse(ConferenceParticipationCreate):
+class ConferenceParticipationResponse(
+    ConferenceParticipationBase
+):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )

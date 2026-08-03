@@ -1,21 +1,40 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+# ---------------------------------------------------------
+# Publication Author
+# ---------------------------------------------------------
 
-class PublicationAuthorCreate(BaseModel):
+class PublicationAuthorBase(BaseModel):
     publication_id: int
     researcher_id: int
     author_order: int | None = None
     contribution: str | None = None
 
 
-class PublicationAuthorResponse(PublicationAuthorCreate):
+class PublicationAuthorCreate(PublicationAuthorBase):
+    pass
+
+
+class PublicationAuthorUpdate(BaseModel):
+    publication_id: int | None = None
+    researcher_id: int | None = None
+    author_order: int | None = None
+    contribution: str | None = None
+
+
+class PublicationAuthorResponse(PublicationAuthorBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
-class CollaborationCreate(BaseModel):
+# ---------------------------------------------------------
+# Collaboration
+# ---------------------------------------------------------
+
+class CollaborationBase(BaseModel):
     title: str
     collaboration_type: str
     primary_researcher_id: int | None = None
@@ -24,8 +43,22 @@ class CollaborationCreate(BaseModel):
     status: str = "Active"
 
 
-class CollaborationResponse(CollaborationCreate):
+class CollaborationCreate(CollaborationBase):
+    pass
+
+
+class CollaborationUpdate(BaseModel):
+    title: str | None = None
+    collaboration_type: str | None = None
+    primary_researcher_id: int | None = None
+    partner_researcher_id: int | None = None
+    institution_name: str | None = None
+    status: str | None = None
+
+
+class CollaborationResponse(CollaborationBase):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
