@@ -45,8 +45,6 @@ export default function GroupMeetings({ groupId }) {
 
                 group_id: Number(groupId),
 
-                created_by: user.id,
-
                 ...form
 
             });
@@ -170,11 +168,11 @@ export default function GroupMeetings({ groupId }) {
 
                         <br /><br />
 
-                        <button
-                            onClick={() => deleteMeeting(meeting.id)}
-                        >
-                            Delete
-                        </button>
+                        {(user?.role === "System Admin" || meeting.created_by === user?.id) && (
+                            <button onClick={() => deleteMeeting(meeting.id)}>
+                                Delete
+                            </button>
+                        )}
 
                     </div>
 

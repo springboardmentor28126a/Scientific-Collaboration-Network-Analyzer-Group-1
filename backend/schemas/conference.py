@@ -38,6 +38,7 @@ class ConferenceUpdate(ConferenceBase):
 
 class ConferenceResponse(ConferenceBase):
     id: int
+    created_by: Optional[int] = None
 
     class Config:
         from_attributes = True

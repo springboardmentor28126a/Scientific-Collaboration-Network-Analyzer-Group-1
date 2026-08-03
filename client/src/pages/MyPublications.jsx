@@ -7,40 +7,38 @@ import EditPublicationModal from "../components/publications/EditPublicationModa
 import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
 import { createCitation } from "../services/citationService";
 function Publications() {
-    const [publications, setPublications] = useState([]);
-    const [searchTitle, setSearchTitle] = useState("");
-    const [sortOption, setSortOption] = useState("Title (A-Z)");
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [customType, setCustomType] = useState("");
-    const fileInputRef = useRef(null);
-    const [selectedPublication, setSelectedPublication] = useState(null);
-    const [editingPublication, setEditingPublication] = useState(null);
-    const [deletePublicationData, setDeletePublicationData] = useState(null);
-    const [institutions, setInstitutions] = useState([]);
-    const [conferences, setConferences] = useState([]);
-    const [selectedCitations, setSelectedCitations] = useState([]);
-    const [showReferences, setShowReferences] = useState(false);
-    const [form, setForm] = useState({
-        id: null,
-        title: "",
-        authors: "",
-        journal: "",
-        publication_year: "",
-        doi: "",
-        keywords: "",
-        abstract: "",
-        pdf_file: "",
-        status: "Draft",
-        researcher_id: null,
-        institution_id: null,
-        conference_id: null
-    });
+  const [publications, setPublications] = useState([]);
+  const [searchTitle, setSearchTitle] = useState("");
+  const [sortOption, setSortOption] = useState("Title (A-Z)");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [customType, setCustomType] = useState("");
+  const fileInputRef = useRef(null);
+  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [editingPublication, setEditingPublication] = useState(null);
+  const [deletePublicationData, setDeletePublicationData] = useState(null);
+  const [institutions,setInstitutions]=useState([]);
+  const [conferences, setConferences] = useState([]);
+  const [form, setForm] = useState({
+    id: null,
+    title: "",
+    authors: "",
+    journal: "",
+    publication_year: "",
+    doi: "",
+    keywords: "",
+    abstract: "",
+    pdf_file: "",
+    status: "Draft",
+    researcher_id: null,
+    institution_id: null,
+    conference_id: null
+  });
 
-    useEffect(() => {
-        loadPublications();
-        loadInstitutions();
-        loadConferences();
-    }, []);
+  useEffect(() => {
+    loadPublications();
+    loadInstitutions();
+    loadConferences();
+  }, []);
 
     const loadPublications = async () => {
         try {
@@ -250,8 +248,8 @@ function Publications() {
                 researcher_id: null,
                 institution_id: null,
 
-                conference_id: null
-            });
+    conference_id: null
+        });
 
             setCustomType("");
 
@@ -338,7 +336,7 @@ function Publications() {
 
                 status: "Draft",
 
-                researcher_id: null
+            researcher_id: null
 
             });
 
@@ -503,9 +501,9 @@ function Publications() {
 
             pdf_file: publication.pdf_file || "",
 
-            status: publication.status,
+        status: publication.status,
 
-            researcher_id: publication.researcher_id
+        researcher_id: publication.researcher_id
 
         });
 
@@ -803,9 +801,9 @@ function Publications() {
 
                     <option>Others</option>
 
-                </select>
-                {
-                    form.publication_type === "Others" && (
+</select>
+{
+    form.publication_type === "Others" && (
 
                         <input
 
@@ -970,20 +968,18 @@ function Publications() {
 
                     }
 
-                </select>
+</select>
 
-
-
-                <select
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                >
-                    <option>Draft</option>
-                    <option>Submitted</option>
-                    <option>Published</option>
-                    <option>Archived</option>
-                </select>
+        <select
+          name="status"
+          value={form.status}
+          onChange={handleChange}
+        >
+          <option>Draft</option>
+          <option>Submitted</option>
+          <option>Published</option>
+          <option>Archived</option>
+        </select>
 
                 <button
 
@@ -1122,10 +1118,10 @@ function Publications() {
                             {publication.doi || "N/A"}
                         </p>
 
-                        <p>
-                            <b>🏷 Keywords:</b>{" "}
-                            {publication.keywords || "N/A"}
-                        </p>
+        <p>
+            <b>🏷 Keywords:</b>{" "}
+            {publication.keywords || "N/A"}
+        </p>
 
                         <div
                             style={{
@@ -1151,24 +1147,24 @@ function Publications() {
                                 👁 View
                             </button>
 
-                            <button
-                                onClick={() =>
-                                    setEditingPublication(publication)
-                                }
-                                style={{
-                                    background: "#22c55e",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "8px 14px",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                ✏ Edit
-                            </button>
+            <button
+                onClick={() =>
+                    setEditingPublication(publication)
+                }
+                style={{
+                    background: "#22c55e",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                }}
+            >
+                ✏ Edit
+            </button>
 
-                            <button
-                                onClick={() =>
+            <button
+                onClick={() =>
 
                                     setDeletePublicationData(
 
@@ -1176,18 +1172,18 @@ function Publications() {
 
                                     )
 
-                                }
-                                style={{
-                                    background: "#ef4444",
-                                    color: "white",
-                                    border: "none",
-                                    padding: "8px 14px",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                🗑 Delete
-                            </button>
+}
+                style={{
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                }}
+            >
+                🗑 Delete
+            </button>
 
                         </div>
 

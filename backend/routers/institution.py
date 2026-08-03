@@ -8,6 +8,8 @@ from backend.schemas.institution import (
     InstitutionUpdate,
     InstitutionResponse,
 )
+from backend.utils.dependencies import require_permission
+from backend.database.models import User
 
 router = APIRouter()
 
@@ -23,6 +25,7 @@ router = APIRouter()
 )
 def create_institution(
     institution: InstitutionCreate,
+    current_user: User = Depends(require_permission("*")),
     db: Session = Depends(get_db)
 ):
 
@@ -334,6 +337,7 @@ def get_institution(
 def update_institution(
     institution_id: int,
     updated_data: InstitutionUpdate,
+    current_user: User = Depends(require_permission("institution:update")),
     db: Session = Depends(get_db)
 ):
 
@@ -348,6 +352,12 @@ def update_institution(
         raise HTTPException(
             status_code=404,
             detail="Institution not found"
+        )
+
+    if current_user.role != "System Admin" and current_user.institution_id != institution.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can update only your own institution."
         )
 
     for key, value in updated_data.model_dump().items():
@@ -374,6 +384,7 @@ def update_institution(
 )
 def delete_institution(
     institution_id: int,
+    current_user: User = Depends(require_permission("*")),
     db: Session = Depends(get_db)
 ):
 

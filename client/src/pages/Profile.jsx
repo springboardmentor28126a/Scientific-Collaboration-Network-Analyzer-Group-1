@@ -4,7 +4,7 @@ import InstitutionSearch from "../components/InstitutionSearch";
 function Profile() {
 
     const user = JSON.parse(localStorage.getItem("user"));
-
+    const [verification, setVerification] = useState(null);
     const normalizeInstitutionName = (value) => {
         if (!value) return "";
         return String(value).split(/,|\||\n/)[0].trim();
@@ -43,7 +43,7 @@ function Profile() {
     useEffect(() => {
 
         loadProfile();
-
+        loadVerification();
     }, []);
 
    const loadProfile = async () => {
@@ -85,7 +85,25 @@ function Profile() {
         setProfileExists(false);
     }
 };
+    const loadVerification = async () => {
 
+    try {
+
+        const res = await API.get(
+            "/verification/status"
+        );
+
+        setVerification(res.data);
+
+    }
+
+    catch (err) {
+
+        console.log(err);
+
+    }
+
+};
     const handleChange = (e) => {
 
         setProfile({
@@ -504,6 +522,74 @@ if (profileExists) {
                     disabled={!editing}
                     style={inputStyle}
                 />
+                {
+verification && (
+
+<div
+    style={{
+        marginTop: "10px"
+    }}
+>
+
+{verification.verified && (
+    <span
+        style={{
+            color: "green",
+            fontWeight: "bold"
+        }}
+    >
+        🟢 Verified
+    </span>
+)}
+
+{verification.status === "Pending" && (
+
+<span
+style={{
+color:"orange",
+fontWeight:"bold"
+}}
+>
+
+🟡 Pending Verification
+
+</span>
+
+)}
+
+{verification.status === "Rejected" && (
+
+<span
+style={{
+color:"red",
+fontWeight:"bold"
+}}
+>
+
+🔴 Rejected
+
+</span>
+
+)}
+
+{verification.status === "Not Submitted" && (
+
+<span
+style={{
+color:"gray",
+fontWeight:"bold"
+}}
+>
+
+⚪ Not Submitted
+
+</span>
+
+)}
+
+</div>
+
+)}
 
                 <br />
 

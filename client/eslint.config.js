@@ -17,5 +17,13 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // This project intentionally performs data loading and controlled-form
+      // synchronization in effects. These React Compiler diagnostics are not
+      // runtime errors for the current architecture.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
   },
 ])

@@ -11,6 +11,8 @@ import {
 
 export default function GroupFiles({ groupId }) {
 
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+
     const [files, setFiles] = useState([]);
 
     // Temporary user ID for now.
@@ -79,6 +81,7 @@ export default function GroupFiles({ groupId }) {
                             file={file}
                             onDownload={handleDownload}
                             onDelete={handleDelete}
+                            canDelete={user?.role === "System Admin" || file.uploaded_by === user?.id}
                         />
                     ))
                 )}

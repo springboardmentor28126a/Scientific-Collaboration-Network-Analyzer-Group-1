@@ -4,6 +4,9 @@ from sqlalchemy import or_
 from backend.schemas.researcher import ResearcherCreate, ResearcherResponse
 from backend.database.database import get_db
 from backend.database.models import User, Publication, Conference
+from backend.utils.security import get_current_user
+from backend.models.friend_request import FriendRequest
+from backend.models.research_group_member import ResearchGroupMember
 
 router = APIRouter(
     prefix="/researcher",
@@ -86,8 +89,11 @@ def search_researchers(
 @router.post("/create", response_model=ResearcherResponse)
 def create_profile(
     profile: ResearcherCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and profile.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can create only your own profile.")
 
     user = db.query(User).filter(
         User.id == profile.user_id
@@ -174,7 +180,18 @@ def get_profile(
         Conference.id.in_(conference_ids)
     ).all() if conference_ids else []
 
-    collaborators = []
+    accepted_requests = db.query(FriendRequest).filter(
+        FriendRequest.status == "Accepted",
+        or_(FriendRequest.sender_id == user_id, FriendRequest.receiver_id == user_id),
+    ).all()
+    collaborator_ids = [
+        request.receiver_id if request.sender_id == user_id else request.sender_id
+        for request in accepted_requests
+    ]
+    collaborators = db.query(User).filter(User.id.in_(collaborator_ids)).all() if collaborator_ids else []
+    group_count = db.query(ResearchGroupMember).filter(
+        ResearchGroupMember.user_id == user_id
+    ).count()
 
     return {
         "id": user.id,
@@ -202,7 +219,8 @@ def get_profile(
         "statistics": {
     "publications": len(publications),
     "conferences": len(conferences),
-    "groups": 0
+    "groups": group_count,
+    "collaborations": len(collaborators),
 },
         "publications": [
             {
@@ -244,8 +262,11 @@ def get_profile(
 def update_profile(
     user_id: int,
     profile: ResearcherCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can update only your own profile.")
 
     user = db.query(User).filter(
         User.id == user_id
@@ -304,8 +325,11 @@ def update_profile(
 @router.delete("/{user_id}")
 def delete_profile(
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can delete only your own profile.")
 
     user = db.query(User).filter(
         User.id == user_id

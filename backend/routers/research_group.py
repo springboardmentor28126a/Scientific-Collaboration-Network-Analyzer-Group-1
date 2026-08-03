@@ -15,6 +15,8 @@ from backend.schemas.research_group import (
     ResearchGroupDetailsResponse,
     ResearchGroupUpdate
 )
+from backend.utils.dependencies import require_permission
+from backend.utils.security import get_current_user
 
 router = APIRouter(
     prefix="/groups",
@@ -26,26 +28,14 @@ router = APIRouter(
 )
 def create_group(
     group: ResearchGroupCreate,
+    current_user: User = Depends(require_permission("group:create")),
     db: Session = Depends(get_db)
 ):
-
-    user = (
-        db.query(User)
-        .filter(User.id == group.created_by)
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
     new_group = ResearchGroup(
         name=group.name,
         description=group.description,
         visibility=group.visibility,
-        created_by=group.created_by
+        created_by=current_user.id
     )
 
     db.add(new_group)
@@ -54,7 +44,7 @@ def create_group(
 
     owner = ResearchGroupMember(
         group_id=new_group.id,
-        user_id=group.created_by,
+        user_id=current_user.id,
         role="Owner"
     )
 
@@ -70,7 +60,7 @@ def create_group(
 def update_group(
     group_id: int,
     group: ResearchGroupUpdate,
-    requester_id: int,
+    current_user: User = Depends(require_permission("group:update")),
     db: Session = Depends(get_db)
 ):
 
@@ -90,12 +80,12 @@ def update_group(
         db.query(ResearchGroupMember)
         .filter(
             ResearchGroupMember.group_id == group_id,
-            ResearchGroupMember.user_id == requester_id
+            ResearchGroupMember.user_id == current_user.id
         )
         .first()
     )
 
-    if not member or member.role != "Owner":
+    if current_user.role != "System Admin" and (not member or member.role != "Owner"):
         raise HTTPException(
             status_code=403,
             detail="Only the group owner can edit the group."
@@ -113,7 +103,7 @@ def update_group(
 @router.delete("/{group_id}")
 def delete_group(
     group_id: int,
-    requester_id: int,
+    current_user: User = Depends(require_permission("group:delete")),
     db: Session = Depends(get_db)
 ):
 
@@ -133,12 +123,12 @@ def delete_group(
         db.query(ResearchGroupMember)
         .filter(
             ResearchGroupMember.group_id == group_id,
-            ResearchGroupMember.user_id == requester_id
+            ResearchGroupMember.user_id == current_user.id
         )
         .first()
     )
 
-    if not owner or owner.role != "Owner":
+    if current_user.role != "System Admin" and (not owner or owner.role != "Owner"):
         raise HTTPException(
             status_code=403,
             detail="Only the group owner can delete this group."
@@ -382,19 +372,19 @@ def get_group_details(
 def remove_group_member(
     group_id: int,
     user_id: int,
-    requester_id: int,
+    current_user: User = Depends(require_permission("group:update")),
     db: Session = Depends(get_db)
 ):
     requester = (
         db.query(ResearchGroupMember)
         .filter(
             ResearchGroupMember.group_id == group_id,
-            ResearchGroupMember.user_id == requester_id
+            ResearchGroupMember.user_id == current_user.id
         )
         .first()
     )
 
-    if not requester or requester.role not in ["Owner", "Admin"]:
+    if current_user.role != "System Admin" and (not requester or requester.role not in ["Owner", "Admin"]):
         raise HTTPException(
             status_code=403,
             detail="Only Owner/Admin can remove members"
@@ -432,8 +422,11 @@ def remove_group_member(
 def leave_group(
     group_id: int,
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only leave a group as yourself.")
     member = (
         db.query(ResearchGroupMember)
         .filter(
@@ -462,65 +455,3 @@ def leave_group(
         "message": "Left group successfully"
     }
 
-@router.delete("/{group_id}")
-def delete_group(
-    group_id: int,
-    requester_id: int,
-    db: Session = Depends(get_db)
-):
-
-    group = (
-        db.query(ResearchGroup)
-        .filter(ResearchGroup.id == group_id)
-        .first()
-    )
-
-    if group is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Research group not found"
-        )
-
-    owner = (
-        db.query(ResearchGroupMember)
-        .filter(
-            ResearchGroupMember.group_id == group_id,
-            ResearchGroupMember.user_id == requester_id
-        )
-        .first()
-    )
-
-    if not owner or owner.role != "Owner":
-        raise HTTPException(
-            status_code=403,
-            detail="Only the group owner can delete this group."
-        )
-
-    # Delete uploaded files from storage
-    group_files = (
-        db.query(GroupFile)
-        .filter(GroupFile.group_id == group_id)
-        .all()
-    )
-
-    for file in group_files:
-        try:
-            delete_file(file.storage_path)
-        except Exception as e:
-            print(f"Storage delete failed: {e}")
-
-        db.delete(file)
-
-    # Delete all members
-    db.query(ResearchGroupMember).filter(
-        ResearchGroupMember.group_id == group_id
-    ).delete()
-
-    # Delete the group
-    db.delete(group)
-
-    db.commit()
-
-    return {
-        "message": "Research group deleted successfully."
-    }

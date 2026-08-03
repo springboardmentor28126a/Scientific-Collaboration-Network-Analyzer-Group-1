@@ -72,7 +72,10 @@ def register(
 
         orcid=user.orcid or "",
 
-        google_scholar=user.google_scholar or ""
+        google_scholar=user.google_scholar or "",
+        verification_status="Pending",
+
+        is_verified=False
 
     )
 

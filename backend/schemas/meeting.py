@@ -5,7 +5,6 @@ from typing import Optional
 
 class MeetingCreate(BaseModel):
     group_id: int
-    created_by: int
     title: str
     description: Optional[str] = None
     meeting_date: date

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.database.models import User
+from backend.database.models import ActivityEvent, Notification, User
 from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
 from backend.models.group_invitation import GroupInvitation
@@ -14,6 +14,8 @@ from backend.schemas.group_invitation import (
 )
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
+from backend.utils.dependencies import require_permission
+from backend.utils.security import get_current_user
 
 
 router = APIRouter(
@@ -26,6 +28,7 @@ router = APIRouter(
 )
 def send_invitation(
     invitation: GroupInvitationCreate,
+    current_user: User = Depends(require_permission("group:invite")),
     db: Session = Depends(get_db)
 ):
     group = db.query(ResearchGroup).filter(
@@ -40,7 +43,7 @@ def send_invitation(
 
     member = db.query(ResearchGroupMember).filter(
         ResearchGroupMember.group_id == invitation.group_id,
-        ResearchGroupMember.user_id == invitation.sender_id
+        ResearchGroupMember.user_id == current_user.id
     ).first()
 
     if not member or member.role not in ["Owner", "Admin"]:
@@ -74,13 +77,30 @@ def send_invitation(
 
     new_invitation = GroupInvitation(
         group_id=invitation.group_id,
-        sender_id=invitation.sender_id,
+        sender_id=current_user.id,
         receiver_id=invitation.receiver_id
     )
 
     db.add(new_invitation)
     db.commit()
     db.refresh(new_invitation)
+
+    db.add(Notification(
+        user_id=invitation.receiver_id,
+        title="Research group invitation",
+        message=f"{current_user.name} invited you to join {group.name}.",
+        notification_type="group_invitation",
+        resource_type="research_group",
+        resource_id=group.id,
+    ))
+    db.add(ActivityEvent(
+        user_id=current_user.id,
+        event_type="group_invitation_sent",
+        description=f"Invitation sent to join {group.name}",
+        resource_type="research_group",
+        resource_id=group.id,
+    ))
+    db.commit()
 
     return new_invitation
 
@@ -90,8 +110,11 @@ def send_invitation(
 )
 def get_my_invitations(
     user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view your own invitations.")
 
     invitations = (
         db.query(GroupInvitation)
@@ -242,6 +265,7 @@ def get_invitation_status(
 @router.put("/accept/{invitation_id}")
 def accept_invitation(
     invitation_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     invitation = (
@@ -261,6 +285,8 @@ def accept_invitation(
             status_code=400,
             detail="Invitation already processed"
         )
+    if current_user.role != "System Admin" and invitation.receiver_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the invited user can accept this invitation.")
 
     existing_member = (
         db.query(ResearchGroupMember)
@@ -296,6 +322,7 @@ def accept_invitation(
 @router.put("/reject/{invitation_id}")
 def reject_invitation(
     invitation_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     invitation = (
@@ -315,6 +342,8 @@ def reject_invitation(
             status_code=400,
             detail="Invitation already processed"
         )
+    if current_user.role != "System Admin" and invitation.receiver_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the invited user can reject this invitation.")
 
     invitation.status = "Rejected"
 

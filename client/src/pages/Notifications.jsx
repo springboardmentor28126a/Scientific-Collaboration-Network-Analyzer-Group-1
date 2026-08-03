@@ -10,30 +10,39 @@ function Notifications() {
     );
 
     const [requests, setRequests] = useState([]);
+    const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
 
         loadRequests();
+        loadNotifications();
 
     }, []);
 
     const loadRequests = async () => {
+        try {
+            const response = await api.get(`/friends/requests/${user.id}`);
+            setRequests(response.data);
+        } catch (error) {
+            console.error(error);
+        }
 
-        const response = await api.get(
+    };
 
-            `/collaboration/received/${user.id}`
-
-        );
-
-        setRequests(response.data);
-
+    const loadNotifications = async () => {
+        try {
+            const response = await api.get("/dashboard/notifications");
+            setNotifications(response.data);
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const accept = async (id) => {
 
         await api.put(
 
-            `/collaboration/accept/${id}`
+            `/friends/accept/${id}`
 
         );
 
@@ -45,12 +54,23 @@ function Notifications() {
 
         await api.put(
 
-            `/collaboration/reject/${id}`
+            `/friends/reject/${id}`
 
         );
 
         loadRequests();
 
+    };
+
+    const markRead = async (id) => {
+        try {
+            await api.put(`/dashboard/notifications/${id}/read`);
+            setNotifications((current) => current.map((notification) => (
+                notification.id === id ? { ...notification, is_read: true } : notification
+            )));
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -62,6 +82,25 @@ function Notifications() {
                 Notifications
 
             </h1>
+
+            {notifications.map((notification) => (
+                <div
+                    key={notification.id}
+                    onClick={() => !notification.is_read && markRead(notification.id)}
+                    style={{
+                        background: "rgba(255,255,255,0.06)",
+                        padding: "20px",
+                        borderRadius: "10px",
+                        marginBottom: "15px",
+                        opacity: notification.is_read ? 0.7 : 1,
+                        cursor: notification.is_read ? "default" : "pointer",
+                    }}
+                >
+                    <h3>{notification.title}</h3>
+                    <p>{notification.message}</p>
+                    <small>{new Date(notification.created_at).toLocaleString()}</small>
+                </div>
+            ))}
 
             {
 
@@ -83,7 +122,7 @@ function Notifications() {
 
                     <div
 
-                        key={request.id}
+                        key={request.request_id}
 
                         style={{
 
@@ -159,7 +198,7 @@ function Notifications() {
 
                                         onClick={() =>
 
-                                            accept(request.id)
+                                            accept(request.request_id)
 
                                         }
 
@@ -173,7 +212,7 @@ function Notifications() {
 
                                         onClick={() =>
 
-                                            reject(request.id)
+                                            reject(request.request_id)
 
                                         }
 

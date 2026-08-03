@@ -18,6 +18,9 @@ orcid: str | None = None
 google_scholar: str | None = None
 
 linkedin: str | None = None
+verification_status: str
+
+is_verified: bool
 
 class UserLogin(BaseModel):
     email: EmailStr

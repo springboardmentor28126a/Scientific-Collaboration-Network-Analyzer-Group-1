@@ -8,6 +8,7 @@ from backend.schemas.conference import (
     ConferenceUpdate,
     ConferenceResponse
 )
+from backend.utils.dependencies import require_permission
 
 router = APIRouter()
 
@@ -15,6 +16,7 @@ def conference_to_response(conference: Conference) -> ConferenceResponse:
     meeting = conference.meeting_details
     return ConferenceResponse(
         id=conference.id,
+        created_by=conference.created_by,
         name=conference.name,
         organizer=conference.organizer,
         location=conference.location,
@@ -40,6 +42,7 @@ def conference_to_response(conference: Conference) -> ConferenceResponse:
 )
 def create_conference(
     conference: ConferenceCreate,
+    current_user: User = Depends(require_permission("conference:create")),
     db: Session = Depends(get_db)
 ):
 
@@ -47,7 +50,8 @@ def create_conference(
     meeting_details = conference_data.pop("meeting_details", None)
 
     new_conference = Conference(
-        **conference_data
+        **conference_data,
+        created_by=current_user.id
     )
 
     db.add(new_conference)
@@ -232,6 +236,7 @@ def conference_details(
 def update_conference(
     conference_id: int,
     updated_data: ConferenceUpdate,
+    current_user: User = Depends(require_permission("conference:update")),
     db: Session = Depends(get_db)
 ):
 
@@ -247,6 +252,9 @@ def update_conference(
             status_code=404,
             detail="Conference not found"
         )
+
+    if current_user.role != "System Admin" and conference.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the conference creator can edit it.")
 
     payload = updated_data.model_dump()
     meeting_details = payload.pop("meeting_details", None)
@@ -282,6 +290,7 @@ def update_conference(
 )
 def delete_conference(
     conference_id: int,
+    current_user: User = Depends(require_permission("conference:delete")),
     db: Session = Depends(get_db)
 ):
 
@@ -297,6 +306,9 @@ def delete_conference(
             status_code=404,
             detail="Conference not found"
         )
+
+    if current_user.role != "System Admin" and conference.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the conference creator can delete it.")
 
     db.delete(conference)
 

@@ -2,6 +2,7 @@ export default function FileCard({
     file,
     onDownload,
     onDelete,
+    canDelete,
 }) {
     return (
         <div
@@ -36,11 +37,11 @@ export default function FileCard({
                     Download
                 </button>
 
-                <button
-                    onClick={() => onDelete(file.id)}
-                >
-                    Delete
-                </button>
+                {canDelete && (
+                    <button onClick={() => onDelete(file.id)}>
+                        Delete
+                    </button>
+                )}
             </div>
         </div>
     );

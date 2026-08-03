@@ -13,6 +13,7 @@ from backend.database.database import get_db
 from backend.database.models import User
 from backend.models.group_file import GroupFile
 from backend.models.research_group import ResearchGroup
+from backend.models.research_group_member import ResearchGroupMember
 
 from backend.schemas.group_file import (
     GroupFileResponse,
@@ -30,6 +31,17 @@ router = APIRouter(
     prefix="/group-files",
     tags=["Group Files"]
 )
+
+
+def require_group_member(group_id: int, current_user: User, db: Session):
+    if current_user.role == "System Admin":
+        return
+    membership = db.query(ResearchGroupMember).filter(
+        ResearchGroupMember.group_id == group_id,
+        ResearchGroupMember.user_id == current_user.id,
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only group members can access workspace files.")
 
 @router.post(
     "/upload/{group_id}",
@@ -52,6 +64,7 @@ def upload_group_file(
             status_code=404,
             detail="Research group not found"
         )
+    require_group_member(group_id, current_user, db)
 
     storage_path = upload_file(
         folder=f"group_{group_id}",
@@ -81,9 +94,11 @@ def upload_group_file(
 )
 def get_group_files(
     group_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
+    require_group_member(group_id, current_user, db)
     return (
         db.query(GroupFile)
         .filter(GroupFile.group_id == group_id)
@@ -97,6 +112,7 @@ def get_group_files(
 )
 def download_file(
     file_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -111,6 +127,7 @@ def download_file(
             status_code=404,
             detail="File not found"
         )
+    require_group_member(db_file.group_id, current_user, db)
 
     url = get_signed_url(
         db_file.storage_path
@@ -123,6 +140,7 @@ def download_file(
 @router.delete("/{file_id}")
 def remove_file(
     file_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -137,6 +155,9 @@ def remove_file(
             status_code=404,
             detail="File not found"
         )
+    require_group_member(db_file.group_id, current_user, db)
+    if current_user.role != "System Admin" and db_file.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the file uploader can delete it.")
 
     delete_file(
         db_file.storage_path

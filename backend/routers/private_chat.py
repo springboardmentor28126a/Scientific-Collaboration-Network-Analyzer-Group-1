@@ -9,6 +9,7 @@ from backend.schemas.private_chat import (
     DirectMessageCreate,
     DirectMessageResponse
 )
+from backend.utils.security import get_current_user
 
 router = APIRouter(
     prefix="/private-chat",
@@ -21,6 +22,7 @@ router = APIRouter(
 )
 def send_message(
     chat: DirectMessageCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -38,7 +40,7 @@ def send_message(
             detail="Conversation not found"
         )
 
-    if chat.sender_id not in [
+    if current_user.id not in [
         conversation.user1_id,
         conversation.user2_id
     ]:
@@ -49,7 +51,7 @@ def send_message(
 
     message = DirectMessage(
         conversation_id=chat.conversation_id,
-        sender_id=chat.sender_id,
+        sender_id=current_user.id,
         message=chat.message
     )
 
@@ -62,6 +64,7 @@ def send_message(
 @router.get("/{conversation_id}")
 def get_messages(
     conversation_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -78,6 +81,11 @@ def get_messages(
             status_code=404,
             detail="Conversation not found"
         )
+
+    if current_user.role != "System Admin" and current_user.id not in [
+        conversation.user1_id, conversation.user2_id
+    ]:
+        raise HTTPException(status_code=403, detail="You are not part of this conversation")
 
     messages = (
         db.query(DirectMessage, User)
@@ -108,7 +116,7 @@ def get_messages(
 @router.delete("/{message_id}")
 def delete_message(
     message_id: int,
-    sender_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -126,7 +134,7 @@ def delete_message(
             detail="Message not found"
         )
 
-    if message.sender_id != sender_id:
+    if current_user.role != "System Admin" and message.sender_id != current_user.id:
         raise HTTPException(
             status_code=403,
             detail="You can delete only your own messages"

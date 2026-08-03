@@ -115,50 +115,91 @@ function Login() {
 
     };
 
-    const handleLogin = async () => {
+const handleLogin = async () => {
 
-        if (!validate()) return;
+    if (!validate()) return;
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
+    try {
 
-            const response = await api.post(
-                "/auth/login",
-                loginData
-            );
+        const response = await api.post(
+            "/auth/login",
+            loginData
+        );
 
-            localStorage.setItem(
-                "token",
-                response.data.access_token
-            );
+        localStorage.setItem(
+            "token",
+            response.data.access_token
+        );
 
-            localStorage.setItem(
-                "user",
-                JSON.stringify(response.data.user)
-            );
+        localStorage.setItem(
+            "user",
+            JSON.stringify(response.data.user)
+        );
+
+        const user = response.data.user;
+
+        // System Admin
+        if (user.role === "System Admin") {
 
             navigate("/dashboard");
 
-        } catch (error) {
+        }
 
-            if (error.response) {
+        // Verified User
+        else if (user.is_verified) {
 
-                setServerError(error.response.data.detail);
-
-            } else {
-
-                setServerError("Login Failed");
-
-            }
-
-        } finally {
-
-            setLoading(false);
+            navigate("/dashboard");
 
         }
 
-    };
+        // Pending Verification
+        else if (user.verification_status === "Pending") {
+
+            navigate("/verification-pending");
+
+        }
+
+        // Rejected Verification
+        else if (user.verification_status === "Rejected") {
+
+            navigate("/verification");
+
+        }
+
+        // Not Submitted
+        else {
+
+            navigate("/verification");
+
+        }
+
+    }
+
+    catch (error) {
+
+        if (error.response) {
+
+            setServerError(error.response.data.detail);
+
+        }
+
+        else {
+
+            setServerError("Login Failed");
+
+        }
+
+    }
+
+    finally {
+
+        setLoading(false);
+
+    }
+
+};
 
     return (
 

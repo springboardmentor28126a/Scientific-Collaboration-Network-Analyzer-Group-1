@@ -39,6 +39,14 @@ function PublicationDetails() {
                 <p><b>DOI:</b> {publication.doi || "N/A"}</p>
                 <p><b>Keywords:</b> {publication.keywords || "N/A"}</p>
                 <p><b>Status:</b> {publication.status}</p>
+                {publication.selected_reviewer_name && <p><b>Selected Reviewer:</b> {publication.selected_reviewer_name}</p>}
+                {publication.reviewer_name && (
+                    <>
+                        <p><b>Accepted By:</b> {publication.reviewer_name}</p>
+                        <p><b>Reviewed On:</b> {new Date(publication.reviewed_at).toLocaleString()}</p>
+                        <p><b>Review Comments:</b> {publication.review_comments || "N/A"}</p>
+                    </>
+                )}
                 <p><b>Abstract:</b></p>
                 <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px" }}>
                     {publication.abstract || "No abstract available."}

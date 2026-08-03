@@ -7,6 +7,7 @@ function ConferenceOrganization() {
     const [conferences, setConferences] = useState([]);
     const [selectedConference, setSelectedConference] = useState(null);
     const [editingConference, setEditingConference] = useState(null);
+    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
 
     const [searchConference, setSearchConference] = useState("");
     const [typeFilter, setTypeFilter] = useState("All");
@@ -689,7 +690,7 @@ function ConferenceOrganization() {
 
                                 </button>
 
-                                <button
+                                {(currentUser?.role === "System Admin" || conference.created_by === currentUser?.id) && <button
 
                                     onClick={()=>
 
@@ -705,9 +706,9 @@ function ConferenceOrganization() {
 
                                     ✏ Edit
 
-                                </button>
+                                </button>}
 
-                                <button
+                                {(currentUser?.role === "System Admin" || conference.created_by === currentUser?.id) && <button
 
                                     onClick={()=>
 
@@ -723,7 +724,7 @@ function ConferenceOrganization() {
 
                                     🗑 Delete
 
-                                </button>
+                                </button>}
 
                             </div>
 

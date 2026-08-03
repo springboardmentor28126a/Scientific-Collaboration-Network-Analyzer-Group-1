@@ -26,11 +26,11 @@ const [collaborations, setCollaborations] = useState([]);
 
         const [sent, received, collabs] = await Promise.all([
 
-            api.get(`/collaboration/sent/${user.id}`),
+            api.get(`/friends/sent/${user.id}`),
 
-            api.get(`/collaboration/received/${user.id}`),
+            api.get(`/friends/requests/${user.id}`),
 
-            api.get(`/collaboration/list/${user.id}`)
+            api.get(`/friends/list/${user.id}`)
 
         ]);
 
@@ -54,7 +54,7 @@ const [collaborations, setCollaborations] = useState([]);
     try {
 
         await api.put(
-            `/collaboration/accept/${requestId}`
+            `/friends/accept/${requestId}`
         );
 
         loadDashboard();
@@ -74,7 +74,7 @@ const rejectRequest = async (requestId) => {
     try {
 
         await api.put(
-            `/collaboration/reject/${requestId}`
+            `/friends/reject/${requestId}`
         );
 
         loadDashboard();
@@ -180,7 +180,7 @@ const rejectRequest = async (requestId) => {
                 receivedRequests.map((request) => (
 
                     <div
-                        key={request.id}
+                        key={request.request_id}
                         style={{
                             background: "var(--surface)",
                             border: "1px solid var(--border)",
@@ -231,7 +231,7 @@ const rejectRequest = async (requestId) => {
                                 >
 
                                   <button
-    onClick={() => acceptRequest(request.id)}
+    onClick={() => acceptRequest(request.request_id)}
     style={{
         background: "#16a34a",
         color: "white",
@@ -245,7 +245,7 @@ const rejectRequest = async (requestId) => {
 </button>
 
                                    <button
-    onClick={() => rejectRequest(request.id)}
+    onClick={() => rejectRequest(request.request_id)}
     style={{
         background: "#dc2626",
         color: "white",
@@ -293,7 +293,7 @@ const rejectRequest = async (requestId) => {
                 collaborations.map((person) => (
 
                     <div
-                        key={person.id}
+                        key={person.user_id}
                         style={{
                             background: "var(--surface)",
                             border: "1px solid var(--border)",
@@ -315,13 +315,13 @@ const rejectRequest = async (requestId) => {
 
                         <button
                             onClick={() =>
-                                navigate(`/workspace/${person.id}`)
+                                navigate(`/researcher/${person.user_id}`)
                             }
                             style={{
                                 marginTop: "12px"
                             }}
                         >
-                            Open Workspace
+                            View Profile
                         </button>
 
                     </div>

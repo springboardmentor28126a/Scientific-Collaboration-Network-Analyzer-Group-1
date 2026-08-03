@@ -6,6 +6,7 @@ from backend.database.models import ChatMessage, User
 from backend.models.research_group import ResearchGroup
 from backend.schemas.chat import ChatCreate, ChatResponse
 from backend.models.research_group_member import ResearchGroupMember
+from backend.utils.security import get_current_user
 
 router = APIRouter(
     prefix="/chat",
@@ -20,6 +21,7 @@ router = APIRouter(
 )
 def send_message(
     chat: ChatCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -39,7 +41,7 @@ def send_message(
         db.query(ResearchGroupMember)
         .filter(
             ResearchGroupMember.group_id == chat.group_id,
-            ResearchGroupMember.user_id == chat.sender_id
+            ResearchGroupMember.user_id == current_user.id
         )
         .first()
     )
@@ -52,7 +54,7 @@ def send_message(
 
     new_message = ChatMessage(
         group_id=chat.group_id,
-        sender_id=chat.sender_id,
+        sender_id=current_user.id,
         message=chat.message
     )
 
@@ -65,8 +67,14 @@ def send_message(
 @router.get("/group/{group_id}")
 def get_messages(
     group_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and not db.query(ResearchGroupMember).filter(
+        ResearchGroupMember.group_id == group_id,
+        ResearchGroupMember.user_id == current_user.id,
+    ).first():
+        raise HTTPException(status_code=403, detail="You are not a member of this research group")
 
     messages = (
         db.query(ChatMessage, User)

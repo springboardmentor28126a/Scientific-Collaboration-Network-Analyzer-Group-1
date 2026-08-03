@@ -27,6 +27,7 @@ from backend.routers import group_invitation
 from backend.routers import group_file
 from backend.routers.friend import router as friend_router
 from backend.routers.private_chat import router as private_chat_router
+from backend.routers import verification
 # Import models so SQLAlchemy creates tables
 from backend.models.meeting import Meeting
 from backend.models.research_group import ResearchGroup
@@ -36,6 +37,9 @@ from backend.models.group_file import GroupFile
 from backend.models.direct_conversation import DirectConversation
 from backend.models.direct_message import DirectMessage
 from backend.models.friend_request import FriendRequest
+from backend.models.verification_document import VerificationDocument
+from backend.routers import reviewer
+from backend.routers import faculty
 
 
 
@@ -105,8 +109,11 @@ app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(search.router)
 
-
-app.include_router(conference.router,prefix="/conference",tags=["Conference"])
+app.include_router(
+    conference.router,
+    prefix="/conference",
+    tags=["Conference"]
+)
 
 app.include_router(institution.router,prefix="/institution",tags=["Institution"])
 
@@ -115,6 +122,8 @@ app.include_router(citation.router)
 
 
 app.include_router(group_file.router)
+app.include_router(verification.router)
+app.include_router(reviewer.router)
 # Home
 
 @app.get("/")
@@ -124,6 +133,31 @@ def home():
     }
 
 from sqlalchemy import text
+
+
+def apply_publication_review_migration():
+    """Add review-workflow columns for existing PostgreSQL deployments.
+
+    ``create_all`` creates these columns for new databases but does not alter
+    the already deployed ``publications`` table.
+    """
+    if engine.dialect.name != "postgresql":
+        return
+
+    statements = (
+        "ALTER TABLE publications ADD COLUMN IF NOT EXISTS selected_reviewer_id INTEGER REFERENCES users(id)",
+        "ALTER TABLE publications ADD COLUMN IF NOT EXISTS reviewed_by INTEGER REFERENCES users(id)",
+        "ALTER TABLE publications ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE publications ADD COLUMN IF NOT EXISTS review_comments TEXT",
+        "ALTER TABLE conferences ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+apply_publication_review_migration()
 
 with engine.connect() as conn:
     print("Database:", conn.execute(text("SELECT current_database()")).scalar())

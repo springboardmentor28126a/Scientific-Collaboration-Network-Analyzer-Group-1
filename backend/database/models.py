@@ -12,6 +12,7 @@ from sqlalchemy import (
 
 from datetime import datetime
 from backend.database.database import Base
+from sqlalchemy import Boolean
 class User(Base):
 
     __tablename__ = "users"
@@ -54,9 +55,24 @@ class User(Base):
     linkedin = Column(String)
     phone = Column(String, nullable=True)
     institution = relationship("Institution", back_populates="researchers")
-    publications = relationship("Publication", back_populates="researcher")
+    publications = relationship(
+        "Publication",
+        back_populates="researcher",
+        foreign_keys="Publication.researcher_id"
+    )
+
+    assigned_publication_reviews = relationship(
+        "Publication",
+        foreign_keys="Publication.selected_reviewer_id"
+    )
+
+    completed_publication_reviews = relationship(
+        "Publication",
+        foreign_keys="Publication.reviewed_by"
+    )
     skills = Column(String, nullable=True)
     bio = Column(String, nullable=True)
+    
 
     created_groups = relationship(
         "ResearchGroup",
@@ -88,6 +104,28 @@ class User(Base):
     sent_direct_messages = relationship(
         "DirectMessage",
         back_populates="sender",
+    )
+    verification_status = Column(
+    String,
+    default="Pending",
+    nullable=False
+    )
+
+    is_verified = Column(
+    Boolean,
+    default=False,
+    nullable=False
+    )
+
+    verified_by = Column(
+    Integer,
+    ForeignKey("users.id"),
+    nullable=True
+    )   
+
+    verified_at = Column(
+    DateTime(timezone=True),
+    nullable=True
     )
 
 class Publication(Base):
@@ -130,11 +168,33 @@ class Publication(Base):
     status = Column(String, default="Draft")
     pdf_file = Column(String)
 
+    # The reviewer chosen by the publication owner and the reviewer who
+    # completed the decision are intentionally recorded separately.
+    selected_reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    review_comments = Column(Text, nullable=True)
+
     uploaded_at = Column(
         DateTime,
         default=datetime.utcnow)
+    researcher = relationship(
+        "User",
+        back_populates="publications",
+        foreign_keys=[researcher_id]
+    )
 
-    researcher = relationship("User", back_populates="publications")
+    selected_reviewer = relationship(
+        "User",
+        foreign_keys=[selected_reviewer_id],
+        back_populates="assigned_publication_reviews"
+    )
+
+    reviewer = relationship(
+        "User",
+        foreign_keys=[reviewed_by],
+        back_populates="completed_publication_reviews"
+    )
     institution = relationship("Institution", back_populates="publications")
     conference = relationship("Conference", back_populates="publications")
 
@@ -183,6 +243,8 @@ class Conference(Base):
         primary_key=True,
         index=True
     )
+
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     name = Column(
         String,
@@ -263,6 +325,32 @@ class Institution(Base):
     pincode = Column(String)
     researchers = relationship("User", back_populates="institution")
     publications = relationship("Publication", back_populates="institution")
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    notification_type = Column(String, nullable=False)
+    resource_type = Column(String, nullable=True)
+    resource_id = Column(Integer, nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ActivityEvent(Base):
+    __tablename__ = "activity_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    event_type = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    resource_type = Column(String, nullable=True)
+    resource_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class ChatMessage(Base):
 
     __tablename__ = "chat_messages"
