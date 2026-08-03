@@ -9,7 +9,8 @@ import {
     FaPeopleArrows,
     FaSchool,
     FaCalendarAlt,
-    FaComments
+    FaComments,
+    FaQuoteRight
 } from "react-icons/fa";
 import { FaEnvelope } from "react-icons/fa";
 function Sidebar() {
@@ -44,59 +45,54 @@ function Sidebar() {
 
             <div style={{ display: "grid", gap: "10px" }}>
 
-            <MenuItem
-                icon={<FaHome />}
-                text="Dashboard"
-                active={location.pathname === "/dashboard"}
-                onClick={() => navigate("/dashboard")}
-            />
+                <MenuItem
+                    icon={<FaHome />}
+                    text="Dashboard"
+                    active={location.pathname === "/dashboard"}
+                    onClick={() => navigate("/dashboard")}
+                />
 
-            {/* <MenuItem
+                {/* <MenuItem
                 icon={<FaUsers />}
                 text="Researchers"
                 active={location.pathname === "/researchers"}
                 onClick={() => navigate("/researchers")}
             /> */}
 
-            <MenuItem
-                icon={<FaBookOpen />}
-                text="Publications"
-                active={
-                    location.pathname === "/publications" ||
-                    location.pathname === "/my-publications"
-                }
-                onClick={() => navigate("/publications")}
-            />
+                <MenuItem
+                    icon={<FaBookOpen />}
+                    text="Publications"
+                    active={
+                        location.pathname === "/publications" ||
+                        location.pathname === "/my-publications"
+                    }
+                    onClick={() => navigate("/publications")}
+                />
 
-            <MenuItem
-    icon={<FaSearch />}
-    text="Search"
-    active={
-        location.pathname === "/search" ||
-        location.pathname === "/search-publications"
-    }
-    onClick={() => navigate("/search")}
-/>
+                <MenuItem
+                    icon={<FaQuoteRight />}
+                    text="Citations"
+                    active={location.pathname === "/citations"}
+                    onClick={() => navigate("/citations")}
+                />
 
-            <MenuItem
-                icon={<FaChartBar />}
-                text="Analytics"
-                active={location.pathname === "/analytics"}
-                onClick={() => navigate("/analytics")}
-            />
+                <MenuItem
+                    icon={<FaSearch />}
+                    text="Search"
+                    active={
+                        location.pathname === "/search" ||
+                        location.pathname === "/search-publications"
+                    }
+                    onClick={() => navigate("/search")}
+                />
 
-            <MenuItem
-                icon={<FaProjectDiagram />}
-                text="Network Graph"
-                active={location.pathname === "/network"}
-                onClick={() => navigate("/network")}
-            />
-            <MenuItem
-    icon={<FaEnvelope />}
-    text="Invitations"
-    active={location.pathname === "/invitations"}
-    onClick={() => navigate("/invitations")}
-/>
+                <MenuItem
+                    icon={<FaChartBar />}
+                    text="Analytics"
+                    active={location.pathname === "/analytics"}
+                    onClick={() => navigate("/analytics")}
+                />
+
 
             <MenuItem
     icon={<FaPeopleArrows />}
@@ -104,30 +100,48 @@ function Sidebar() {
     active={location.pathname.startsWith("/groups")}
     onClick={() => navigate("/groups")}
 />
-            <MenuItem
-    icon={<FaComments />}
-    text="Chat"
-    active={location.pathname.startsWith("/groups")}
-    onClick={() => navigate("/chat")}
-/>
+          
 
-            <MenuItem
-                icon={<FaCalendarAlt />}
-                text="Conference Organization"
-                active={location.pathname === "/conference"}
-                onClick={() => navigate("/conference")}
-            />
 
-            <MenuItem
-                icon={<FaSchool />}
-                text="Institution Management"
-                active={location.pathname === "/institution"}
-                onClick={() => navigate("/institution")}
-            />
+                <MenuItem
+                    icon={<FaProjectDiagram />}
+                    text="Network Graph"
+                    active={location.pathname === "/network"}
+                    onClick={() => navigate("/network")}
+                />
+                <MenuItem
+                    icon={<FaEnvelope />}
+                    text="Invitations"
+                    active={location.pathname === "/invitations"}
+                    onClick={() => navigate("/invitations")}
+                />
+
+
+                
+                <MenuItem
+                    icon={<FaComments />}
+                    text="Group Chat"
+                    active={location.pathname.startsWith("/groups")}
+                    onClick={() => navigate("/groups/1/chat")}
+                />
+
+                <MenuItem
+                    icon={<FaCalendarAlt />}
+                    text="Conference Organization"
+                    active={location.pathname === "/conference"}
+                    onClick={() => navigate("/conference")}
+                />
+
+                <MenuItem
+                    icon={<FaSchool />}
+                    text="Institution Management"
+                    active={location.pathname === "/institution"}
+                    onClick={() => navigate("/institution")}
+                />
+
+            </div>
 
         </div>
-
-    </div>
 
     );
 
@@ -160,7 +174,7 @@ function MenuItem({ icon, text, active, onClick }) {
 
 
         </div>
-        
+
 
     );
 

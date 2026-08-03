@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from backend.database.database import get_db
 from backend.database.models import Publication
 from backend.schemas.publication import PublicationCreate
-from fastapi import UploadFile, File
+
 import shutil
 import os
-from fastapi import Query
-from sqlalchemy import or_
+
 
 router = APIRouter(
     prefix="/publications",
@@ -16,8 +15,6 @@ router = APIRouter(
 )
 
 
-# ---------------- CREATE ----------------
-# ---------------- CREATE ----------------
 @router.post("/")
 def create_publication(
     publication: PublicationCreate,
@@ -53,10 +50,11 @@ def create_publication(
         print("DATABASE ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-# ---------------- GET ALL ----------------
+
 @router.get("/")
-def get_publications(db: Session = Depends(get_db)):
-    return db.query(Publication).all()
+def get_all_publications(db: Session = Depends(get_db)):
+    publications = db.query(Publication).all()
+    return publications
 
 
 @router.get("/search")
@@ -97,7 +95,7 @@ def search_publications(
         )
 
     return query.limit(20).all()
-# ---------------- GET BY ID ----------------
+
 @router.get("/{publication_id}")
 def get_publication(publication_id: int, db: Session = Depends(get_db)):
     publication = db.query(Publication).filter(
@@ -109,138 +107,8 @@ def get_publication(publication_id: int, db: Session = Depends(get_db)):
 
     return publication
 
-from fastapi import Query, Depends
-from sqlalchemy import or_
-
-@router.get("/search")
-def search_publications(
-    q: str = Query(..., description="Search text"),
-    db: Session = Depends(get_db)
-):
-    return (
-        db.query(Publication)
-        .filter(
-            or_(
-                Publication.title.ilike(f"%{q}%"),
-                Publication.authors.ilike(f"%{q}%"),
-                Publication.journal.ilike(f"%{q}%"),
-                Publication.keywords.ilike(f"%{q}%"),
-                Publication.abstract.ilike(f"%{q}%"),
-                Publication.doi.ilike(f"%{q}%"),
-            )
-        )
-        .limit(20)
-        .all()
-    )
-
-# @router.get("/search")
-# def search_publications(
-
-#     title: str = Query(None),
-
-#     author: str = Query(None),
-
-#     journal: str = Query(None),
-
-#     publication_type: str = Query(None),
-
-#     keyword: str = Query(None),
-
-#     year: int = Query(None),
-
-#     status: str = Query(None),
-
-#     doi: str = Query(None),
-
-#     db: Session = Depends(get_db)
-
-# ):
-
-#     query = db.query(Publication)
-
-#     if title:
-
-#         query = query.filter(
-
-#             Publication.title.ilike(f"%{title}%")
-
-#         )
-
-#     if author:
-
-#         query = query.filter(
-
-#             Publication.authors.ilike(f"%{author}%")
-
-#         )
-
-#     if journal:
-
-#         query = query.filter(
-
-#             Publication.journal.ilike(f"%{journal}%")
-
-#         )
-
-#     if publication_type:
-
-#         query = query.filter(
-
-#             Publication.publication_type == publication_type
-
-#         )
-
-#     if keyword:
-
-#         query = query.filter(
-
-#             Publication.keywords.ilike(f"%{keyword}%")
-
-#         )
-
-#     if year:
-
-#         query = query.filter(
-
-#             Publication.publication_year == year
-
-#         )
-
-#     if status:
-
-#         query = query.filter(
-
-#             Publication.status == status
-
-#         )
-
-#     if doi:
-
-#         query = query.filter(
-
-#             Publication.doi.ilike(f"%{doi}%")
-
-#         )
-
-#     return query.all()
-
-# # ---------------- SEARCH BY TITLE ----------------
-# @router.get("/search/{title}")
-# def search_publication(title: str, db: Session = Depends(get_db)):
-#     publications = db.query(Publication).filter(
-#         Publication.title.ilike(f"%{title}%")
-#     ).all()
-
-#     if not publications:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="No publications found"
-#         )
-
-#     return publications
 
 
-# ---------------- FILTER BY YEAR ----------------
 @router.get("/year/{year}")
 def publications_by_year(year: int, db: Session = Depends(get_db)):
     publications = db.query(Publication).filter(
@@ -256,7 +124,6 @@ def publications_by_year(year: int, db: Session = Depends(get_db)):
     return publications
 
 
-# ---------------- FILTER BY STATUS ----------------
 @router.get("/status/{status}")
 def publications_by_status(status: str, db: Session = Depends(get_db)):
     publications = db.query(Publication).filter(
@@ -272,7 +139,6 @@ def publications_by_status(status: str, db: Session = Depends(get_db)):
     return publications
 
 
-# ---------------- UPDATE ----------------
 @router.put("/{publication_id}")
 def update_publication(
     publication_id: int,

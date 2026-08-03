@@ -26,7 +26,11 @@ import InstitutionDashboard from "./pages/InstitutionDashboard";
 import ResearchGroups from "./pages/ResearchGroups";
 import Invitations from "./pages/Invitations";
 import GroupWorkspace from "./pages/GroupWorkspace";
+
 import Chat from "./pages/Chat";
+
+
+import Citations from "./pages/Citations";
 
 
 function App() {
@@ -58,10 +62,9 @@ function App() {
                     <Route path="/publications" element={<MyPublications />} />
                     <Route path="/my-publications" element={<MyPublications />} />
                     <Route path="/search-publications" element={<SearchPublications />} />
-                    <Route
-    path="/search"
-    element={<Search />}
-/>
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/citations" element={<Citations />} />
+
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/network" element={<NetworkGraph />} />
                     <Route path="/publication/:id" element={<PublicationDetails />} />
@@ -88,10 +91,15 @@ function App() {
     path="/groups/:groupId"
     element={<GroupWorkspace />}
 />
+
 <Route
     path="/chat"
     element={<Chat />}
 />
+
+
+
+
                 </Route>
             </Routes>
         </BrowserRouter>

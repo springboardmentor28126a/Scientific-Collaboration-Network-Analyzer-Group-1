@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.staticfiles import StaticFiles
-# import os
+
+from fastapi.staticfiles import StaticFiles
+import os
+
+
 
 from backend.database.database import Base, engine
 import backend.database.models
@@ -15,6 +18,9 @@ from backend.routers import search
 from backend.routers import dashboard
 from backend.routers import conference
 from backend.routers import institution
+
+from backend.routers import citation
+
 from backend.routers import meeting
 from backend.routers import research_group
 from backend.routers import group_invitation
@@ -39,14 +45,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Upload folder
-# os.makedirs("uploads/papers", exist_ok=True)
 
-# app.mount(
-#     "/uploads",
-#     StaticFiles(directory="uploads"),
-#     name="uploads"
-# )
+os.makedirs("uploads/papers", exist_ok=True)
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
+)
+
+
+
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -56,6 +65,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+
+
         "http://127.0.0.1:5173",
 
         "http://localhost:5174",
@@ -69,6 +80,7 @@ app.add_middleware(
 
         "http://localhost:5177",
         "http://127.0.0.1:5177",
+
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -93,19 +105,18 @@ app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(search.router)
 
-app.include_router(
-    conference.router,
-    prefix="/conference",
-    tags=["Conference"]
-)
 
-app.include_router(
-    institution.router,
-    prefix="/institution",
-    tags=["Institution"]
-)
+app.include_router(conference.router,prefix="/conference",tags=["Conference"])
+
+app.include_router(institution.router,prefix="/institution",tags=["Institution"])
+
+app.include_router(citation.router)
+
+
+
 app.include_router(group_file.router)
 # Home
+
 @app.get("/")
 def home():
     return {
