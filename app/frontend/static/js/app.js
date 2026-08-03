@@ -1,3 +1,4 @@
+let currentUser = null;
 let conferenceCurrentPage = 1;
 let publicationCurrentPage = 1;
 const pageSize = 5;
@@ -14,27 +15,23 @@ function showToast(title, message) {
   toast?.show();
 }
 
-async function api(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    ...options,
-  });
+async function api(url, options = {}) {
+    const token = localStorage.getItem("access_token");
 
-  if (!response.ok) {
-    let message = "Request failed";
-    try {
-      const error = await response.json();
-      message = error.detail || message;
-    } catch {
-      message = response.statusText;
+    options.headers = {
+        ...(options.headers || {}),
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Request failed");
     }
-    throw new Error(message);
-  }
 
-  return response.json();
+    return response.json();
 }
 
 function formDataToJson(form) {
@@ -72,69 +69,139 @@ function bindForm(formId, endpoint, successMessage, afterSave = loadAll)
     }
   });
 }
-async function bindPublicationForm() 
-  {
-  console.log("bindPublicationForm loaded");
-  const form = document.getElementById("publicationForm");
+async function bindPublicationForm() {
 
-  if (!form) return;
+    console.log("bindPublicationForm loaded");
 
-  form.addEventListener("submit", async (event) => {
-    console.log("Publication form submitted");
-    event.preventDefault();
-    const fileInput = form.querySelector('input[name="pdf_file"]');
+    const form = document.getElementById("publicationForm");
 
-    
-    const formData = new FormData(form);
-    console.log(formData.get("pdf_file"));
+    if (!form) return;
 
-    try {
-      let url = "/publications/";
-      let method = "POST";
+    form.addEventListener("submit", async (event) => {
 
-      if (editingPublicationId !== null) {
-      url = `/publications/${editingPublicationId}`;
-      method = "PUT";
-      }
+        event.preventDefault();
 
-      const response = await fetch(url, {
-    method: method,
-    body: formData,
-      });
+        const formData = new FormData(form);
 
-      if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail);
-}
+        try {
 
-      form.reset();
+            let url = "/publications/";
+            let method = "POST";
 
-if (editingPublicationId === null) {
-    showToast("Success", "Publication added.");
-} else {
-    showToast("Success", "Publication updated.");
-    editingPublicationId = null;
-}
+            if (editingPublicationId !== null) {
+                url = `/publications/${editingPublicationId}`;
+                method = "PUT";
+            }
 
-await loadAll();
-await loadPublications();
+            const token = localStorage.getItem("access_token");
 
-    } catch (error) {
-      showToast("Error", error.message);
-    }
-  });
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail);
+            }
+
+            form.reset();
+
+            if (editingPublicationId === null) {
+                showToast("Success", "Publication added.");
+            } else {
+                showToast("Success", "Publication updated.");
+                editingPublicationId = null;
+            }
+
+            await loadAll();
+            await loadPublications();
+
+        } catch (error) {
+            showToast("Error", error.message);
+        }
+    });
 }
 
 async function loadDashboard() {
-  if (!document.getElementById("metricUsers")) return;
 
-  const data = await api("/dashboard/admin");
-  document.getElementById("metricUsers").textContent = data.users ?? 0;
-  document.getElementById("metricResearchers").textContent = data.researchers ?? 0;
-  document.getElementById("metricInstitutions").textContent = data.institutions ?? 0;
-  document.getElementById("metricPublications").textContent = data.publications ?? 0;
-  document.getElementById("metricProjects").textContent = data.projects ?? 0;
-  document.getElementById("metricCollaborations").textContent = data.collaborations ?? 0;
+    if (!document.getElementById("metricUsers")) {
+        return;
+    }
+
+    try {
+
+        // -----------------------------
+        // Researcher Dashboard
+        // -----------------------------
+        if (currentUser?.role === "researcher") {
+
+            document.getElementById("metricUsers").textContent = "-";
+            document.getElementById("metricResearchers").textContent = "1";
+            document.getElementById("metricInstitutions").textContent = "-";
+            document.getElementById("metricPublications").textContent = "-";
+            document.getElementById("metricProjects").textContent = "-";
+            document.getElementById("metricCollaborations").textContent = "-";
+
+            return;
+        }
+
+        // -----------------------------
+        // Admin / Institution Admin
+        // -----------------------------
+        const data = await api("/dashboard/admin");
+
+        console.log("Dashboard Data:", data);
+
+        document.getElementById("metricUsers").textContent =
+            data.total_users ?? 0;
+
+        document.getElementById("metricResearchers").textContent =
+            data.total_researchers ?? 0;
+
+        document.getElementById("metricInstitutions").textContent =
+            data.total_institutions ?? 0;
+
+        document.getElementById("metricPublications").textContent =
+            data.total_publications ?? 0;
+
+        document.getElementById("metricProjects").textContent =
+            data.total_projects ?? 0;
+
+        document.getElementById("metricCollaborations").textContent =
+            data.total_collaborations ?? 0;
+
+        // If you add a conference dashboard card
+        const conferenceCard =
+            document.getElementById("metricConferences");
+
+        if (conferenceCard) {
+            conferenceCard.textContent =
+                data.total_conferences ?? 0;
+        }
+
+    }
+    catch (error) {
+
+        console.error("Dashboard Error:", error);
+
+        document.getElementById("metricUsers").textContent = "0";
+        document.getElementById("metricResearchers").textContent = "0";
+        document.getElementById("metricInstitutions").textContent = "0";
+        document.getElementById("metricPublications").textContent = "0";
+        document.getElementById("metricProjects").textContent = "0";
+        document.getElementById("metricCollaborations").textContent = "0";
+
+        const conferenceCard =
+            document.getElementById("metricConferences");
+
+        if (conferenceCard) {
+            conferenceCard.textContent = "0";
+        }
+    }
 }
 
 async function loadReports() {
@@ -154,28 +221,47 @@ async function loadNetwork() {
 }
 
 async function loadCurrentUser() {
-  const token = localStorage.getItem("access_token");
-  const navUser = document.getElementById("navUser");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const loginLink = document.getElementById("loginLink");
-  const registerLink = document.getElementById("registerLink");
 
-  if (!token) return;
+    const token = localStorage.getItem("access_token");
 
-  try {
-    const response = await fetch("/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    if (!token) return;
 
-    if (!response.ok) throw new Error("Invalid session");
-    const user = await response.json();
-    navUser.textContent = user.email;
-    logoutBtn.classList.remove("d-none");
-    loginLink.classList.add("d-none");
-    registerLink.classList.add("d-none");
-  } catch {
-    localStorage.removeItem("access_token");
-  }
+    try {
+
+        const response = await fetch("/users/me", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok)
+            throw new Error("Invalid session");
+
+        currentUser = await response.json();
+
+        console.log("Current User:", currentUser);
+        console.log("Role:", currentUser.role);
+
+        document.getElementById("navUser").textContent =
+            currentUser.email;
+
+        document.getElementById("logoutBtn")
+            ?.classList.remove("d-none");
+
+        document.getElementById("loginLink")
+            ?.classList.add("d-none");
+
+        document.getElementById("registerLink")
+            ?.classList.add("d-none");
+
+    }
+
+    catch {
+
+        localStorage.removeItem("access_token");
+
+    }
+
 }
 
 function bindLogout() {
@@ -185,6 +271,110 @@ function bindLogout() {
     window.location.href = "/";
   });
 }
+
+async function loadConferenceDashboard() {
+
+    if (!document.getElementById("totalConferences"))
+        return;
+
+    const data = await api("/conferences/dashboard");
+
+    console.log(data);
+
+    document.getElementById("totalConferences").textContent =
+        data.total_conferences ?? 0;
+
+    document.getElementById("upcomingConferences").textContent =
+        data.upcoming_conferences ?? 0;
+
+    document.getElementById("ongoingConferences").textContent =
+        data.ongoing_conferences ?? 0;
+
+    document.getElementById("completedConferences").textContent =
+        data.completed_conferences ?? 0;
+
+    document.getElementById("conferenceRegistrations").textContent =
+        data.total_registrations ?? 0;
+
+    document.getElementById("acceptedPapers").textContent =
+        data.accepted_papers ?? 0;
+}
+
+
+function renderConferenceTable(conferences) {
+
+    const table = document.getElementById("conferenceTableBody");
+
+    if (!table) return;
+
+    if (!Array.isArray(conferences)) {
+
+        console.error(conferences);
+
+        table.innerHTML =
+            "<tr><td colspan='7'>No conferences found.</td></tr>";
+
+        return;
+    }
+
+    table.innerHTML = conferences.map(conf => `
+        <tr>
+            <td>${conf.name ?? ""}</td>
+            <td>${conf.organizer ?? ""}</td>
+            <td>${conf.location ?? ""}</td>
+            <td>${conf.start_date ?? ""}</td>
+            <td>${conf.end_date ?? ""}</td>
+            <td>
+                ${
+                    conf.website
+                    ? `<a href="${conf.website}" target="_blank">Website</a>`
+                    : ""
+                }
+            </td>
+            <td>
+                Register
+            </td>
+        </tr>
+    `).join("");
+
+}
+
+async function filterConferenceStatus(status) {
+
+    try {
+
+        let conferences = [];
+
+        switch (status) {
+
+            case "upcoming":
+                conferences = await api("/conferences/upcoming");
+                break;
+
+            case "past":
+                conferences = await api("/conferences/past");
+                break;
+
+            case "ongoing":
+                conferences = await api("/conferences/status?status=ongoing");
+                break;
+
+            default:
+                await loadConferences();
+                return;
+        }
+
+        renderConferenceTable(conferences);
+
+    } catch (error) {
+
+        showToast("Error", error.message);
+
+    }
+
+}
+
+
 async function loadConferences() {
 
     const table = document.getElementById("conferenceTableBody");
@@ -246,42 +436,7 @@ if (pageNumber) {
         return 0;
     });
 
-    table.innerHTML = conferences.map(conf => `
-
-        <tr>
-
-            <td>${conf.name ?? ""}</td>
-
-            <td>${conf.organizer ?? ""}</td>
-
-            <td>${conf.location ?? ""}</td>
-
-            <td>${conf.start_date ?? ""}</td>
-
-            <td>${conf.end_date ?? ""}</td>
-
-            <td>
-                ${
-                    conf.website
-                        ? `<a href="${conf.website}" target="_blank">Website</a>`
-                        : ""
-                }
-            </td>
-
-            <td class="text-center">
-
-                <button
-                    type="button"
-                    class="btn btn-success btn-sm"
-                    onclick="registerConference(${conf.id}, '${(conf.name ?? "").replace(/'/g, "\\'")}')">
-                    Register
-                </button>
-
-            </td>
-
-        </tr>
-
-    `).join("");
+    renderConferenceTable(conferences);
 
 }
 
@@ -787,6 +942,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await loadCurrentUser();
 
+    await loadConferenceDashboard(); 
+
     try {
         await loadAll();
         await loadPublications();
@@ -804,15 +961,50 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Sort Button
-    const sortBtn = document.getElementById("sortConferenceBtn");
+// Sort Button
 
-    if (sortBtn) {
-        sortBtn.addEventListener("click", function (e) {
-            e.preventDefault();
-            loadConferences();
-        });
-    }
+const sortBtn = document.getElementById("sortConferenceBtn");
+
+if (sortBtn) {
+    sortBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        loadConferences();
+    });
+}
+
+
+// Conference Status Buttons
+
+document.getElementById("allConferenceBtn")
+?.addEventListener("click", function () {
+
+    loadConferences();
+
+});
+
+document.getElementById("upcomingConferenceBtn")
+?.addEventListener("click", function () {
+
+    filterConferenceStatus("upcoming");
+
+});
+
+document.getElementById("ongoingConferenceBtn")
+?.addEventListener("click", function () {
+
+    filterConferenceStatus("ongoing");
+
+});
+
+document.getElementById("pastConferenceBtn")
+?.addEventListener("click", function () {
+
+    filterConferenceStatus("past");
+
+});
+
+
+// Paginationv
 
 
     // Auto Filter
@@ -922,3 +1114,4 @@ window.deleteConference = deleteConference;
 window.editConference = editConference;
 window.viewInstitution = viewInstitution;
 window.searchInstitution = searchInstitution;
+window.filterConferenceStatus = filterConferenceStatus;

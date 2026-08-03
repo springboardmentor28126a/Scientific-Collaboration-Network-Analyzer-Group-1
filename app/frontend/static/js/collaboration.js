@@ -254,19 +254,16 @@ if (projectForm) {
 
         try {
 
-            const response = await fetch("/projects/", {
+const token = localStorage.getItem("access_token");
 
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type": "application/json"
-
-                },
-
-                body: JSON.stringify(payload)
-
-            });
+const response = await fetch("/projects/", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+});
 
             if (!response.ok) {
 
