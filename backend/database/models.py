@@ -73,6 +73,22 @@ class User(Base):
         back_populates="uploader",
         cascade="all, delete-orphan"
     )
+    conversations_as_user1 = relationship(
+        "DirectConversation",
+        foreign_keys="DirectConversation.user1_id",
+        back_populates="user1",
+    )
+
+    conversations_as_user2 = relationship(
+        "DirectConversation",
+        foreign_keys="DirectConversation.user2_id",
+        back_populates="user2",
+    )
+
+    sent_direct_messages = relationship(
+        "DirectMessage",
+        back_populates="sender",
+    )
 
 class Publication(Base):
     __tablename__ = "publications"

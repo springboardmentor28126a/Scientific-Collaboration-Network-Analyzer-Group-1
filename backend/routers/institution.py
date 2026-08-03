@@ -253,16 +253,19 @@ def institution_details(
     }
 
 @router.get("/")
-def get_institutions(
-    db: Session = Depends(get_db)
-):
-    print("1. Route entered")
+def get_institutions(db: Session = Depends(get_db)):
 
-    print("2. Before query")
-    institution = db.query(Institution).limit(100).all()
-    print("3. After query")
+    institutions = db.query(Institution).all()
 
     result = []
+
+    for inst in institutions:
+        result.append({
+            "id": inst.id,
+            "name": inst.name
+        })
+
+    return result
 
     for inst in institutions:
         print(f"Processing {inst.id}")

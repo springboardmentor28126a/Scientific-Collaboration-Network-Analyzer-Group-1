@@ -31,6 +31,8 @@ from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
 from backend.models.group_invitation import GroupInvitation
 from backend.models.group_file import GroupFile
+from backend.models.direct_conversation import DirectConversation
+from backend.models.direct_message import DirectMessage
 
 
 

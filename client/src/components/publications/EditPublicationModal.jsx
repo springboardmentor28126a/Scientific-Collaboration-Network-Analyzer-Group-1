@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import API from "../../services/api";
 
 function EditPublicationModal({
 
@@ -11,12 +12,59 @@ function EditPublicationModal({
 }) {
 
     const [form, setForm] = useState(publication);
+    const [publications, setPublications] = useState([]);
+    const [selectedCitations, setSelectedCitations] = useState([]);
 
     useEffect(() => {
 
-        setForm(publication);
+        if (publication) {
+
+            setForm(publication);
+
+            loadPublications();
+
+            loadCitations(publication.id);
+
+        }
 
     }, [publication]);
+    const loadPublications = async () => {
+
+        try {
+
+            const response = await API.get("/publications/");
+
+            setPublications(response.data);
+
+        }
+
+        catch (error) {
+
+            console.log(error);
+
+        }
+
+    };
+
+    const loadCitations = async (publicationId) => {
+
+        try {
+
+            const response = await API.get(`/citation/${publicationId}`);
+
+            setSelectedCitations(
+                response.data.map(citation => citation.cited_publication_id)
+            );
+
+        }
+
+        catch (error) {
+
+            console.log(error);
+
+        }
+
+    };
 
     if (!publication) return null;
 
@@ -115,7 +163,7 @@ function EditPublicationModal({
 
                 <textarea
                     name="abstract"
-                    value={form.abstract}
+                    value={form.abstract || ""}
                     onChange={handleChange}
                     placeholder="Abstract"
                     rows="5"
@@ -141,6 +189,39 @@ function EditPublicationModal({
                     <option>Archived</option>
 
                 </select>
+                <label style={{ marginTop: "15px", display: "block" }}>
+                    References (Citations)
+                </label>
+
+                <select
+                    multiple
+                    value={selectedCitations}
+                    onChange={(e) => {
+                        const values = [...e.target.selectedOptions].map(option =>
+                            Number(option.value)
+                        );
+
+                        console.log("Selected:", values);
+
+                        setSelectedCitations(values);
+                    }}
+                    style={{
+                        width: "100%",
+                        height: "120px",
+                        marginTop: "10px",
+                        borderRadius: "8px",
+                        background: "white",
+                        color: "black"
+                    }}
+                >
+                    {publications
+                        .filter(pub => pub.id !== form.id)
+                        .map((pub) => (
+                            <option key={pub.id} value={pub.id}>
+                                {pub.title}
+                            </option>
+                        ))}
+                </select>
 
                 <div
                     style={{
@@ -165,7 +246,12 @@ function EditPublicationModal({
                     </button>
 
                     <button
-                        onClick={() => onSave(form)}
+                        onClick={() =>
+                            onSave({
+                                ...form,
+                                citations: selectedCitations
+                            })
+                        }
                         style={{
                             background: "#22c55e",
                             color: "white",
