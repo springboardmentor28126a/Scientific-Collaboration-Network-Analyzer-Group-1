@@ -1,111 +1,242 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-APP_DIR = Path(__file__).resolve().parents[2]
-TEMPLATES_DIR = APP_DIR / "frontend" / "templates"
+# ---------------------------------------------------------
+# Template Configuration
+# ---------------------------------------------------------
 
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+APP_DIR = Path(__file__).resolve().parents[2]
+
+TEMPLATES_DIR = (
+    APP_DIR /
+    "frontend" /
+    "templates"
+)
+
+templates = Jinja2Templates(
+    directory=str(TEMPLATES_DIR)
+)
+
+# Disable template caching during development
 templates.env.cache = None
 
-router = APIRouter(tags=["Frontend"])
+router = APIRouter(
+    tags=["Frontend"]
+)
 
 
-@router.get("/")
+# ---------------------------------------------------------
+# Helper Function
+# ---------------------------------------------------------
+
+def render(
+    request: Request,
+    template: str,
+    title: str
+):
+    return templates.TemplateResponse(
+        request=request,
+        name=template,
+        context={
+            "title": title
+        }
+    )
+
+
+# ---------------------------------------------------------
+# Home
+# ---------------------------------------------------------
+
+@router.get(
+    "/",
+    response_class=HTMLResponse
+)
 def home_page(request: Request):
-    return templates.TemplateResponse(
+    return render(
         request,
         "home.html",
-        {
-            "title": "Dashboard",
-        },
+        "Dashboard"
     )
 
 
-@router.get("/dashboard")
+@router.get(
+    "/dashboard",
+    response_class=HTMLResponse
+)
 def dashboard_page(request: Request):
-    return templates.TemplateResponse(
+    return render(
         request,
         "home.html",
-        {
-            "title": "Dashboard",
-        },
+        "Dashboard"
     )
 
 
-@router.get("/researchers-page")
-def researchers_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "researchers.html",
-        {
-            "title": "Researchers",
-        },
-    )
+# ---------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------
 
-
-@router.get("/publications-page")
-def publications_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "publications.html",
-        {
-            "title": "Publications",
-        },
-    )
-
-
-@router.get("/collaborations-page")
-def collaborations_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "collaborations.html",
-        {
-            "title": "Collaborations",
-        },
-    )
-
-
-@router.get("/reports-page")
-def reports_page(request: Request):
-    return templates.TemplateResponse(
-        request,
-        "reports.html",
-        {
-            "title": "Reports",
-        },
-    )
-
-
-@router.get("/login")
+@router.get(
+    "/login",
+    response_class=HTMLResponse
+)
 def login_page(request: Request):
-    return templates.TemplateResponse(
+    return render(
         request,
         "login.html",
-        {
-            "title": "Login",
-        },
+        "Login"
     )
 
 
-@router.get("/register")
+@router.get(
+    "/register",
+    response_class=HTMLResponse
+)
 def register_page(request: Request):
-    return templates.TemplateResponse(
+    return render(
         request,
         "register.html",
-        {
-            "title": "Register",
-        },
+        "Register"
     )
 
 
-@router.get("/account")
+@router.get(
+    "/account",
+    response_class=HTMLResponse
+)
 def account_page(request: Request):
-    return templates.TemplateResponse(
+    return render(
         request,
         "account.html",
-        {
-            "title": "Account",
-        },
+        "Account"
+    )
+
+
+# ---------------------------------------------------------
+# Researchers
+# ---------------------------------------------------------
+
+@router.get(
+    "/researchers-page",
+    response_class=HTMLResponse
+)
+def researchers_page(request: Request):
+    return render(
+        request,
+        "researchers.html",
+        "Researchers"
+    )
+
+
+# ---------------------------------------------------------
+# Institutions
+# ---------------------------------------------------------
+
+@router.get(
+    "/institutions-page",
+    response_class=HTMLResponse
+)
+def institutions_page(request: Request):
+    return render(
+        request,
+        "institutions.html",
+        "Institutions"
+    )
+
+
+# ---------------------------------------------------------
+# Publications
+# ---------------------------------------------------------
+
+@router.get(
+    "/publications-page",
+    response_class=HTMLResponse
+)
+def publications_page(request: Request):
+    return render(
+        request,
+        "publications.html",
+        "Publications"
+    )
+
+
+# ---------------------------------------------------------
+# Projects
+# ---------------------------------------------------------
+
+@router.get(
+    "/projects-page",
+    response_class=HTMLResponse
+)
+def projects_page(request: Request):
+    return render(
+        request,
+        "projects.html",
+        "Projects"
+    )
+
+
+# ---------------------------------------------------------
+# Collaborations
+# ---------------------------------------------------------
+
+@router.get(
+    "/collaborations-page",
+    response_class=HTMLResponse
+)
+def collaborations_page(request: Request):
+    return render(
+        request,
+        "collaborations.html",
+        "Collaborations"
+    )
+
+
+# ---------------------------------------------------------
+# Conferences
+# ---------------------------------------------------------
+
+@router.get(
+    "/conferences-page",
+    response_class=HTMLResponse
+)
+def conferences_page(request: Request):
+    return render(
+        request,
+        "conferences.html",
+        "Conferences"
+    )
+
+
+# ---------------------------------------------------------
+# Reports
+# ---------------------------------------------------------
+
+@router.get(
+    "/reports-page",
+    response_class=HTMLResponse
+)
+def reports_page(request: Request):
+    return render(
+        request,
+        "reports.html",
+        "Reports"
+    )
+
+
+# ---------------------------------------------------------
+# Search
+# ---------------------------------------------------------
+
+@router.get(
+    "/search-page",
+    response_class=HTMLResponse
+)
+def search_page(request: Request):
+    return render(
+        request,
+        "search.html",
+        "Search"
     )

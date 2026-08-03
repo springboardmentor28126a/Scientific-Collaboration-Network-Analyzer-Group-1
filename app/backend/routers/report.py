@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.backend.database.database import get_db
+
+from app.backend.models.user import User
 from app.backend.models.researcher import Researcher
 from app.backend.models.publication import Publication
 from app.backend.models.project import ResearchProject
 from app.backend.models.collaboration import Collaboration
+from app.backend.models.conference import Conference
+
+from app.backend.utils.rbac import get_current_user
 
 router = APIRouter(
     prefix="/reports",
@@ -14,19 +19,36 @@ router = APIRouter(
 )
 
 
-# ------------------------------------------------------------------
-# Existing Publication Report
-# ------------------------------------------------------------------
+# ---------------------------------------------------------
+# Publication Report
+# ---------------------------------------------------------
 
-@router.get("/publications")
-def publication_report(db: Session = Depends(get_db)):
+@router.get(
+    "/publications",
+    summary="Publication Report"
+)
+def publication_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
 
     by_status = (
         db.query(
             Publication.status,
             func.count(Publication.id)
         )
-        .group_by(Publication.status)
+        .group_by(
+            Publication.status
+        )
         .all()
     )
 
@@ -35,24 +57,55 @@ def publication_report(db: Session = Depends(get_db)):
             Publication.publication_year,
             func.count(Publication.id)
         )
-        .group_by(Publication.publication_year)
-        .order_by(Publication.publication_year)
+        .group_by(
+            Publication.publication_year
+        )
+        .order_by(
+            Publication.publication_year
+        )
         .all()
     )
 
     return {
-        "total": db.query(Publication).count(),
-        "by_status": dict(by_status),
-        "by_year": dict(by_year)
+
+        "total":
+            db.query(Publication).count(),
+
+        "by_status": {
+            status if status else "Unknown": total
+            for status, total in by_status
+        },
+
+        "by_year": {
+            year: total
+            for year, total in by_year
+            if year is not None
+        }
+
     }
 
 
-# ------------------------------------------------------------------
-# Existing Research Report
-# ------------------------------------------------------------------
+# ---------------------------------------------------------
+# Research Report
+# ---------------------------------------------------------
 
-@router.get("/research")
-def research_report(db: Session = Depends(get_db)):
+@router.get(
+    "/research",
+    summary="Research Report"
+)
+def research_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
 
     return {
 
@@ -79,19 +132,36 @@ def research_report(db: Session = Depends(get_db)):
     }
 
 
-# ------------------------------------------------------------------
-# Existing Collaboration Report
-# ------------------------------------------------------------------
+# ---------------------------------------------------------
+# Collaboration Report
+# ---------------------------------------------------------
 
-@router.get("/collaborations")
-def collaboration_report(db: Session = Depends(get_db)):
+@router.get(
+    "/collaborations",
+    summary="Collaboration Report"
+)
+def collaboration_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
 
     by_status = (
         db.query(
             Collaboration.status,
             func.count(Collaboration.id)
         )
-        .group_by(Collaboration.status)
+        .group_by(
+            Collaboration.status
+        )
         .all()
     )
 
@@ -111,23 +181,125 @@ def collaboration_report(db: Session = Depends(get_db)):
         "total":
             db.query(Collaboration).count(),
 
-        "by_status":
-            dict(by_status),
+        "by_status": {
+            status if status else "Unknown": total
+            for status, total in by_status
+        },
 
-        "by_type":
-            dict(by_type)
+        "by_type": {
+            collab_type if collab_type else "Unknown": total
+            for collab_type, total in by_type
+        }
 
     }
 
 
-# ------------------------------------------------------------------
-# Dashboard API
-# ------------------------------------------------------------------
+# ---------------------------------------------------------
+# Project Report
+# ---------------------------------------------------------
 
-@router.get("/dashboard")
-def dashboard_report(db: Session = Depends(get_db)):
+@router.get(
+    "/projects",
+    summary="Project Report"
+)
+def project_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
 
-    # ---------------- Summary ----------------
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
+
+    by_status = (
+        db.query(
+            ResearchProject.status,
+            func.count(
+                ResearchProject.id
+            )
+        )
+        .group_by(
+            ResearchProject.status
+        )
+        .all()
+    )
+
+    return {
+
+        "total":
+            db.query(
+                ResearchProject
+            ).count(),
+
+        "by_status": {
+            status if status else "Unknown": total
+            for status, total in by_status
+        }
+
+    }
+
+
+# ---------------------------------------------------------
+# Conference Report
+# ---------------------------------------------------------
+
+@router.get(
+    "/conferences",
+    summary="Conference Report"
+)
+def conference_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
+
+    return {
+
+        "total_conferences":
+            db.query(
+                Conference
+            ).count()
+
+    }
+
+# ---------------------------------------------------------
+# Dashboard Report
+# ---------------------------------------------------------
+
+@router.get(
+    "/dashboard",
+    summary="Dashboard Report"
+)
+def dashboard_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role not in [
+        "system_admin",
+        "institution_admin"
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied."
+        )
+
+    # -----------------------------------------------------
+    # Summary Cards
+    # -----------------------------------------------------
 
     researcher_count = db.query(
         Researcher
@@ -145,7 +317,13 @@ def dashboard_report(db: Session = Depends(get_db)):
         Collaboration
     ).count()
 
-    # ---------------- Publications by Year ----------------
+    conference_count = db.query(
+        Conference
+    ).count()
+
+    # -----------------------------------------------------
+    # Publications by Year
+    # -----------------------------------------------------
 
     publication_year = (
         db.query(
@@ -172,7 +350,9 @@ def dashboard_report(db: Session = Depends(get_db)):
         year_labels.append(str(year))
         year_values.append(total)
 
-    # ---------------- Publications by Status ----------------
+    # -----------------------------------------------------
+    # Publications by Status
+    # -----------------------------------------------------
 
     publication_status = (
         db.query(
@@ -190,10 +370,15 @@ def dashboard_report(db: Session = Depends(get_db)):
 
     for status, total in publication_status:
 
-        status_labels.append(status)
+        status_labels.append(
+            status if status else "Unknown"
+        )
+
         status_values.append(total)
 
-    # ---------------- Researchers by Institution ----------------
+    # -----------------------------------------------------
+    # Researchers by Institution
+    # -----------------------------------------------------
 
     institution_data = (
         db.query(
@@ -217,7 +402,9 @@ def dashboard_report(db: Session = Depends(get_db)):
 
         institution_values.append(total)
 
-    # ---------------- Top Institutions ----------------
+    # -----------------------------------------------------
+    # Top Institutions
+    # -----------------------------------------------------
 
     top_institutions = []
 
@@ -237,65 +424,113 @@ def dashboard_report(db: Session = Depends(get_db)):
 
         })
 
-    return {
+    # -----------------------------------------------------
+    # Projects by Status
+    # -----------------------------------------------------
 
-        # Summary Cards
+    project_status = (
+        db.query(
+            ResearchProject.status,
+            func.count(
+                ResearchProject.id
+            )
+        )
+        .group_by(
+            ResearchProject.status
+        )
+        .all()
+    )
+
+    project_status_labels = []
+    project_status_values = []
+
+    for status, total in project_status:
+
+        project_status_labels.append(
+            status if status else "Unknown"
+        )
+
+        project_status_values.append(total)
+
+    # -----------------------------------------------------
+    # Collaborations by Type
+    # -----------------------------------------------------
+
+    collaboration_type = (
+        db.query(
+            Collaboration.collaboration_type,
+            func.count(
+                Collaboration.id
+            )
+        )
+        .group_by(
+            Collaboration.collaboration_type
+        )
+        .all()
+    )
+
+    collaboration_labels = []
+    collaboration_values = []
+
+    for collab_type, total in collaboration_type:
+
+        collaboration_labels.append(
+            collab_type if collab_type else "Unknown"
+        )
+
+        collaboration_values.append(total)
+
+    # -----------------------------------------------------
+    # Final Response
+    # -----------------------------------------------------
+
+    return {
 
         "summary": {
 
-            "researchers":
-                researcher_count,
-
-            "publications":
-                publication_count,
-
-            "projects":
-                project_count,
-
-            "collaborations":
-                collaboration_count
+            "researchers": researcher_count,
+            "publications": publication_count,
+            "projects": project_count,
+            "collaborations": collaboration_count,
+            "conferences": conference_count
 
         },
-
-        # Publications by Year
 
         "publication_year": {
 
-            "labels":
-                year_labels,
-
-            "values":
-                year_values
+            "labels": year_labels,
+            "values": year_values
 
         },
-
-        # Publications by Status
 
         "publication_status": {
 
-            "labels":
-                status_labels,
-
-            "values":
-                status_values
+            "labels": status_labels,
+            "values": status_values
 
         },
-
-        # Institution Chart
 
         "institution": {
 
-            "labels":
-                institution_labels,
-
-            "values":
-                institution_values
+            "labels": institution_labels,
+            "values": institution_values
 
         },
 
-        # Table
+        "project_status": {
 
-        "top_institutions":
-            top_institutions
+            "labels": project_status_labels,
+            "values": project_status_values
+
+        },
+
+        "collaboration_type": {
+
+            "labels": collaboration_labels,
+            "values": collaboration_values
+
+        },
+
+        "top_institutions": top_institutions
 
     }
