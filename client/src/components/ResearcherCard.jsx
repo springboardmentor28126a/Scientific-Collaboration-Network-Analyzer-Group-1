@@ -68,6 +68,29 @@ const sendInvitation = async (groupId) => {
     }
 
 };
+const sendFriendRequest = async (receiverId) => {
+
+    try {
+
+        await api.post("/friends/send-request", {
+
+            sender_id: user.id,
+
+            receiver_id: receiverId
+
+        });
+
+        alert("Friend request sent successfully.");
+
+    } catch (error) {
+    console.log(error);
+    console.log(error.response);
+    console.log(error.response?.data);
+    alert("Unable to send friend request");
+
+    }
+
+};
 //     const sendRequest = async () => {
 
 //     try {
@@ -297,6 +320,20 @@ Member
 
                 <button onClick={openInviteModal}>
     Invite to Group
+</button>
+<button
+    onClick={() => sendFriendRequest(researcher.id)}
+    style={{
+        background: "#2563eb",
+        color: "white",
+        border: "none",
+        padding: "10px 18px",
+        borderRadius: "8px",
+        cursor: "pointer",
+        marginLeft: "10px"
+    }}
+>
+    Add Friend
 </button>
 
             </div>

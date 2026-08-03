@@ -30,65 +30,135 @@ function Search() {
 
 
   useEffect(() => {
-  const query = search.trim();
+    const query = search.trim();
 
-  if (query.length < 2) {
-    setPublications([]);
-    setResearchers([]);
-    setInstitutions([]);
-    setConferences([]);
-    setGroups([]);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setLoading(false);
-    return;
-  }
+    if (query.length < 2) {
 
-  const timer = setTimeout(async () => {
-    try {
-      setLoading(true);
-
-      const [
-        pubsRes,
-        researchersRes,
-        institutionsRes,
-        conferencesRes,
-        groupsRes,
-      ] = await Promise.all([
-        API.get("/publications/search", {
-          params: { q: query },
-        }),
-        API.get("/researcher/search", {
-          params: { q: query },
-        }),
-        API.get("/institution/search", {
-          params: {
-            q: query,
-            limit: 20,
-          },
-        }),
-        API.get("/conference/search", {
-          params: { q: query },
-        }),
-        API.get("/groups/search", {
-          params: { q: query },
-        }),
-      ]);
-
-      setPublications(pubsRes.data);
-      setResearchers(researchersRes.data);
-      setInstitutions(institutionsRes.data);
-      setConferences(conferencesRes.data);
-      setGroups(groupsRes.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+        setPublications([]);
+        setResearchers([]);
+        setInstitutions([]);
+        setConferences([]);
+        setGroups([]);
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setLoading(false);
+        return;
     }
-  }, 300);
 
-  return () => clearTimeout(timer);
-}, [search]);
+    const timer = setTimeout(async () => {
+        try {
+            setLoading(true);
+
+            if (activeSection === "Researchers") {
+
+                const res = await API.get("/researcher/search", {
+                    params: { q: query }
+                });
+
+                setResearchers(res.data);
+                setPublications([]);
+                setGroups([]);
+                setInstitutions([]);
+                setConferences([]);
+
+            } else if (activeSection === "Publications") {
+
+                const res = await API.get("/publications/search", {
+                    params: { q: query }
+                });
+
+                setPublications(res.data);
+                setResearchers([]);
+                setGroups([]);
+                setInstitutions([]);
+                setConferences([]);
+
+            } else if (activeSection === "Research Groups") {
+
+                const res = await API.get("/groups/search", {
+                    params: { q: query }
+                });
+
+                setGroups(res.data);
+                setResearchers([]);
+                setPublications([]);
+                setInstitutions([]);
+                setConferences([]);
+
+            } else if (activeSection === "Institutions") {
+
+                const res = await API.get("/institution/search", {
+                    params: {
+                        q: query,
+                        limit: 20
+                    }
+                });
+
+                setInstitutions(res.data);
+                setResearchers([]);
+                setPublications([]);
+                setGroups([]);
+                setConferences([]);
+
+            } else if (activeSection === "Conferences") {
+
+                const res = await API.get("/conference/search", {
+                    params: { q: query }
+                });
+
+                setConferences(res.data);
+                setResearchers([]);
+                setPublications([]);
+                setGroups([]);
+                setInstitutions([]);
+
+            } else {
+
+                const [
+                    pubsRes,
+                    researchersRes,
+                    institutionsRes,
+                    conferencesRes,
+                    groupsRes
+                ] = await Promise.all([
+                    API.get("/publications/search", {
+                        params: { q: query }
+                    }),
+                    API.get("/researcher/search", {
+                        params: { q: query }
+                    }),
+                    API.get("/institution/search", {
+                        params: {
+                            q: query,
+                            limit: 20
+                        }
+                    }),
+                    API.get("/conference/search", {
+                        params: { q: query }
+                    }),
+                    API.get("/groups/search", {
+                        params: { q: query }
+                    })
+                ]);
+
+                setPublications(pubsRes.data);
+                setResearchers(researchersRes.data);
+                setInstitutions(institutionsRes.data);
+                setConferences(conferencesRes.data);
+                setGroups(groupsRes.data);
+            }
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+
+    }, 300);
+
+    return () => clearTimeout(timer);
+
+}, [search, activeSection]);
 
   useEffect(() => {
 
@@ -137,85 +207,11 @@ const filteredConferences =
   activeSection === "All" || activeSection === "Conferences"
     ? conferences
     : [];
-//   const normalizedSearch = search.toLowerCase().trim();
-
-//   const filteredPublications = useMemo(() => {
-//     if (activeSection !== "All" && activeSection !== "Publications") return [];
-//     if (!normalizedSearch) return publications;
 
 
-//     return publications.filter((p) => {
-//       const titleMatch = p?.title?.toLowerCase().includes(normalizedSearch);
-//       const authorsMatch = p?.authors?.toLowerCase().includes(normalizedSearch);
-//       const journalMatch = p?.journal?.toLowerCase().includes(normalizedSearch);
-//       const doiMatch = p?.doi?.toLowerCase().includes(normalizedSearch);
-//       return titleMatch || authorsMatch || journalMatch || doiMatch;
-//     });
-//   }, [activeSection, normalizedSearch, publications]);
+ useEffect(() => {
 
-//   const filteredResearchers = useMemo(() => {
-//     if (activeSection !== "All" && activeSection !== "Researchers") return [];
-
-//     if (!normalizedSearch) return researchers;
-
-//     return researchers.filter((r) => {
-//       return (
-//         r?.name?.toLowerCase().includes(normalizedSearch) ||
-//         r?.email?.toLowerCase().includes(normalizedSearch)
-//       );
-//     });
-//   }, [activeSection, normalizedSearch, researchers]);
-
-//   const filteredGroups = useMemo(() => {
-//     if (activeSection !== "All" && activeSection !== "Research Groups")
-//         return [];
-
-//     if (!normalizedSearch) return groups;
-
-//     return groups.filter(group =>
-//         group.name?.toLowerCase().includes(normalizedSearch) ||
-//         group.description?.toLowerCase().includes(normalizedSearch)
-//     );
-// }, [activeSection, normalizedSearch, groups]);
-
-//   const filteredInstitutions = useMemo(() => {
-//   if (activeSection !== "All" && activeSection !== "Institutions") {
-//     return [];
-//   }
-
-//   if (!normalizedSearch) {
-//     return institutions;
-//   }
-
-//   return institutions.filter((i) => (
-//     i?.name?.toLowerCase().includes(normalizedSearch) ||
-//     `${i?.city || ""} ${i?.country || ""}`
-//       .toLowerCase()
-//       .includes(normalizedSearch)
-//   ));
-// }, [activeSection, normalizedSearch, institutions]);
-
-//   const filteredConferences = useMemo(() => {
-//     if (
-//         activeSection !== "All" &&
-//         activeSection !== "Conferences"
-//     ) {
-//         return [];
-//     }
-
-//     if (!normalizedSearch) {
-//         return conferences;
-//     }
-
-//     return conferences.filter((c) => (
-//         c?.name?.toLowerCase().includes(normalizedSearch) ||
-//         c?.location?.toLowerCase().includes(normalizedSearch)
-//     ));
-// }, [activeSection, normalizedSearch, conferences]);
-
-  useEffect(() => {
-
-    if (!search.trim()) {
+    if (search.trim().length < 2) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
@@ -223,7 +219,7 @@ const filteredConferences =
 
     const data = [];
 
-    filteredResearchers.slice(0, 3).forEach((r) => {
+    filteredResearchers.slice(0,3).forEach(r => {
         data.push({
             id: r.id,
             type: "researcher",
@@ -233,7 +229,7 @@ const filteredConferences =
         });
     });
 
-    filteredPublications.slice(0, 3).forEach((p) => {
+    filteredPublications.slice(0,3).forEach(p => {
         data.push({
             id: p.id,
             type: "publication",
@@ -243,7 +239,7 @@ const filteredConferences =
         });
     });
 
-    filteredGroups.slice(0, 3).forEach((g) => {
+    filteredGroups.slice(0,3).forEach(g => {
         data.push({
             id: g.id,
             type: "group",
@@ -253,7 +249,7 @@ const filteredConferences =
         });
     });
 
-    filteredInstitutions.slice(0, 3).forEach((i) => {
+    filteredInstitutions.slice(0,3).forEach(i => {
         data.push({
             id: i.id,
             type: "institution",
@@ -263,7 +259,7 @@ const filteredConferences =
         });
     });
 
-    filteredConferences.slice(0, 3).forEach((c) => {
+    filteredConferences.slice(0,3).forEach(c => {
         data.push({
             id: c.id,
             type: "conference",
@@ -273,17 +269,21 @@ const filteredConferences =
         });
     });
 
-    setSuggestions(data);
+    setSuggestions(prev => {
+
+        const oldValue = JSON.stringify(prev);
+        const newValue = JSON.stringify(data);
+
+        if (oldValue === newValue) {
+            return prev;
+        }
+
+        return data;
+    });
+
     setShowSuggestions(data.length > 0);
 
-}, [
-    search,
-    filteredResearchers,
-    filteredPublications,
-    filteredGroups,
-    filteredInstitutions,
-    filteredConferences
-]);
+}, [search, activeSection, publications, researchers, groups, institutions, conferences]);
   return (
     <div style={{ padding: "30px" }}>
       <h1>🔍 Research Search</h1>
@@ -427,10 +427,39 @@ const filteredConferences =
       </div>
 
       {loading ? (
-        <div style={{ padding: "40px", textAlign: "center" }}>
-          <h3>Loading research data...</h3>
+
+    <div
+        style={{
+            textAlign: "center",
+            padding: "40px"
+        }}
+    >
+        <h3>Searching...</h3>
+    </div>
+
+) : (
+
+    search.trim().length >= 2 &&
+    filteredResearchers.length === 0 &&
+    filteredPublications.length === 0 &&
+    filteredGroups.length === 0 &&
+    filteredInstitutions.length === 0 &&
+    filteredConferences.length === 0 ? (
+
+        <div
+            style={{
+                textAlign: "center",
+                padding: "60px"
+            }}
+        >
+            <h2>🔍 No Results Found</h2>
+
+            <p>Try another keyword or change the filter.</p>
+
         </div>
-      ) : (
+
+    ) : (
+
         <>
               {activeSection === "All" && (
             <>
@@ -696,12 +725,12 @@ const filteredConferences =
                 ))
               )}
             </>
-          )}
+                    )}
         </>
-      )}
+    )
+)}
     </div>
   );
 }
 
 export default Search;
-

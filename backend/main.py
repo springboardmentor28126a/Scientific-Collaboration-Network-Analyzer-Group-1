@@ -19,6 +19,8 @@ from backend.routers import meeting
 from backend.routers import research_group
 from backend.routers import group_invitation
 from backend.routers import group_file
+from backend.routers.friend import router as friend_router
+from backend.routers.private_chat import router as private_chat_router
 # Import models so SQLAlchemy creates tables
 from backend.models.meeting import Meeting
 from backend.models.research_group import ResearchGroup
@@ -27,6 +29,7 @@ from backend.models.group_invitation import GroupInvitation
 from backend.models.group_file import GroupFile
 from backend.models.direct_conversation import DirectConversation
 from backend.models.direct_message import DirectMessage
+from backend.models.friend_request import FriendRequest
 
 
 
@@ -82,6 +85,8 @@ app.include_router(research_group.router)
 app.include_router(group_invitation.router)
 app.include_router(chat.router)
 app.include_router(meeting.router)
+app.include_router(friend_router)
+app.include_router(private_chat_router)
 
 # Other modules
 app.include_router(dashboard.router)

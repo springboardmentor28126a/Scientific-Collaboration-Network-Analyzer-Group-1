@@ -1,256 +1,408 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import api from "../services/api";
+import { useEffect, useRef, useState } from "react";
+import API from "../services/api";
 
-function Chat() {
+export default function Chat() {
 
-    const { id } = useParams();
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
-
+    const [friends, setFriends] = useState([]);
+    const [selectedFriend, setSelectedFriend] = useState(null);
     const [messages, setMessages] = useState([]);
-
     const [message, setMessage] = useState("");
+    const bottomRef = useRef(null);
+    const [friendSearch, setFriendSearch] = useState("");
+useEffect(() => {
 
-    useEffect(() => {
+    loadFriends();
 
-        loadMessages();
+}, []);
+useEffect(() => {
 
-        const interval = setInterval(() => {
+    bottomRef.current?.scrollIntoView({
+        behavior: "smooth"
+    });
 
-            loadMessages();
+}, [messages]);
+useEffect(() => {
 
-        }, 2000);
+    if (!selectedFriend) return;
 
-        return () => clearInterval(interval);
+    loadMessages(selectedFriend.conversation_id);
 
-    }, []);
+    const interval = setInterval(() => {
 
-    const loadMessages = async () => {
+        loadMessages(selectedFriend.conversation_id);
+
+    }, 2000);
+
+    return () => clearInterval(interval);
+
+}, [selectedFriend]);
+
+    const loadFriends = async () => {
 
         try {
 
-            const response = await api.get(
-                `/chat/${id}`
+            const res = await API.get(
+                `/friends/list/${user.id}`
             );
+            console.log("Friends:", res.data);
+            setFriends(res.data);
+            
 
-            setMessages(response.data);
+        } catch (err) {
 
-        }
-
-        catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
-
-    const sendMessage = async () => {
-
-        if (!message.trim()) return;
-
-        try {
-
-            await api.post("/chat/send", {
-
-                collaboration_id: id,
-
-                sender_id: user.id,
-
-                message
-
-            });
-
-            setMessage("");
-
-            loadMessages();
-
-        }
-
-        catch (error) {
-
-            console.log(error);
+            console.error(err);
 
         }
 
     };
+    const loadMessages = async (conversationId) => {
 
+    try {
+
+        const res = await API.get(
+            `/private-chat/${conversationId}`
+        );
+
+        setMessages(res.data);
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+};
+const sendMessage = async () => {
+
+    if (!message.trim() || !selectedFriend) return;
+
+    try {
+
+        await API.post("/private-chat/send", {
+
+            conversation_id: selectedFriend.conversation_id,
+
+            sender_id: user.id,
+
+            message: message
+
+        });
+
+        setMessage("");
+
+        loadMessages(selectedFriend.conversation_id);
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+};
+const filteredFriends = friends.filter(friend =>
+    friend.name
+        ?.toLowerCase()
+        .includes(friendSearch.toLowerCase())
+);
+console.log("Friends State:", friends);
     return (
 
-        <div>
+        <div
+            style={{
+                display: "flex",
+                height: "85vh"
+            }}
+        >
 
-            <h1>
-
-                💬 Research Chat
-
-            </h1>
+            {/* LEFT PANEL */}
 
             <div
                 style={{
-                    height: "450px",
-                    overflowY: "auto",
-                    border: "1px solid var(--border)",
+                    width: "320px",
+                    borderRight: "1px solid #ddd",
                     padding: "20px",
-                    borderRadius: "12px",
-                    background: "var(--surface)",
-                    marginBottom: "20px",
-                    color: "var(--text)"
+                    overflowY: "auto"
                 }}
             >
 
-                {
+                <h2>💬 Chats</h2>
+                <input
+    type="text"
+    placeholder="🔍 Search Friend..."
+    value={friendSearch}
+    onChange={(e) => setFriendSearch(e.target.value)}
+    style={{
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: "10px",
+        border: "1px solid #ddd",
+        marginBottom: "20px",
+        outline: "none",
+        boxSizing: "border-box"
+    }}
+/>
 
-                    messages.map((msg) => (
+                {friends.length === 0 ? (
+
+                    <p>No Friends Yet</p>
+
+                ) : (
+
+                    filteredFriends.map(friend => (
 
                         <div
-                            key={msg.id}
+                            key={friend.user_id}
+                            onClick={() => {
+
+    setSelectedFriend(friend);
+
+    loadMessages(friend.conversation_id);
+
+}}
                             style={{
+    padding: "15px",
+    marginBottom: "10px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    transition: "0.25s",
 
-                                display: "flex",
+    background:
+        selectedFriend?.user_id === friend.user_id
+            ? "#2563eb"
+            : "#ffffff",
 
-                                justifyContent:
+    color:
+        selectedFriend?.user_id === friend.user_id
+            ? "white"
+            : "black",
 
-                                    msg.sender_id === user.id
-
-                                        ? "flex-end"
-
-                                        : "flex-start",
-
-                                marginBottom: "15px"
-
-                            }}
+    border:
+        selectedFriend?.user_id === friend.user_id
+            ? "none"
+            : "1px solid #ddd"
+}}
                         >
 
-                                <div
-                                style={{
-                                    background:
-                                        msg.sender_id === user.id
-                                            ? "var(--accent)"
-                                            : "rgba(255,255,255,0.08)",
-                                    color:
-                                        msg.sender_id === user.id
-                                            ? "white"
-                                            : "var(--text)",
+                            <h4>{friend.name}</h4>
 
-                                    padding: "12px 15px",
-
-                                    borderRadius: "15px",
-
-                                    maxWidth: "320px",
-
-                                    wordWrap: "break-word",
-
-                                    boxShadow:
-
-                                        "0 2px 8px rgba(0,0,0,.1)"
-
-                                }}
-                            >
-
-                                <strong>
-
-                                    👤 {msg.sender_name}
-
-                                </strong>
-
-                                <br />
-
-                                <span>
-
-                                    {msg.message}
-
-                                </span>
-
-                            </div>
+                            <p>{friend.institution}</p>
 
                         </div>
 
                     ))
 
-                }
+                )}
 
             </div>
+
+            {/* RIGHT PANEL */}
+
+            <div
+    style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        padding: "20px"
+    }}
+>
+
+    {!selectedFriend ? (
+
+        <h2>Select a Friend</h2>
+
+    ) : (
+
+        <>
+
+            <div
+    style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingBottom: "15px",
+        borderBottom: "1px solid #ddd",
+        marginBottom: "15px"
+    }}
+>
+
+    <div
+        style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "15px"
+        }}
+    >
+
+        <div
+            style={{
+                width: "50px",
+                height: "50px",
+                borderRadius: "50%",
+                background: "#2563eb",
+                color: "white",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontSize: "22px",
+                fontWeight: "bold"
+            }}
+        >
+            {selectedFriend.name.charAt(0).toUpperCase()}
+        </div>
+
+        <div>
+
+            <h3 style={{ margin: 0 }}>
+                {selectedFriend.name}
+            </h3>
+
+            <small style={{ color: "#888" }}>
+                Friend
+            </small>
+
+        </div>
+
+    </div>
+
+</div>
 
             <div
                 style={{
-                    display: "flex",
-                    gap: "10px"
+                    flex: 1,
+                    overflowY: "auto",
+                    marginTop: "20px",
+                    border: "1px solid #ddd",
+                    borderRadius: "10px",
+                    padding: "20px"
                 }}
             >
 
-                <input
+                {messages.map(msg => (
 
-                    type="text"
+                    <div
+                        key={msg.id}
+                        style={{
+                            display: "flex",
+                            justifyContent:
+                                msg.sender_id === user.id
+                                    ? "flex-end"
+                                    : "flex-start",
+                            marginBottom: "15px"
+                        }}
+                    >
 
-                    value={message}
+                        <div
+                            style={{
+    background:
+        msg.sender_id === user.id
+            ? "#2563eb"
+            : "#f4f4f4",
 
-                    onChange={(e) =>
+    color:
+        msg.sender_id === user.id
+            ? "white"
+            : "#222",
 
-                        setMessage(e.target.value)
+    padding: "12px 16px",
 
-                    }
+    borderRadius: "18px",
 
-                    placeholder="Type your message..."
+    maxWidth: "420px",
 
-                    style={{
+    boxShadow: "0 2px 8px rgba(0,0,0,.08)"
+}}
+                        >
 
-                        flex: 1,
+                            {msg.message}
+                            <div
+    style={{
+        fontSize: "11px",
+        marginTop: "6px",
+        opacity: 0.7,
+        textAlign: "right"
+    }}
+>
 
-                        padding: "12px",
+    {new Date(msg.created_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
 
-                        borderRadius: "10px",
+</div>
 
-                        border: "1px solid #ccc"
+                        </div>
 
-                    }}
+                    </div>
 
-                    onKeyDown={(e) => {
-
-                        if (e.key === "Enter") {
-
-                            sendMessage();
-
-                        }
-
-                    }}
-
-                />
-
-                <button
-
-                    onClick={sendMessage}
-
-                    style={{
-
-                        background: "#2563eb",
-
-                        color: "white",
-
-                        border: "none",
-
-                        borderRadius: "10px",
-
-                        padding: "12px 20px",
-
-                        cursor: "pointer"
-
-                    }}
-
-                >
-
-                    Send
-
-                </button>
+                ))}
+                <div ref={bottomRef}></div>
 
             </div>
+
+        </>
+
+    )}
+   <div
+    style={{
+        display: "flex",
+        gap: "10px",
+        paddingTop: "15px",
+        borderTop: "1px solid #ddd",
+        marginTop: "15px"
+    }}
+>
+
+    <input
+        type="text"
+        placeholder="Type a message..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        style={{
+            flex: 1,
+            padding: "12px",
+            borderRadius: "10px",
+            border: "1px solid #ccc"
+        }}
+        onKeyDown={(e) => {
+
+            if (e.key === "Enter") {
+
+                sendMessage();
+
+            }
+
+        }}
+    />
+
+    <button
+    onClick={sendMessage}
+    disabled={!message.trim()}
+    style={{
+        padding: "12px 24px",
+        background: message.trim()
+            ? "#2563eb"
+            : "#bfc8d8",
+        color: "white",
+        border: "none",
+        borderRadius: "10px",
+        cursor: message.trim()
+            ? "pointer"
+            : "not-allowed"
+    }}
+>
+
+        Send
+
+    </button>
+
+</div>
+
+</div>
 
         </div>
 
     );
 
 }
-
-export default Chat;

@@ -4,6 +4,7 @@ import api from "../services/api";
 export default function Invitations() {
 
     const [invitations, setInvitations] = useState([]);
+    const [friendRequests, setFriendRequests] = useState([]);
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -15,11 +16,13 @@ export default function Invitations() {
 
         try {
 
-            const res = await api.get(
-                `/group-invitations/user/${user.id}`
-            );
+            const [groupRes, friendRes] = await Promise.all([
+                api.get(`/group-invitations/user/${user.id}`),
+                api.get(`/friends/requests/${user.id}`)
+            ]);
 
-            setInvitations(res.data);
+            setInvitations(groupRes.data);
+            setFriendRequests(friendRes.data);
 
         } catch (err) {
 
@@ -33,9 +36,7 @@ export default function Invitations() {
 
         try {
 
-            await api.put(
-                `/group-invitations/accept/${id}`
-            );
+            await api.put(`/group-invitations/accept/${id}`);
 
             loadInvitations();
 
@@ -51,9 +52,39 @@ export default function Invitations() {
 
         try {
 
-            await api.put(
-                `/group-invitations/reject/${id}`
-            );
+            await api.put(`/group-invitations/reject/${id}`);
+
+            loadInvitations();
+
+        } catch (err) {
+
+            console.error(err);
+
+        }
+
+    };
+
+    const acceptFriend = async (id) => {
+
+        try {
+
+            await api.put(`/friends/accept/${id}`);
+
+            loadInvitations();
+
+        } catch (err) {
+
+            console.error(err);
+
+        }
+
+    };
+
+    const rejectFriend = async (id) => {
+
+        try {
+
+            await api.put(`/friends/reject/${id}`);
 
             loadInvitations();
 
@@ -71,9 +102,16 @@ export default function Invitations() {
 
             <h1>My Invitations</h1>
 
+            {/* ---------------- GROUP INVITATIONS ---------------- */}
+
+            <h2>👥 Research Group Invitations</h2>
+
             {invitations.length === 0 ? (
-                <p>No pending invitations.</p>
+
+                <p>No pending group invitations.</p>
+
             ) : (
+
                 invitations.map((invite) => (
 
                     <div
@@ -115,6 +153,61 @@ export default function Invitations() {
                     </div>
 
                 ))
+
+            )}
+
+            <hr style={{ margin: "40px 0" }} />
+
+            {/* ---------------- FRIEND REQUESTS ---------------- */}
+
+            <h2>👤 Friend Requests</h2>
+
+            {friendRequests.length === 0 ? (
+
+                <p>No pending friend requests.</p>
+
+            ) : (
+
+                friendRequests.map((request) => (
+
+                    <div
+                        key={request.request_id}
+                        style={{
+                            border: "1px solid #ddd",
+                            borderRadius: 10,
+                            padding: 20,
+                            marginBottom: 20,
+                            background: "white"
+                        }}
+                    >
+
+                        <h3>{request.sender_name}</h3>
+
+                        <p>{request.sender_email}</p>
+
+                        <p>Status : {request.status}</p>
+
+                        <button
+                            onClick={() =>
+                                acceptFriend(request.request_id)
+                            }
+                            style={{ marginRight: 10 }}
+                        >
+                            Accept
+                        </button>
+
+                        <button
+                            onClick={() =>
+                                rejectFriend(request.request_id)
+                            }
+                        >
+                            Reject
+                        </button>
+
+                    </div>
+
+                ))
+
             )}
 
         </div>

@@ -18,7 +18,7 @@ import NetworkGraph from "./pages/NetworkGraph";
 import Settings from "./pages/Settings";
 import Collaborations from "./pages/Collaborations";
 import Workspace from "./pages/Workspace";
-import Chat from "./pages/Chat";
+import GroupChat from "./pages/GroupChat";
 import ConferenceOrganization from "./pages/ConferenceOrganization";
 import InstitutionManagement from "./pages/InstitutionManagement";
 import InstitutionDetails from "./pages/InstitutionDetails";
@@ -26,6 +26,7 @@ import InstitutionDashboard from "./pages/InstitutionDashboard";
 import ResearchGroups from "./pages/ResearchGroups";
 import Invitations from "./pages/Invitations";
 import GroupWorkspace from "./pages/GroupWorkspace";
+import Chat from "./pages/Chat";
 
 
 function App() {
@@ -73,7 +74,10 @@ function App() {
                     <Route path="/settings" element={<Settings theme={theme} toggleTheme={toggleTheme} />} />
                     <Route path="/collaborations" element={<Collaborations />} />
                     <Route path="/workspace/:id" element={<Workspace />} />
-                    <Route path="/chat/:id" element={<Chat />} />
+                    <Route
+    path="/groups/:groupId/chat"
+    element={<GroupChat />}
+/>
                     
                     <Route path="/groups"element={<ResearchGroups />}/>
 <Route
@@ -84,7 +88,10 @@ function App() {
     path="/groups/:groupId"
     element={<GroupWorkspace />}
 />
-
+<Route
+    path="/chat"
+    element={<Chat />}
+/>
                 </Route>
             </Routes>
         </BrowserRouter>

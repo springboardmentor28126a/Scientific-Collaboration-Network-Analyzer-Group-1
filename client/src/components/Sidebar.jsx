@@ -106,9 +106,9 @@ function Sidebar() {
 />
             <MenuItem
     icon={<FaComments />}
-    text="Group Chat"
+    text="Chat"
     active={location.pathname.startsWith("/groups")}
-    onClick={() => navigate("/groups/1/chat")}
+    onClick={() => navigate("/chat")}
 />
 
             <MenuItem
