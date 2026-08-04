@@ -15,16 +15,25 @@ from app.database import engine, Base
 from app.models.user import User
 from app.models.paper import Paper
 from app.models.researcher import Researcher
+from app.models.researcher_paper import ResearcherPaper
 from app.models.conference import Conference
 from app.models.institution import Institution
+from app.models.project import Project
+from app.models.team import Team
+from app.models.project_assignment import ProjectAssignment
 from app.routers.auth import router as auth_router
 from app.routers.paper import router as paper_router
 from app.routers.researcher import router as researcher_router
 from app.routers.conference import router as conference_router
 from app.routers.institution import router as institution_router
-
-
+from app.routers.collaboration import router as collaboration_router
+from app.routers.project import router as project_router
+from app.routers.team import router as team_router
+from app.routers.project_assignment import router as project_assignment_router
+from app.routers.institution_collaboration import router as institution_collaboration_router
+from app.models.institution_collaboration import InstitutionCollaboration
 Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer API",
@@ -45,6 +54,12 @@ app.include_router(paper_router)
 app.include_router(researcher_router)
 app.include_router(conference_router)
 app.include_router(institution_router)
+app.include_router(collaboration_router)
+app.include_router(project_router)
+app.include_router(team_router)
+app.include_router(project_assignment_router)
+app.include_router(institution_collaboration_router)
+
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 
