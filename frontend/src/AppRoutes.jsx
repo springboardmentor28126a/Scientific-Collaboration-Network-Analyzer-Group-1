@@ -7,6 +7,11 @@ import Researchers from "./pages/Researchers";
 import Publications from "./pages/Publications";
 import Conferences from "./pages/Conferences";
 import Institutions from "./pages/Institutions";
+import CollaborationGraph from "./pages/CollaborationGraph";
+import Projects from "./pages/Projects";
+import Teams from "./pages/Teams";
+import ProjectAssignments from "./pages/ProjectAssignments";
+import InstitutionCollaborations from "./pages/InstitutionCollaborations";
 
 function AppRoutes() {
   return (
@@ -19,6 +24,20 @@ function AppRoutes() {
         <Route path="/publications" element={<Publications />} />
         <Route path="/conferences" element={<Conferences />} />
         <Route path="/institutions" element={<Institutions />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/teams" element={<Teams />} />
+        <Route
+    path="/institution-collaborations"
+    element={<InstitutionCollaborations />}
+/>
+        <Route
+    path="/collaboration-graph"
+    element={<CollaborationGraph />}
+/>
+<Route
+    path="/project-assignments"
+    element={<ProjectAssignments />}
+/>
       </Routes>
     </BrowserRouter>
   );

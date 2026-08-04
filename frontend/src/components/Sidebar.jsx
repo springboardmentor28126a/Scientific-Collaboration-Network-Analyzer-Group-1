@@ -5,7 +5,9 @@ import {
   FaBook,
   FaUniversity,
   FaChalkboardTeacher,
-  FaSignOutAlt,
+  FaProjectDiagram,
+  FaUsersCog,
+  FaHandshake,
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
@@ -36,10 +38,43 @@ function Sidebar() {
         <FaUniversity /> Institutions
       </Link>
 
-      <Link className="logout" to="/">
-  🚪 Logout
-</Link>
+      <h2
+        className="menu-title"
+        style={{
+          marginTop: "25px",
+          fontSize: "15px",
+          color: "#ff3b3b",
+        }}
+      >
+        Collaboration Management
+      </h2>
 
+      <Link to="/collaboration-graph">
+        <FaProjectDiagram /> Collaboration Graph
+      </Link>
+
+      <Link to="/projects">
+        <FaProjectDiagram /> Projects
+      </Link>
+
+      <Link to="/teams">
+        <FaUsersCog /> Teams
+      </Link>
+
+      <Link to="/project-assignments">
+        <FaUsers /> Project Assignments
+      </Link>
+
+      <Link to="/institution-collaborations">
+        <FaHandshake /> Institutional Collaborations
+      </Link>
+
+      <Link className="logout" to="/">
+        🚪 Logout
+      </Link>
+<Link to="/institution-collaborations">
+    <FaProjectDiagram /> Institution Collaboration
+</Link>
     </div>
   );
 }
