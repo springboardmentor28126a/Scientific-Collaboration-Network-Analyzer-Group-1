@@ -1,11 +1,14 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+import asyncio
 
 from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.notification import (
     NotificationCreate,
     NotificationUpdate,
 )
+from app.services.email_service import send_email
 
 
 def create_notification(
@@ -23,6 +26,21 @@ def create_notification(
     db.add(notification)
     db.commit()
     db.refresh(notification)
+
+    # Send Email Notification
+    user = db.query(User).filter(User.id == payload.user_id).first()
+
+    if user and user.email:
+        try:
+            asyncio.run(
+                send_email(
+                    recipient=user.email,
+                    subject=payload.title,
+                    body=payload.message,
+                )
+            )
+        except Exception as e:
+            print("Email sending failed:", e)
 
     return notification
 
