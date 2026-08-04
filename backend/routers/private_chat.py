@@ -9,7 +9,7 @@ from backend.schemas.private_chat import (
     DirectMessageCreate,
     DirectMessageResponse
 )
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_verified_user
 
 router = APIRouter(
     prefix="/private-chat",
@@ -22,7 +22,7 @@ router = APIRouter(
 )
 def send_message(
     chat: DirectMessageCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -64,7 +64,7 @@ def send_message(
 @router.get("/{conversation_id}")
 def get_messages(
     conversation_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -116,7 +116,7 @@ def get_messages(
 @router.delete("/{message_id}")
 def delete_message(
     message_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 

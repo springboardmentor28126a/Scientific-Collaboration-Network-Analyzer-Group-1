@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, allowedRoles }) {
 
     const token = localStorage.getItem("token");
 
@@ -15,6 +15,15 @@ export default function ProtectedRoute({ children }) {
 
     }
 
+    if (allowedRoles && user.role !== "System Admin" && !allowedRoles.includes(user.role)) {
+        return (
+            <div style={{ padding: "40px", textAlign: "center" }}>
+                <h1>403</h1>
+                <p>You are not allowed to access this page.</p>
+            </div>
+        );
+    }
+
     // System Admin bypasses verification
     if (user.role === "System Admin") {
 
@@ -23,7 +32,7 @@ export default function ProtectedRoute({ children }) {
     }
 
     // Verified users
-    if (user.is_verified) {
+    if (user.is_verified || user.verification_status === "Approved") {
 
         return children;
 

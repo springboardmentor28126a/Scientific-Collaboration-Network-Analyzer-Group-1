@@ -384,7 +384,7 @@ def update_institution(
 )
 def delete_institution(
     institution_id: int,
-    current_user: User = Depends(require_permission("*")),
+    current_user: User = Depends(require_permission("institution:delete")),
     db: Session = Depends(get_db)
 ):
 
@@ -400,6 +400,9 @@ def delete_institution(
             status_code=404,
             detail="Institution not found"
         )
+
+    if current_user.role != "System Admin" and current_user.institution_id != institution.id:
+        raise HTTPException(status_code=403, detail="You can delete only your own institution.")
 
     db.delete(institution)
 

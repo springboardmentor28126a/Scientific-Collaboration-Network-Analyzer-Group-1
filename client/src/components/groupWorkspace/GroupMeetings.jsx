@@ -19,6 +19,7 @@ export default function GroupMeetings({ groupId }) {
 
     useEffect(() => {
         loadMeetings();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     const loadMeetings = async () => {

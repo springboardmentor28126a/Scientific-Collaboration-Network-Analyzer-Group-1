@@ -15,8 +15,7 @@ from backend.schemas.research_group import (
     ResearchGroupDetailsResponse,
     ResearchGroupUpdate
 )
-from backend.utils.dependencies import require_permission
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_permission, require_verified_user
 
 router = APIRouter(
     prefix="/groups",
@@ -422,7 +421,7 @@ def remove_group_member(
 def leave_group(
     group_id: int,
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     if current_user.role != "System Admin" and user_id != current_user.id:

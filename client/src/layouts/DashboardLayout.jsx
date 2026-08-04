@@ -41,10 +41,4 @@ function DashboardLayout({ theme, toggleTheme }) {
     );
 }
 
-const styles = {
-    fadeIn: {
-        animation: "fadeIn 0.35s ease"
-    }
-};
-
 export default DashboardLayout;

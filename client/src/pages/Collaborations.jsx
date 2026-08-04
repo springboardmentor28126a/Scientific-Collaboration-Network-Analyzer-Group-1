@@ -18,6 +18,7 @@ const [collaborations, setCollaborations] = useState([]);
 
     loadDashboard();
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
    const loadDashboard = async () => {

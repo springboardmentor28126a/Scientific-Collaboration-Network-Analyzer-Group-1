@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../services/api";
 import { FaTrash } from "react-icons/fa";
-import PublicationCard from "../components/publications/PublicationCard";
 import PublicationDetailsModal from "../components/publications/PublicationDetailsModal";
 import EditPublicationModal from "../components/publications/EditPublicationModal";
 import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
 import { createCitation } from "../services/citationService";
 function Publications() {
+  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  const canCreatePublication = ["Researcher", "System Admin"].includes(currentUser?.role);
+  const [searchParams] = useSearchParams();
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
   const [sortOption, setSortOption] = useState("Title (A-Z)");
@@ -16,13 +19,22 @@ function Publications() {
   const [selectedPublication, setSelectedPublication] = useState(null);
   const [editingPublication, setEditingPublication] = useState(null);
   const [deletePublicationData, setDeletePublicationData] = useState(null);
+  const [selectedCitations, setSelectedCitations] = useState([]);
+  const [showReferences, setShowReferences] = useState(false);
+  const [filterType] = useState("Title");
+  const [filterValue] = useState("");
   const [institutions,setInstitutions]=useState([]);
+  const [institutionQuery, setInstitutionQuery] = useState("");
+  const [showInstitutionOptions, setShowInstitutionOptions] = useState(false);
   const [conferences, setConferences] = useState([]);
+  const [reviewers, setReviewers] = useState([]);
+  const [reviewerLoading, setReviewerLoading] = useState(false);
   const [form, setForm] = useState({
     id: null,
     title: "",
     authors: "",
     journal: "",
+    publication_type: "Journal Article",
     publication_year: "",
     doi: "",
     keywords: "",
@@ -31,19 +43,28 @@ function Publications() {
     status: "Draft",
     researcher_id: null,
     institution_id: null,
-    conference_id: null
+    conference_id: null,
+    selected_reviewer_id: null
   });
 
   useEffect(() => {
     loadPublications();
     loadInstitutions();
     loadConferences();
+    loadReviewers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
     const loadPublications = async () => {
         try {
             const response = await API.get("/publications/");
-            setPublications(response.data);
+            const visiblePublications = response.data.filter((publication) => (
+                currentUser?.role === "System Admin" ||
+                (currentUser?.role === "Reviewer"
+                    ? publication.selected_reviewer_id === currentUser?.id
+                    : publication.researcher_id === currentUser?.id)
+            ));
+            setPublications(visiblePublications);
         } catch (error) {
             console.log(error);
         }
@@ -67,9 +88,7 @@ function Publications() {
         }
 
         catch (error) {
-
-            console.log(error);
-
+            alert(error.response?.data?.detail || "You are not allowed to delete this publication.");
         }
 
     };
@@ -95,6 +114,23 @@ function Publications() {
 
     };
 
+    const loadReviewers = async () => {
+        try {
+            setReviewerLoading(true);
+            const response = await API.get("/reviewer/available");
+            setReviewers(
+                (response.data || []).filter(
+                    (reviewer) => reviewer.id !== currentUser?.id
+                )
+            );
+        } catch (error) {
+            console.log(error);
+            setReviewers([]);
+        } finally {
+            setReviewerLoading(false);
+        }
+    };
+
     const searchPublication = async () => {
         try {
             if (searchTitle.trim() === "") {
@@ -102,12 +138,18 @@ function Publications() {
                 return;
             }
 
-            const response = await API.get(
-                `/publications/search/${searchTitle}`
-            );
+            const response = await API.get("/publications/search", {
+                params: { q: searchTitle },
+            });
 
-            setPublications(response.data);
-        } catch (error) {
+            const visiblePublications = response.data.filter((publication) => (
+                currentUser?.role === "System Admin" ||
+                (currentUser?.role === "Reviewer"
+                    ? publication.selected_reviewer_id === currentUser?.id
+                    : publication.researcher_id === currentUser?.id)
+            ));
+            setPublications(visiblePublications);
+        } catch {
             alert("No publications found");
         }
     };
@@ -186,6 +228,23 @@ function Publications() {
 
     const addPublication = async () => {
 
+        if (!canCreatePublication) {
+            alert("Only Researchers can create publications.");
+            return;
+        }
+
+        const missingFields = [];
+        if (!form.title.trim()) missingFields.push("Title");
+        if (!form.authors.trim()) missingFields.push("Authors");
+        if (!form.journal.trim()) missingFields.push("Journal");
+        if (!form.publication_year) missingFields.push("Publication year");
+        if (!form.keywords.trim()) missingFields.push("Keywords");
+        if (!form.selected_reviewer_id) missingFields.push("Reviewer");
+        if (missingFields.length) {
+            alert(`Please fill the required fields: ${missingFields.join(", ")}.`);
+            return;
+        }
+
         try {
 
             const pdfURL = await uploadPDF();
@@ -193,6 +252,18 @@ function Publications() {
             const publicationData = {
 
                 ...form,
+
+                institution_id: form.institution_id ? Number(form.institution_id) : null,
+
+                conference_id: form.conference_id ? Number(form.conference_id) : null,
+
+                selected_reviewer_id: form.selected_reviewer_id
+                    ? Number(form.selected_reviewer_id)
+                    : null,
+
+                doi: form.doi.trim() || null,
+
+                publication_year: Number(form.publication_year),
 
                 publication_type:
 
@@ -211,7 +282,11 @@ function Publications() {
             console.log("Added publication response:", response.data);
 
             const newPublication = response.data.publication;
-            alert("Publication Added Successfully");
+            alert(
+                publicationData.selected_reviewer_id
+                    ? "Your publication was sent to the selected reviewer."
+                    : "Publication added successfully."
+            );
             console.log("Selected citations:", selectedCitations);
             console.log("New publication id:", newPublication.id);
             for (const citedId of selectedCitations) {
@@ -248,8 +323,13 @@ function Publications() {
                 researcher_id: null,
                 institution_id: null,
 
-    conference_id: null
+                conference_id: null,
+
+                selected_reviewer_id: null
         });
+
+            setInstitutionQuery("");
+            setShowInstitutionOptions(false);
 
             setCustomType("");
 
@@ -267,12 +347,17 @@ function Publications() {
 
         catch (error) {
 
-            console.log(error);
+            alert(error.response?.data?.detail || "Could not add publication. Please check the required fields.");
 
         }
 
     };
     const updatePublication = async () => {
+
+        if (!canCreatePublication) {
+            alert("Only Researchers can update publications.");
+            return;
+        }
 
         try {
 
@@ -287,6 +372,18 @@ function Publications() {
             const publicationData = {
 
                 ...form,
+
+                institution_id: form.institution_id ? Number(form.institution_id) : null,
+
+                conference_id: form.conference_id ? Number(form.conference_id) : null,
+
+                selected_reviewer_id: form.selected_reviewer_id
+                    ? Number(form.selected_reviewer_id)
+                    : null,
+
+                doi: form.doi.trim() || null,
+
+                publication_year: Number(form.publication_year),
 
                 publication_type:
 
@@ -385,11 +482,13 @@ function Publications() {
 
         catch (error) {
 
-            console.log(error);
+            alert(error.response?.data?.detail || "You are not allowed to delete this publication.");
 
         }
 
     };
+    /* Legacy filter handler retained for compatibility with the old form. */
+    // eslint-disable-next-line no-unused-vars
     const searchPublications = async () => {
 
         try {
@@ -475,6 +574,7 @@ function Publications() {
         }
 
     };
+    // eslint-disable-next-line no-unused-vars
     const editPublication = (publication) => {
         console.log("Edit clicked", publication);
 
@@ -567,6 +667,13 @@ function Publications() {
         }
 
     };
+
+    useEffect(() => {
+        const publicationId = searchParams.get("publication");
+        if (publicationId) {
+            loadPublication(Number(publicationId));
+        }
+    }, [searchParams]);
     const savePublication = async (updatedPublication) => {
 
         try {
@@ -629,6 +736,9 @@ function Publications() {
 
             <div style={{ marginBottom: "20px" }}>
 
+                <label className="publication-form-label">
+                    Title <span className="required-mark">*</span>
+                </label>
                 <input
                     type="text"
                     placeholder="Search by Title"
@@ -669,6 +779,9 @@ function Publications() {
 
             <div style={{ marginBottom: "20px" }}>
 
+                <label className="publication-form-label">
+                    Title <span className="required-mark">*</span>
+                </label>
                 <input
                     type="text"
                     name="title"
@@ -677,6 +790,9 @@ function Publications() {
                     onChange={handleChange}
                 />
 
+                <label className="publication-form-label">
+                    Authors <span className="required-mark">*</span>
+                </label>
                 <input
                     type="text"
                     name="authors"
@@ -685,6 +801,9 @@ function Publications() {
                     onChange={handleChange}
                 />
 
+                <label className="publication-form-label">
+                    Journal <span className="required-mark">*</span>
+                </label>
                 <input
                     type="text"
                     name="journal"
@@ -693,6 +812,9 @@ function Publications() {
                     onChange={handleChange}
                 />
 
+                <label className="publication-form-label">
+                    Publication Year <span className="required-mark">*</span>
+                </label>
                 <input
                     type="number"
                     name="publication_year"
@@ -701,6 +823,9 @@ function Publications() {
                     onChange={handleChange}
                 />
 
+                <label className="publication-form-label">
+                    DOI
+                </label>
                 <input
                     type="text"
                     name="doi"
@@ -709,6 +834,9 @@ function Publications() {
                     onChange={handleChange}
                 />
 
+                <label className="publication-form-label">
+                    Keywords <span className="required-mark">*</span>
+                </label>
                 <input
                     type="text"
                     name="keywords"
@@ -824,15 +952,83 @@ function Publications() {
                     )
                 }
 
-                <label>
-
+                <label className="publication-form-label">
                     Institution
-
                 </label>
+                <div style={{ position: "relative" }}>
+                    <input
+                        type="text"
+                        value={institutionQuery}
+                        placeholder="Type at least 3 characters to search"
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setInstitutionQuery(value);
+                            setShowInstitutionOptions(value.trim().length > 2);
+                            setForm((previous) => ({
+                                ...previous,
+                                institution_id: null,
+                            }));
+                        }}
+                        onFocus={() => setShowInstitutionOptions(institutionQuery.trim().length > 2)}
+                        className="publication-form-select"
+                    />
+                    {showInstitutionOptions && institutionQuery.trim().length > 2 && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                zIndex: 20,
+                                width: "100%",
+                                maxHeight: "220px",
+                                overflowY: "auto",
+                                background: "var(--surface-alt)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "10px",
+                                boxShadow: "var(--shadow)",
+                            }}
+                        >
+                            {institutions
+                                .filter((institution) =>
+                                    institution.name?.toLowerCase().includes(institutionQuery.trim().toLowerCase())
+                                )
+                                .map((institution) => (
+                                    <button
+                                        type="button"
+                                        key={institution.id}
+                                        onClick={() => {
+                                            setInstitutionQuery(institution.name);
+                                            setShowInstitutionOptions(false);
+                                            setForm((previous) => ({
+                                                ...previous,
+                                                institution_id: institution.id,
+                                            }));
+                                        }}
+                                        style={{
+                                            display: "block",
+                                            width: "100%",
+                                            padding: "10px 12px",
+                                            border: "none",
+                                            background: "transparent",
+                                            color: "var(--text)",
+                                            textAlign: "left",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        {institution.name}
+                                    </button>
+                                ))}
+                            {institutions.filter((institution) =>
+                                institution.name?.toLowerCase().includes(institutionQuery.trim().toLowerCase())
+                            ).length === 0 && (
+                                <p style={{ padding: "10px 12px", margin: 0 }}>
+                                    No institutions found.
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 <label>
-
                     Conference
-
                 </label>
 
                 <select
@@ -872,6 +1068,28 @@ function Publications() {
                     }
 
                 </select>
+
+                <label className="publication-form-label">
+                    Reviewer <span className="required-mark">*</span>
+                </label>
+                <select
+                    name="selected_reviewer_id"
+                    value={form.selected_reviewer_id || ""}
+                    onChange={handleChange}
+                    className="publication-form-select"
+                >
+                    <option value="">
+                        {reviewerLoading ? "Loading reviewers..." : reviewers.length ? "Select a reviewer to review your paper" : "No verified reviewers available"}
+                    </option>
+                    {reviewers.map((reviewer) => (
+                        <option key={reviewer.id} value={reviewer.id}>
+                            {reviewer.name} ({reviewer.email})
+                        </option>
+                    ))}
+                </select>
+                {reviewers.length === 0 && !reviewerLoading && (
+                    <p className="publication-form-help">A verified reviewer must be available before this paper can be submitted for review.</p>
+                )}
 
                 <div style={{ marginTop: "15px" }}>
 
@@ -939,49 +1157,26 @@ function Publications() {
                     )}
 
                 </div>
-                <select
-                    name="institution_id"
-                    value={form.institution_id || ""}
-                    onChange={handleChange}
-                >
-
-                    <option value="">
-
-                        Select Institution
-
-                    </option>
-
-                    {
-
-                        institutions.map((institution) => (
-
-                            <option
-                                key={institution.id}
-                                value={institution.id}
-                            >
-
-                                {institution.name}
-
-                            </option>
-
-                        ))
-
-                    }
-
-</select>
-
         <select
           name="status"
           value={form.status}
           onChange={handleChange}
         >
           <option>Draft</option>
-          <option>Submitted</option>
+          <option>Pending Review</option>
           <option>Published</option>
           <option>Archived</option>
         </select>
 
                 <button
+
+                    disabled={!canCreatePublication}
+
+                    title={
+                        canCreatePublication
+                            ? ""
+                            : "Only Researchers can create publications"
+                    }
 
                     onClick={
 
@@ -1006,6 +1201,12 @@ function Publications() {
                     }
 
                 </button>
+
+                {!canCreatePublication && (
+                    <p className="publication-form-help">
+                        Reviewers can review assigned publications but cannot create publications.
+                    </p>
+                )}
 
             </div>
             <div
@@ -1044,11 +1245,11 @@ function Publications() {
                 </div>
 
                 <div style={statsCard}>
-                    <h3>🔵 Submitted</h3>
+                    <h3>🔵 Pending Review</h3>
                     <h1>
                         {
                             publications.filter(
-                                (p) => p.status === "Submitted"
+                                (p) => ["Submitted", "Pending Review"].includes(p.status)
                             ).length
                         }
                     </h1>
@@ -1114,6 +1315,30 @@ function Publications() {
                         </p>
 
                         <p>
+                            <b>Reviewer:</b>{" "}
+                            {publication.reviewer_name ||
+                                publication.selected_reviewer_name ||
+                                "Not assigned"}
+                        </p>
+
+                        {publication.reviewed_by && (
+                            <>
+                                <p>
+                                    <b>Accepted By:</b> {publication.reviewer_name || "Reviewer"}
+                                </p>
+                                <p>
+                                    <b>Reviewed On:</b>{" "}
+                                    {publication.reviewed_at
+                                        ? new Date(publication.reviewed_at).toLocaleString()
+                                        : "N/A"}
+                                </p>
+                                <p>
+                                    <b>Review Comments:</b> {publication.review_comments || "No comments"}
+                                </p>
+                            </>
+                        )}
+
+                        <p>
                             <b>🔗 DOI:</b>{" "}
                             {publication.doi || "N/A"}
                         </p>
@@ -1147,10 +1372,8 @@ function Publications() {
                                 👁 View
                             </button>
 
-            <button
-                onClick={() =>
-                    setEditingPublication(publication)
-                }
+            {(currentUser?.role === "System Admin" || publication.researcher_id === currentUser?.id) && <button
+                onClick={() => setEditingPublication(publication)}
                 style={{
                     background: "#22c55e",
                     color: "white",
@@ -1161,9 +1384,9 @@ function Publications() {
                 }}
             >
                 ✏ Edit
-            </button>
+            </button>}
 
-            <button
+            {(currentUser?.role === "System Admin" || publication.researcher_id === currentUser?.id) && <button
                 onClick={() =>
 
                                     setDeletePublicationData(
@@ -1183,7 +1406,7 @@ function Publications() {
                 }}
             >
                 🗑 Delete
-            </button>
+            </button>}
 
                         </div>
 

@@ -55,6 +55,16 @@ const permissions = {
 
     ],
 
+    "Institution Admin": [
+        "institution:update",
+        "institution:delete",
+        "institution:view",
+        "researcher:view",
+        "student:view",
+        "publication:view",
+        "analytics:view",
+    ],
+
     Faculty: [
 
         // Institution

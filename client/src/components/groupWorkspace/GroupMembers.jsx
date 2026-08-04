@@ -9,6 +9,7 @@ export default function GroupMembers({ groupId }) {
 
         loadMembers();
 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     const loadMembers = async () => {

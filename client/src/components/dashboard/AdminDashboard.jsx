@@ -4,10 +4,14 @@ import API from "../../services/api";
 export default function AdminDashboard() {
 
     const [stats, setStats] = useState({});
+    const [users, setUsers] = useState([]);
+    const [newAdminId, setNewAdminId] = useState("");
+    const [replacementRole, setReplacementRole] = useState("Researcher");
 
     useEffect(() => {
 
         loadDashboard();
+        loadUsers();
 
     }, []);
 
@@ -19,6 +23,31 @@ export default function AdminDashboard() {
 
         setStats(res.data);
 
+    };
+
+    const loadUsers = async () => {
+        try {
+            const response = await API.get("/admin/users");
+            setUsers(response.data || []);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const transferOwnership = async () => {
+        if (!newAdminId) return;
+        try {
+            await API.post("/admin/transfer-ownership", null, {
+                params: {
+                    new_admin_id: Number(newAdminId),
+                    replacement_role: replacementRole,
+                },
+            });
+            alert("System Admin ownership transferred successfully.");
+            await loadUsers();
+        } catch (error) {
+            alert(error.response?.data?.detail || "Unable to transfer ownership.");
+        }
     };
 
     return (
@@ -77,6 +106,34 @@ export default function AdminDashboard() {
 
                 </div>
 
+            </div>
+
+            <div className="card" style={{ marginTop: "24px" }}>
+                <h2>Transfer System Admin Ownership</h2>
+                <p>Select a verified user. The current System Admin will immediately lose admin privileges.</p>
+                <select value={newAdminId} onChange={(event) => setNewAdminId(event.target.value)}>
+                    <option value="">Select verified user</option>
+                    {users
+                        .filter((user) => user.role !== "System Admin" && user.is_verified)
+                        .map((user) => (
+                            <option key={user.id} value={user.id}>
+                                {user.name} ({user.email})
+                            </option>
+                        ))}
+                </select>
+                <select
+                    value={replacementRole}
+                    onChange={(event) => setReplacementRole(event.target.value)}
+                    style={{ marginLeft: "10px" }}
+                >
+                    <option value="Researcher">Researcher</option>
+                    <option value="Reviewer">Reviewer</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Institution Admin">Institution Admin</option>
+                </select>
+                <button onClick={transferOwnership} disabled={!newAdminId} style={{ marginLeft: "10px" }}>
+                    Transfer Ownership
+                </button>
             </div>
 
         </div>

@@ -11,9 +11,10 @@ import uuid
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from backend.database.database import get_db
-from backend.database.models import User
+from backend.database.models import Notification, User
 from backend.models.verification_document import VerificationDocument
 from backend.utils.supabase import supabase
+from backend.services.storage import get_signed_url
 from backend.utils.security import get_current_user
 from backend.utils.dependencies import require_permission
 
@@ -120,6 +121,8 @@ async def upload_verification_document(
 )
 
     db.add(document)
+    current_user.verification_status = "Pending"
+    current_user.is_verified = False
     db.commit()
     db.refresh(document)
 
@@ -229,7 +232,7 @@ def verification_status(
 def get_pending_requests(
 
     current_user: User = Depends(
-        require_permission("*")
+        require_permission("verification:approve")
     ),
 
     db: Session = Depends(get_db)
@@ -290,6 +293,32 @@ def get_pending_requests(
 
     return result
 
+
+@router.get("/document/{verification_id}")
+def download_verification_document(
+    verification_id: int,
+    current_user: User = Depends(require_permission("verification:approve")),
+    db: Session = Depends(get_db),
+):
+    document = db.query(VerificationDocument).filter(
+        VerificationDocument.id == verification_id
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Verification document not found.")
+
+    try:
+        return {
+            "download_url": get_signed_url(
+                document.document_path,
+                bucket="verification-documents",
+            )
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=404,
+            detail="The verification document is unavailable in storage.",
+        ) from exc
+
 from datetime import datetime
 
 
@@ -299,7 +328,7 @@ def approve_verification(
     verification_id: int,
 
     current_user: User = Depends(
-        require_permission("*")
+        require_permission("verification:approve")
     ),
 
     db: Session = Depends(get_db)
@@ -340,6 +369,15 @@ def approve_verification(
     user.verified_by = current_user.id
     user.verified_at = datetime.utcnow()
 
+    db.add(Notification(
+        user_id=user.id,
+        title="Verification approved",
+        message="Your account verification has been approved.",
+        notification_type="verification_approved",
+        resource_type="verification",
+        resource_id=document.id,
+    ))
+
     db.commit()
 
     return {
@@ -356,7 +394,7 @@ def reject_verification(
     remarks: str,
 
     current_user: User = Depends(
-        require_permission("*")
+        require_permission("verification:approve")
     ),
 
     db: Session = Depends(get_db)
@@ -395,6 +433,15 @@ def reject_verification(
     user.verification_status = "Rejected"
     user.verified_by = current_user.id
     user.verified_at = datetime.utcnow()
+
+    db.add(Notification(
+        user_id=user.id,
+        title="Verification rejected",
+        message=f"Your verification was rejected. {remarks}",
+        notification_type="verification_rejected",
+        resource_type="verification",
+        resource_id=document.id,
+    ))
 
     db.commit()
 

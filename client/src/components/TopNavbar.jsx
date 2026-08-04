@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
+import API from "../services/api";
 
-function TopNavbar({ theme, toggleTheme }) {
+function TopNavbar() {
 
     const navigate = useNavigate();
 
     const user = JSON.parse(localStorage.getItem("user"));
 
     const [showMenu, setShowMenu] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const menuRef = useRef();
     useEffect(() => {
 
@@ -36,6 +39,16 @@ function TopNavbar({ theme, toggleTheme }) {
     };
 
 }, []);
+
+    useEffect(() => {
+        let active = true;
+        API.get("/dashboard/notifications")
+            .then(({ data }) => {
+                if (active) setUnreadCount(data.filter((item) => !item.is_read).length);
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, []);
     const logout = () => {
 
         localStorage.removeItem("token");
@@ -48,6 +61,7 @@ function TopNavbar({ theme, toggleTheme }) {
     return (
 
         <div
+            className="top-navbar"
             style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -63,6 +77,7 @@ function TopNavbar({ theme, toggleTheme }) {
         >
 
             <h2
+                className="top-navbar-title"
                 style={{
                     margin: 0,
                     color: "var(--accent)"
@@ -78,6 +93,16 @@ function TopNavbar({ theme, toggleTheme }) {
                     gap: "18px"
                 }}
             >
+
+                <button
+                    type="button"
+                    aria-label="Notifications"
+                    onClick={() => navigate("/notifications")}
+                    style={notificationButtonStyle}
+                >
+                    <FaBell />
+                    {unreadCount > 0 && <span style={notificationBadgeStyle}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
+                </button>
 
 
                 <div
@@ -175,20 +200,36 @@ function TopNavbar({ theme, toggleTheme }) {
     );
 }
 
-const themeButtonStyle = {
-    border: "1px solid var(--border)",
-    borderRadius: "14px",
-    background: "var(--button-bg)",
-    color: "var(--text)",
-    padding: "10px 16px",
-    cursor: "pointer",
-    fontWeight: 600,
-};
-
 const itemStyle = {
     padding: "15px",
     cursor: "pointer",
     borderBottom: "1px solid var(--border)"
+};
+
+const notificationButtonStyle = {
+    position: "relative",
+    border: "1px solid var(--border)",
+    borderRadius: "12px",
+    background: "var(--surface)",
+    color: "var(--text)",
+    width: "40px",
+    height: "40px",
+    cursor: "pointer",
+};
+
+const notificationBadgeStyle = {
+    position: "absolute",
+    top: "-6px",
+    right: "-6px",
+    minWidth: "18px",
+    height: "18px",
+    borderRadius: "999px",
+    background: "#ef4444",
+    color: "white",
+    fontSize: "10px",
+    display: "grid",
+    placeItems: "center",
+    padding: "0 4px",
 };
 
 

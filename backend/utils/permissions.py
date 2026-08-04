@@ -2,6 +2,7 @@ ROLE_PERMISSIONS = {
 
     "Researcher": {
 
+        "publication:view",
         "publication:create",
         "publication:update",
         "publication:delete",
@@ -21,20 +22,34 @@ ROLE_PERMISSIONS = {
 
         "chat:private",
         "chat:group"
+        ,"analytics:view"
+    },
+
+    "Institution Admin": {
+        "institution:update",
+        "institution:delete",
+        "researcher:view",
+        "student:view",
+        "publication:view",
+        "analytics:view",
+        "chat:private",
     },
 
     "Reviewer": {
 
+        "publication:view",
         "publication:review",
         "publication:approve",
         "publication:reject",
 
-        "chat:private"
+        "chat:private",
+        "analytics:view"
     },
 
     "Student": {
 
         "publication:view",
+        "analytics:view",
 
         "group:join",
 
@@ -46,8 +61,6 @@ ROLE_PERMISSIONS = {
 
     "Faculty": {
 
-    "institution:update",
-
     "researcher:view",
     "researcher:update",
 
@@ -57,6 +70,7 @@ ROLE_PERMISSIONS = {
     "verification:approve",
 
     "chat:private"
+    ,"analytics:view"
 
 },
 

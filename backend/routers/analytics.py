@@ -3,6 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
+from backend.utils.dependencies import require_permission
 from backend.database.models import Publication, User, Institution, Conference
 
 router = APIRouter(
@@ -12,7 +13,10 @@ router = APIRouter(
 
 
 @router.get("/overview")
-def analytics_overview(db: Session = Depends(get_db)):
+def analytics_overview(
+    current_user=Depends(require_permission("analytics:view")),
+    db: Session = Depends(get_db),
+):
     total_researchers = db.query(User).count()
     total_publications = db.query(Publication).count()
     total_institutions = db.query(Institution).count()
@@ -99,7 +103,10 @@ def analytics_overview(db: Session = Depends(get_db)):
 
 
 @router.get("/network")
-def analytics_network(db: Session = Depends(get_db)):
+def analytics_network(
+    current_user=Depends(require_permission("analytics:view")),
+    db: Session = Depends(get_db),
+):
     institutions = db.query(Institution).all()
     researchers = db.query(User).all()
     publications = db.query(Publication).all()

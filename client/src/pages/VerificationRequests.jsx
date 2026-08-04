@@ -96,6 +96,15 @@ export default function VerificationRequests() {
 
     };
 
+    const openDocument = async (request) => {
+        try {
+            const response = await API.get(`/verification/document/${request.id}`);
+            window.open(response.data.download_url, "_blank", "noopener,noreferrer");
+        } catch (error) {
+            alert(error.response?.data?.detail || "Unable to open verification document.");
+        }
+    };
+
     return (
 
         <div style={{ padding: "30px" }}>
@@ -203,13 +212,11 @@ export default function VerificationRequests() {
                                 }}
                             >
 
-                                <a
+                                <button
 
-                                    href={request.document_url}
+                                    type="button"
 
-                                    target="_blank"
-
-                                    rel="noreferrer"
+                                    onClick={() => openDocument(request)}
 
                                     style={{
                                         textDecoration: "none",
@@ -223,7 +230,7 @@ export default function VerificationRequests() {
 
                                     📄 View Document
 
-                                </a>
+                                </button>
 
                                 <button
 

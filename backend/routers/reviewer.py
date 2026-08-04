@@ -31,7 +31,9 @@ def get_pending_publications(
     current_user: User = Depends(require_permission("publication:review")),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Publication).filter(Publication.status == "Submitted")
+    query = db.query(Publication).filter(
+        Publication.status.in_(["Submitted", "Pending Review"])
+    )
     if current_user.role != "System Admin":
         query = query.filter(Publication.selected_reviewer_id == current_user.id)
     return [publication_payload(publication) for publication in query.order_by(Publication.uploaded_at.desc()).all()]
@@ -47,7 +49,7 @@ def approve_publication(
     publication = db.query(Publication).filter(Publication.id == publication_id).first()
     if not publication:
         raise HTTPException(status_code=404, detail="Publication not found.")
-    if publication.status != "Submitted":
+    if publication.status not in {"Submitted", "Pending Review"}:
         raise HTTPException(status_code=409, detail="Only submitted publications can be reviewed.")
     assigned_to_reviewer(publication, current_user)
     publication.status = "Published"
@@ -84,7 +86,7 @@ def reject_publication(
     publication = db.query(Publication).filter(Publication.id == publication_id).first()
     if not publication:
         raise HTTPException(status_code=404, detail="Publication not found.")
-    if publication.status != "Submitted":
+    if publication.status not in {"Submitted", "Pending Review"}:
         raise HTTPException(status_code=409, detail="Only submitted publications can be reviewed.")
     assigned_to_reviewer(publication, current_user)
     publication.status = "Rejected"

@@ -2,9 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from backend.utils.security import create_access_token
+from backend.utils.security import create_access_token, get_current_user
 from backend.database.database import get_db
 from backend.database.models import User
+from backend.models.verification_document import VerificationDocument
 from backend.schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse
 from backend.schemas.user import (
     RegisterRequest,
@@ -16,6 +17,15 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+VALID_ROLES = {
+    "Researcher",
+    "Reviewer",
+    "Student",
+    "Faculty",
+    "Institution Admin",
+    "System Admin",
+}
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -34,6 +44,18 @@ def register(
         raise HTTPException(
             status_code=400,
             detail="⚠ This email is already registered."
+        )
+
+    if user.role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid role.")
+
+    is_first_system_admin = user.role == "System Admin" and not db.query(User).filter(
+        User.role == "System Admin"
+    ).first()
+    if user.role == "System Admin" and not is_first_system_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="A System Admin already exists. Ownership must be transferred by the current System Admin.",
         )
 
     hashed_password = pwd_context.hash(user.password)
@@ -73,9 +95,9 @@ def register(
         orcid=user.orcid or "",
 
         google_scholar=user.google_scholar or "",
-        verification_status="Pending",
+        verification_status="Approved" if is_first_system_admin else "Not Submitted",
 
-        is_verified=False
+        is_verified=bool(is_first_system_admin)
 
     )
 
@@ -142,8 +164,13 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 def update_user(
     user_id: int,
     user: UserUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="You can only update your own profile.")
+    if user.role is not None and current_user.role != "System Admin":
+        raise HTTPException(status_code=403, detail="Only System Admin can change roles.")
     existing_user = db.query(User).filter(User.id == user_id).first()
 
     if not existing_user:
@@ -244,15 +271,8 @@ def update_user(
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.id == user_id).first()
-
-    if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    db.delete(existing_user)
-    db.commit()
-
-    return {"message": "User deleted successfully"}
+    # Kept as a legacy endpoint, but no longer allows anonymous deletion.
+    raise HTTPException(status_code=405, detail="Use the protected admin user-management endpoint.")
 
 
 # 👇 Paste the login API HERE
@@ -267,6 +287,27 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
     if not pwd_context.verify(user.password, existing_user.password):
         raise HTTPException(status_code=401, detail="Invalid Password")
+
+    # The user-table default must not imply that a document was submitted.
+    # The latest verification document is the source of truth for login state.
+    latest_document = (
+        db.query(VerificationDocument)
+        .filter(VerificationDocument.user_id == existing_user.id)
+        .order_by(VerificationDocument.id.desc())
+        .first()
+    )
+
+    if existing_user.is_verified or (
+        latest_document is not None and latest_document.status == "Approved"
+    ):
+        effective_verification_status = "Approved"
+        effective_is_verified = True
+    elif latest_document is not None:
+        effective_verification_status = latest_document.status
+        effective_is_verified = False
+    else:
+        effective_verification_status = "Not Submitted"
+        effective_is_verified = False
 
     role = existing_user.role
 
@@ -299,6 +340,12 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "id": existing_user.id,
         "name": existing_user.name,
         "email": existing_user.email,
-        "role": existing_user.role
+        "role": existing_user.role,
+        "institution_id": existing_user.institution_id,
+        "verification_status": effective_verification_status,
+        "is_verified": effective_is_verified,
+        "verified_at": existing_user.verified_at or (
+            latest_document.verified_at if latest_document else None
+        ),
     }
 }

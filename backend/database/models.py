@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Index, text
 from sqlalchemy.orm import relationship
 
 from sqlalchemy import (
@@ -16,6 +16,15 @@ from sqlalchemy import Boolean
 class User(Base):
 
     __tablename__ = "users"
+    __table_args__ = (
+        Index(
+            "uq_users_single_system_admin",
+            "role",
+            unique=True,
+            postgresql_where=text("role = 'System Admin'"),
+            sqlite_where=text("role = 'System Admin'"),
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
 

@@ -85,6 +85,13 @@ def get_conferences(
 
 from sqlalchemy import or_
 
+
+@router.get("/details/{conference_id}")
+def conference_details_endpoint(conference_id: int, db: Session = Depends(get_db)):
+    # Keep the detail route ahead of /{conference_id}; otherwise FastAPI
+    # attempts to parse the literal segment "details" as an integer.
+    return conference_details(conference_id, db)
+
 @router.get("/search")
 def search_conferences(
     q: str,
@@ -130,7 +137,7 @@ def get_conference(
 
 
 @router.get(
-    "/details/{conference_id}"
+    "/details-legacy/{conference_id}"
 )
 def conference_details(
     conference_id: int,

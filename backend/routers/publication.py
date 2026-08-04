@@ -1,68 +1,136 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import shutil
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.database.models import ActivityEvent, Conference, Institution, Notification, Publication, User
+from backend.database.models import Institution, Notification, Publication, User
 from backend.schemas.publication import PublicationCreate
-from fastapi import UploadFile, File
-import shutil
-import os
-from fastapi import Query
-from sqlalchemy import or_
-
-router = APIRouter(
-    prefix="/publications",
-    tags=["Publication"]
-)
+from backend.utils.dependencies import require_permission
 
 
-# ---------------- CREATE ----------------
-# ---------------- CREATE ----------------
+router = APIRouter(prefix="/publications", tags=["Publication"])
+
+
+def publication_payload(publication: Publication) -> dict:
+    """Return the stable JSON shape used by the publication UI and reviewer UI."""
+    return {
+        "id": publication.id,
+        "title": publication.title,
+        "authors": publication.authors,
+        "journal": publication.journal,
+        "publication_type": publication.publication_type,
+        "publication_year": publication.publication_year,
+        "doi": publication.doi,
+        "keywords": publication.keywords,
+        "abstract": publication.abstract,
+        "pdf_file": publication.pdf_file,
+        "status": publication.status,
+        "researcher_id": publication.researcher_id,
+        "institution_id": publication.institution_id,
+        "conference_id": publication.conference_id,
+        "selected_reviewer_id": publication.selected_reviewer_id,
+        "selected_reviewer_name": (
+            publication.selected_reviewer.name
+            if publication.selected_reviewer else None
+        ),
+        "reviewed_by": publication.reviewed_by,
+        "reviewer_name": (
+            publication.reviewer.name
+            if publication.reviewer else None
+        ),
+        "reviewed_at": publication.reviewed_at,
+        "review_comments": publication.review_comments,
+        "uploaded_at": publication.uploaded_at,
+    }
+
+
+def require_publication_owner(publication: Publication, current_user: User) -> None:
+    if current_user.role != "System Admin" and publication.researcher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only manage your own publications.")
+
+
+def validate_selected_reviewer(
+    reviewer_id: int | None, owner_id: int, db: Session
+) -> User | None:
+    if reviewer_id is None:
+        return None
+    reviewer = db.query(User).filter(
+        User.id == reviewer_id,
+        User.role == "Reviewer",
+        User.is_verified.is_(True),
+    ).first()
+    if reviewer is None:
+        raise HTTPException(status_code=400, detail="Selected reviewer is not valid.")
+    if reviewer.id == owner_id:
+        raise HTTPException(status_code=400, detail="A researcher cannot review their own publication.")
+    return reviewer
+
+
 @router.post("/")
 def create_publication(
     publication: PublicationCreate,
     current_user: User = Depends(require_permission("publication:create")),
     db: Session = Depends(get_db),
 ):
-    # A selected reviewer submits the work for review.  Keeping no reviewer
-    # leaves a compatible Draft path for incomplete existing forms.
-    selected_reviewer = validate_selected_reviewer(
-        publication.selected_reviewer_id, current_user.id, db
-    )
+    validate_selected_reviewer(publication.selected_reviewer_id, current_user.id, db)
+    publication_data = publication.model_dump()
+    publication_data["doi"] = publication_data.get("doi") or None
+    selected_institution_id = publication_data.pop("institution_id", None) or current_user.institution_id
+    if selected_institution_id is not None and not db.query(Institution).filter(
+        Institution.id == selected_institution_id
+    ).first():
+        raise HTTPException(status_code=400, detail="Selected institution is not valid.")
     new_publication = Publication(
-        title=publication.title,
-        authors=publication.authors,
-        journal=publication.journal,
-        publication_type=publication.publication_type,
-        publication_year=publication.publication_year,
-        doi=publication.doi,
-        keywords=publication.keywords,
-        abstract=publication.abstract,
-        pdf_file=publication.pdf_file,
+        **publication_data,
         researcher_id=current_user.id,
-        institution_id=current_user.institution_id,
-        conference_id=publication.conference_id,
-        selected_reviewer_id=publication.selected_reviewer_id,
-        status="Submitted" if publication.selected_reviewer_id else "Draft",
+        institution_id=selected_institution_id,
+        status="Pending Review" if publication.selected_reviewer_id else "Draft",
     )
-    db.add(new_publication)
-    db.commit()
-    db.refresh(new_publication)
+    try:
+        db.add(new_publication)
+        db.flush()
 
-        return {
-            "message": "Publication Added Successfully",
-            "publication": new_publication
-        }
+        if new_publication.selected_reviewer_id:
+            db.add(Notification(
+                user_id=new_publication.selected_reviewer_id,
+                title="Publication review requested",
+                message=(
+                    f"{current_user.name} sent '{new_publication.title}' for review. "
+                    "Please accept or reject this publication."
+                ),
+                notification_type="publication_review_request",
+                resource_type="publication",
+                resource_id=new_publication.id,
+            ))
 
-    except Exception as e:
+        db.commit()
+        db.refresh(new_publication)
+    except IntegrityError as exc:
         db.rollback()
-        print("DATABASE ERROR:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        print("PUBLICATION CREATE DATABASE ERROR:", repr(exc))
+        if "publications_doi_key" in str(exc.orig):
+            raise HTTPException(
+                status_code=409,
+                detail="A publication with this DOI already exists.",
+            ) from exc
+        raise HTTPException(status_code=500, detail="Could not create publication.") from exc
+    except Exception as exc:
+        db.rollback()
+        print("PUBLICATION CREATE DATABASE ERROR:", repr(exc))
+        raise HTTPException(status_code=500, detail="Could not create publication.") from exc
+    return {"message": "Publication added successfully", "publication": publication_payload(new_publication)}
 
-# ---------------- GET ALL ----------------
+
 @router.get("/")
-def get_publications(db: Session = Depends(get_db)):
-    return db.query(Publication).all()
+def get_publications(
+    current_user: User = Depends(require_permission("publication:view")),
+    db: Session = Depends(get_db),
+):
+    return [publication_payload(publication) for publication in db.query(Publication).all()]
 
 
 @router.get("/search")
@@ -76,16 +144,19 @@ def search_publications(
     publication_type: str | None = Query(None),
     year: int | None = Query(None),
     status: str | None = Query(None),
+    current_user: User = Depends(require_permission("publication:view")),
     db: Session = Depends(get_db),
 ):
     query = db.query(Publication)
     term = q or title
     if term:
-        query = query.filter(or_(
-            Publication.title.ilike(f"%{term}%"), Publication.authors.ilike(f"%{term}%"),
-            Publication.journal.ilike(f"%{term}%"), Publication.keywords.ilike(f"%{term}%"),
-            Publication.abstract.ilike(f"%{term}%"), Publication.doi.ilike(f"%{term}%"),
-        ))
+        query = query.filter(or_(*[
+            field.ilike(f"%{term}%")
+            for field in (
+                Publication.title, Publication.authors, Publication.journal,
+                Publication.keywords, Publication.abstract, Publication.doi,
+            )
+        ]))
     if author:
         query = query.filter(Publication.authors.ilike(f"%{author}%"))
     if journal:
@@ -99,187 +170,84 @@ def search_publications(
     if year:
         query = query.filter(Publication.publication_year == year)
     if status:
-        query = query.filter(
-            Publication.status == status
-        )
+        query = query.filter(Publication.status == status)
+    return [publication_payload(publication) for publication in query.limit(20).all()]
 
-    return query.limit(20).all()
-# ---------------- GET BY ID ----------------
-@router.get("/{publication_id}")
-def get_publication(publication_id: int, db: Session = Depends(get_db)):
-    publication = db.query(Publication).filter(
-        Publication.id == publication_id
-    ).first()
 
-    if not publication:
+@router.get("/year/{year}")
+def publications_by_year(
+    year: int,
+    current_user: User = Depends(require_permission("publication:view")),
+    db: Session = Depends(get_db),
+):
+    publications = db.query(Publication).filter(Publication.publication_year == year).all()
+    if not publications:
+        raise HTTPException(status_code=404, detail="No publications found")
+    return publications
+
+
+@router.get("/status/{status}")
+def publications_by_status(
+    status: str,
+    current_user: User = Depends(require_permission("publication:view")),
+    db: Session = Depends(get_db),
+):
+    publications = db.query(Publication).filter(Publication.status == status).all()
+    if not publications:
+        raise HTTPException(status_code=404, detail="No publications found")
+    return publications
+
+
+@router.get("/details/{publication_id}")
+def publication_details(
+    publication_id: int,
+    current_user: User = Depends(require_permission("publication:view")),
+    db: Session = Depends(get_db),
+):
+    publication = db.query(Publication).filter(Publication.id == publication_id).first()
+    if publication is None:
         raise HTTPException(status_code=404, detail="Publication not found")
 
+    related = db.query(Publication).filter(
+        Publication.id != publication.id,
+        Publication.authors.ilike(f"%{publication.authors}%"),
+    ).limit(10).all()
+
+    similar = []
+    if publication.keywords:
+        similar = db.query(Publication).filter(
+            Publication.id != publication.id,
+            Publication.keywords.ilike(f"%{publication.keywords}%"),
+        ).limit(10).all()
+
+    publication_data = publication_payload(publication)
+    publication_data["selected_reviewer_name"] = (
+        publication.selected_reviewer.name if publication.selected_reviewer else None
+    )
+    publication_data["reviewer_name"] = (
+        publication.reviewer.name if publication.reviewer else None
+    )
+    return {
+        "publication": publication_data,
+        "institution": publication.institution,
+        "conference": publication.conference,
+        "related_publications": [publication_payload(item) for item in related],
+        "similar_research": [publication_payload(item) for item in similar],
+    }
+
+
+@router.get("/{publication_id}")
+def get_publication(
+    publication_id: int,
+    current_user: User = Depends(require_permission("publication:view")),
+    db: Session = Depends(get_db),
+):
+    publication = db.query(Publication).filter(Publication.id == publication_id).first()
+    if publication is None:
+        raise HTTPException(status_code=404, detail="Publication not found")
     return publication
 
-from fastapi import Query, Depends
-from sqlalchemy import or_
 
-@router.get("/search")
-def search_publications(
-    q: str = Query(..., description="Search text"),
-    db: Session = Depends(get_db)
-):
-    return (
-        db.query(Publication)
-        .filter(
-            or_(
-                Publication.title.ilike(f"%{q}%"),
-                Publication.authors.ilike(f"%{q}%"),
-                Publication.journal.ilike(f"%{q}%"),
-                Publication.keywords.ilike(f"%{q}%"),
-                Publication.abstract.ilike(f"%{q}%"),
-                Publication.doi.ilike(f"%{q}%"),
-            )
-        )
-        .limit(20)
-        .all()
-    )
-
-# @router.get("/search")
-# def search_publications(
-
-#     title: str = Query(None),
-
-#     author: str = Query(None),
-
-#     journal: str = Query(None),
-
-#     publication_type: str = Query(None),
-
-#     keyword: str = Query(None),
-
-#     year: int = Query(None),
-
-#     status: str = Query(None),
-
-#     doi: str = Query(None),
-
-#     db: Session = Depends(get_db)
-
-# ):
-
-#     query = db.query(Publication)
-
-#     if title:
-
-#         query = query.filter(
-
-#             Publication.title.ilike(f"%{title}%")
-
-#         )
-
-#     if author:
-
-#         query = query.filter(
-
-#             Publication.authors.ilike(f"%{author}%")
-
-#         )
-
-#     if journal:
-
-#         query = query.filter(
-
-#             Publication.journal.ilike(f"%{journal}%")
-
-#         )
-
-#     if publication_type:
-
-#         query = query.filter(
-
-#             Publication.publication_type == publication_type
-
-#         )
-
-#     if keyword:
-
-#         query = query.filter(
-
-#             Publication.keywords.ilike(f"%{keyword}%")
-
-#         )
-
-#     if year:
-
-#         query = query.filter(
-
-#             Publication.publication_year == year
-
-#         )
-
-#     if status:
-
-#         query = query.filter(
-
-#             Publication.status == status
-
-#         )
-
-#     if doi:
-
-#         query = query.filter(
-
-#             Publication.doi.ilike(f"%{doi}%")
-
-#         )
-
-#     return query.all()
-
-# # ---------------- SEARCH BY TITLE ----------------
-# @router.get("/search/{title}")
-# def search_publication(title: str, db: Session = Depends(get_db)):
-#     publications = db.query(Publication).filter(
-#         Publication.title.ilike(f"%{title}%")
-#     ).all()
-
-#     if not publications:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="No publications found"
-#         )
-
-#     return publications
-
-
-# ---------------- FILTER BY YEAR ----------------
-@router.get("/year/{year}")
-def publications_by_year(year: int, db: Session = Depends(get_db)):
-    publications = db.query(Publication).filter(
-        Publication.publication_year == year
-    ).all()
-
-    if not publications:
-        raise HTTPException(
-            status_code=404,
-            detail="No publications found"
-        )
-
-    return publications
-
-
-# ---------------- FILTER BY STATUS ----------------
-@router.get("/status/{status}")
-def publications_by_status(status: str, db: Session = Depends(get_db)):
-    publications = db.query(Publication).filter(
-        Publication.status == status
-    ).all()
-
-    if not publications:
-        raise HTTPException(
-            status_code=404,
-            detail="No publications found"
-        )
-
-    return publications
-
-
-# ---------------- UPDATE ----------------
 @router.put("/{publication_id}")
 def update_publication(
     publication_id: int,
@@ -288,18 +256,16 @@ def update_publication(
     db: Session = Depends(get_db),
 ):
     existing = db.query(Publication).filter(Publication.id == publication_id).first()
-    if not existing:
+    if existing is None:
         raise HTTPException(status_code=404, detail="Publication not found")
     require_publication_owner(existing, current_user)
     validate_selected_reviewer(publication.selected_reviewer_id, existing.researcher_id, db)
-
-    for field in ("title", "authors", "journal", "publication_type", "publication_year", "doi", "keywords", "abstract", "pdf_file", "conference_id"):
-        setattr(existing, field, getattr(publication, field))
-    existing.selected_reviewer_id = publication.selected_reviewer_id
-    existing.status = "Submitted" if publication.selected_reviewer_id else "Draft"
-    existing.reviewed_by = None
-    existing.reviewed_at = None
-    existing.review_comments = None
+    publication_data = publication.model_dump()
+    publication_data["doi"] = publication_data.get("doi") or None
+    for field, value in publication_data.items():
+        setattr(existing, field, value)
+    existing.status = "Pending Review" if publication.selected_reviewer_id else "Draft"
+    existing.reviewed_by = existing.reviewed_at = existing.review_comments = None
     db.commit()
     db.refresh(existing)
     return {"message": "Publication updated successfully.", "publication": publication_payload(existing)}
@@ -312,7 +278,7 @@ def delete_publication(
     db: Session = Depends(get_db),
 ):
     publication = db.query(Publication).filter(Publication.id == publication_id).first()
-    if not publication:
+    if publication is None:
         raise HTTPException(status_code=404, detail="Publication not found")
     require_publication_owner(publication, current_user)
     db.delete(publication)
@@ -327,7 +293,6 @@ def upload_publication_pdf(
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
-    # Prefixing prevents an owner from overwriting another user's upload.
     safe_name = f"{current_user.id}_{os.path.basename(file.filename)}"
     folder = "uploads/papers"
     os.makedirs(folder, exist_ok=True)

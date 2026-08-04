@@ -183,30 +183,25 @@ function Search() {
     };
 
 }, []);
-const filteredPublications =
-  activeSection === "All" || activeSection === "Publications"
-    ? publications
-    : [];
+const filteredPublications = useMemo(() => (
+  activeSection === "All" || activeSection === "Publications" ? publications : []
+), [activeSection, publications]);
 
-const filteredResearchers =
-  activeSection === "All" || activeSection === "Researchers"
-    ? researchers
-    : [];
+const filteredResearchers = useMemo(() => (
+  activeSection === "All" || activeSection === "Researchers" ? researchers : []
+), [activeSection, researchers]);
 
-const filteredGroups =
-  activeSection === "All" || activeSection === "Research Groups"
-    ? groups
-    : [];
+const filteredGroups = useMemo(() => (
+  activeSection === "All" || activeSection === "Research Groups" ? groups : []
+), [activeSection, groups]);
 
-const filteredInstitutions =
-  activeSection === "All" || activeSection === "Institutions"
-    ? institutions
-    : [];
+const filteredInstitutions = useMemo(() => (
+  activeSection === "All" || activeSection === "Institutions" ? institutions : []
+), [activeSection, institutions]);
 
-const filteredConferences =
-  activeSection === "All" || activeSection === "Conferences"
-    ? conferences
-    : [];
+const filteredConferences = useMemo(() => (
+  activeSection === "All" || activeSection === "Conferences" ? conferences : []
+), [activeSection, conferences]);
 
 
  useEffect(() => {
@@ -283,7 +278,7 @@ const filteredConferences =
 
     setShowSuggestions(data.length > 0);
 
-}, [search, activeSection, publications, researchers, groups, institutions, conferences]);
+}, [search, filteredConferences, filteredGroups, filteredInstitutions, filteredPublications, filteredResearchers]);
   return (
     <div style={{ padding: "30px" }}>
       <h1>🔍 Research Search</h1>

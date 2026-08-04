@@ -75,9 +75,13 @@ def delete_file(storage_path: str):
 # Generate Signed URL
 # ---------------------------------------------------
 
-def get_signed_url(storage_path: str, expires_in: int = 3600):
+def get_signed_url(
+    storage_path: str,
+    expires_in: int = 3600,
+    bucket: str = BUCKET,
+):
 
-    response = supabase.storage.from_(BUCKET).create_signed_url(
+    response = supabase.storage.from_(bucket).create_signed_url(
         storage_path,
         expires_in
     )

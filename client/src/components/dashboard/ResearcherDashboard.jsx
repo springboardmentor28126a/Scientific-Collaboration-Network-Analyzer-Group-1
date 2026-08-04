@@ -12,6 +12,7 @@ export default function ResearcherDashboard() {
 
         loadDashboard();
         loadVerification();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadDashboard = async () => {

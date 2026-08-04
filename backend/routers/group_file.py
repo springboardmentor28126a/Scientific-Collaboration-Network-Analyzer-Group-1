@@ -7,7 +7,7 @@ from fastapi import (
 )
 
 from sqlalchemy.orm import Session
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_verified_user
 from backend.database.models import User
 from backend.database.database import get_db
 from backend.database.models import User
@@ -50,7 +50,7 @@ def require_group_member(group_id: int, current_user: User, db: Session):
 def upload_group_file(
     group_id: int,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     group = (
@@ -94,7 +94,7 @@ def upload_group_file(
 )
 def get_group_files(
     group_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -112,7 +112,7 @@ def get_group_files(
 )
 def download_file(
     file_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -140,7 +140,7 @@ def download_file(
 @router.delete("/{file_id}")
 def remove_file(
     file_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 

@@ -13,13 +13,14 @@ function DeleteConfirmationModal({
     return (
 
         <div
+            className="delete-modal-backdrop"
             style={{
                 position: "fixed",
                 top: 0,
                 left: 0,
                 width: "100%",
                 height: "100%",
-                background: "rgba(0,0,0,.5)",
+                background: "rgba(2, 8, 23, .76)",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -28,9 +29,14 @@ function DeleteConfirmationModal({
         >
 
             <div
+                className="delete-modal"
                 style={{
-                    width: "500px",
-                    background: "rgba(255,255,255,0.06)",
+                    width: "min(500px, calc(100vw - 32px))",
+                    maxHeight: "calc(100vh - 32px)",
+                    overflowY: "auto",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border)",
                     padding: "30px",
                     borderRadius: "15px",
                     textAlign: "center",

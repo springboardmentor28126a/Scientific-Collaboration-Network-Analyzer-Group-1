@@ -14,8 +14,7 @@ from backend.schemas.group_invitation import (
 )
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
-from backend.utils.dependencies import require_permission
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_permission, require_verified_user
 
 
 router = APIRouter(
@@ -110,7 +109,7 @@ def send_invitation(
 )
 def get_my_invitations(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     if current_user.role != "System Admin" and user_id != current_user.id:
@@ -265,7 +264,7 @@ def get_invitation_status(
 @router.put("/accept/{invitation_id}")
 def accept_invitation(
     invitation_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     invitation = (
@@ -322,7 +321,7 @@ def accept_invitation(
 @router.put("/reject/{invitation_id}")
 def reject_invitation(
     invitation_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     invitation = (

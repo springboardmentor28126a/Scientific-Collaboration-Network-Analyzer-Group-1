@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -126,6 +126,67 @@ def create_bulk_citations(
 
 # ---------------- GET ALL REFERENCES OF A PUBLICATION ---------------- #
 
+@router.get("/stats/{publication_id}", response_model=CitationStatsResponse)
+def get_citation_stats(
+    publication_id: int,
+    db: Session = Depends(get_db)
+):
+    publication = db.query(Publication).filter(
+        Publication.id == publication_id
+    ).first()
+
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+
+    times_cited = db.query(Citation).filter(
+        Citation.cited_publication_id == publication_id
+    ).count()
+    reference_count = db.query(Citation).filter(
+        Citation.citing_publication_id == publication_id
+    ).count()
+    return {
+        "publication_id": publication.id,
+        "title": publication.title,
+        "times_cited": times_cited,
+        "reference_count": reference_count,
+    }
+
+
+@router.get("/format/{publication_id}")
+def format_citation(
+    publication_id: int,
+    style: str = Query("APA", pattern="^(APA|IEEE|MLA|Chicago|BibTeX)$"),
+    db: Session = Depends(get_db),
+):
+    publication = db.query(Publication).filter(Publication.id == publication_id).first()
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+
+    authors = publication.authors or "Unknown Author"
+    title = publication.title or "Untitled"
+    year = publication.publication_year or "n.d."
+    journal = publication.journal or ""
+    doi = f" https://doi.org/{publication.doi}" if publication.doi else ""
+    if style == "APA":
+        citation = f"{authors} ({year}). {title}. {journal}.{doi}"
+    elif style == "IEEE":
+        citation = f"{authors}, \"{title},\" {journal}, {year}.{doi}"
+    elif style == "MLA":
+        citation = f"{authors}. \"{title}.\" {journal}, {year}.{doi}"
+    elif style == "Chicago":
+        citation = f"{authors}. \"{title}.\" {journal} ({year}).{doi}"
+    else:
+        key = f"publication{publication.id}"
+        citation = (
+            f"@article{{{key},\n"
+            f"  author = {{{authors}}},\n"
+            f"  title = {{{title}}},\n"
+            f"  journal = {{{journal}}},\n"
+            f"  year = {{{year}}}"
+            f"\n}}"
+        )
+    return {"publication_id": publication.id, "style": style, "citation": citation}
+
 @router.get("/{publication_id}", response_model=list[CitationResponse])
 def get_citations(
     publication_id: int,
@@ -146,39 +207,6 @@ def get_citations(
     ).all()
 
     return citations
-
-
-# ---------------- CITATION STATS ---------------- #
-
-@router.get("/stats/{publication_id}", response_model=CitationStatsResponse)
-def get_citation_stats(
-    publication_id: int,
-    db: Session = Depends(get_db)
-):
-    publication = db.query(Publication).filter(
-        Publication.id == publication_id
-    ).first()
-
-    if not publication:
-        raise HTTPException(
-            status_code=404,
-            detail="Publication not found"
-        )
-
-    times_cited = db.query(Citation).filter(
-        Citation.cited_publication_id == publication_id
-    ).count()
-
-    reference_count = db.query(Citation).filter(
-        Citation.citing_publication_id == publication_id
-    ).count()
-
-    return {
-        "publication_id": publication.id,
-        "title": publication.title,
-        "times_cited": times_cited,
-        "reference_count": reference_count
-    }
 
 
 # ---------------- DELETE ---------------- #

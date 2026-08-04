@@ -215,7 +215,7 @@ function App() {
     <Route
         path="/institution/manage"
         element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["Institution Admin"]}>
                 <InstitutionManagement />
             </ProtectedRoute>
         }
@@ -306,25 +306,19 @@ function App() {
     />
 
     <Route
-        path="/verification"
-        element={<Verification />}
-    />
-
-    <Route
-        path="/verification-pending"
-        element={<VerificationPending />}
-    />
-
-    <Route
         path="/verification-requests"
         element={
-            <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["Faculty", "System Admin"]}>
                 <VerificationRequests />
             </ProtectedRoute>
         }
     />
 
 </Route>
+
+                {/* Unverified users must not receive the dashboard shell. */}
+                <Route path="/verification" element={<Verification />} />
+                <Route path="/verification-pending" element={<VerificationPending />} />
             </Routes>
         </BrowserRouter>
     );

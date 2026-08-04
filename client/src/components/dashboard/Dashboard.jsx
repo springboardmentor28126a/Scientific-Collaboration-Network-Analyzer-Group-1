@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 
 export default function Dashboard() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const navigate = useNavigate();
     const [verification, setVerification] = useState(null);
-    const [overview, setOverview] = useState({ stats: {}, activity: [] });
+    const [overview, setOverview] = useState({ stats: {}, activity: [], sections: {} });
     const [loading, setLoading] = useState(true);
+    const [expandedSection, setExpandedSection] = useState(null);
 
     useEffect(() => {
         async function loadDashboard() {
@@ -22,17 +25,17 @@ export default function Dashboard() {
                 setLoading(false);
             }
         }
-
         loadDashboard();
     }, []);
 
+    const sections = overview.sections || {};
     const cards = [
-        ["📚", "Publications", overview.stats.publications],
-        ["🤝", "Collaborations", overview.stats.collaborations],
-        ["📅", "Meetings", overview.stats.meetings],
-        ["👥", "Research Groups", overview.stats.groups],
-        ["⭐", "Citations", overview.stats.citations],
-        ["🔔", "Unread Notifications", overview.stats.notifications],
+        ["publications", "📚", "My Publications", overview.stats.publications],
+        ["groups", "👥", "My Research Groups", overview.stats.groups],
+        ["conferences", "🏛", "My Conferences", sections.conferences?.length || 0],
+        ["meetings", "📅", "My Meetings", overview.stats.meetings],
+        ["collaborations", "🤝", "My Collaborations", overview.stats.collaborations],
+        ["notifications", "🔔", "My Notifications", overview.stats.notifications],
     ];
 
     return (
@@ -48,14 +51,24 @@ export default function Dashboard() {
             </div>
 
             <div style={cardsStyle}>
-                {cards.map(([icon, label, value]) => (
-                    <div key={label} className="card-surface" style={cardStyle}>
+                {cards.map(([key, icon, label, value]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        className={`card-surface dashboard-card-button ${expandedSection === key ? "is-expanded" : ""}`}
+                        style={cardStyle}
+                        onClick={() => setExpandedSection((current) => current === key ? null : key)}
+                        aria-expanded={expandedSection === key}
+                    >
                         <span style={{ fontSize: "26px" }}>{icon}</span>
                         <p style={{ marginTop: "14px" }}>{label}</p>
                         <h2 style={{ marginTop: "8px", fontSize: "30px" }}>{loading ? "–" : value ?? 0}</h2>
-                    </div>
+                        <small className="dashboard-card-hint">{expandedSection === key ? "Hide details" : "View details"}</small>
+                    </button>
                 ))}
             </div>
+
+            {expandedSection && <DashboardDetail section={expandedSection} overview={overview} onNavigate={navigate} />}
 
             <section className="card-surface" style={{ marginTop: "24px", padding: "24px" }}>
                 <h2>Recent Activity</h2>
@@ -72,15 +85,67 @@ export default function Dashboard() {
                     ))}
                 </div>
             </section>
+
+            <section className="dashboard-leaderboards">
+                <Leaderboard title="🏆 Top Researchers" items={overview.leaderboards?.researchers} />
+                <Leaderboard title="🏛 Top Institutions" items={overview.leaderboards?.institutions} />
+            </section>
         </div>
+    );
+}
+
+function DashboardDetail({ section, overview, onNavigate }) {
+    const items = overview.sections?.[section] || [];
+    const title = {
+        publications: "Recent publications",
+        groups: "My research groups",
+        conferences: "My conferences",
+        meetings: "Upcoming meetings",
+        collaborations: "Collaboration activity",
+        notifications: "Recent notifications",
+    }[section] || "Details";
+
+    return (
+        <section className="dashboard-detail card-surface" aria-live="polite">
+            <div className="dashboard-detail-heading">
+                <div><span className="eyebrow">Personal workspace</span><h2>{title}</h2></div>
+                {section === "publications" && <button onClick={() => onNavigate("/publications")}>Manage publications</button>}
+                {section === "groups" && <button onClick={() => onNavigate("/groups")}>Explore groups</button>}
+                {section === "notifications" && <button onClick={() => onNavigate("/notifications")}>Open notifications</button>}
+            </div>
+            {items.length === 0 ? (
+                <div className="empty-state"><strong>No activity here yet</strong><span>Your personal workspace will appear here as you use SCNA.</span></div>
+            ) : (
+                <div className="dashboard-detail-list">
+                    {items.map((item) => (
+                        <div className="dashboard-detail-row" key={item.id}>
+                            <div><strong>{item.title || item.name || item.message}</strong><small>{item.status || item.description || item.location || item.date || ""}</small></div>
+                            {item.reviewed_at && <span className="status-badge">Reviewed</span>}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+}
+
+function Leaderboard({ title, items = [] }) {
+    return (
+        <section className="card-surface leaderboard-card">
+            <h2>{title}</h2>
+            {items.length === 0 ? <p>No ranking data yet.</p> : items.map((item, index) => (
+                <div className="leaderboard-row" key={`${item.name}-${index}`}>
+                    <span className="leaderboard-rank">{index + 1}</span>
+                    <strong>{item.name}</strong>
+                    <span>{item.publications} publications</span>
+                </div>
+            ))}
+        </section>
     );
 }
 
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px", flexWrap: "wrap" };
 const cardsStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "16px", marginTop: "28px" };
-const cardStyle = { padding: "20px", minHeight: "140px" };
+const cardStyle = { padding: "20px", minHeight: "140px", textAlign: "left" };
 const activityStyle = { display: "flex", gap: "12px", padding: "14px 0", borderBottom: "1px solid var(--border)" };
-const verificationStyle = (status) => ({
-    color: status === "Approved" ? "#22c55e" : status === "Rejected" ? "#ef4444" : "#f59e0b",
-    fontWeight: 700,
-});
+const verificationStyle = (status) => ({ color: status === "Approved" ? "#22c55e" : status === "Rejected" ? "#ef4444" : "#f59e0b", fontWeight: 700 });

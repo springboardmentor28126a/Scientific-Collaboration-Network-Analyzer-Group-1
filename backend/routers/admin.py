@@ -20,8 +20,17 @@ VALID_ROLES = [
     "Reviewer",
     "Student",
     "Faculty",
+    "Institution Admin",
     "System Admin"
 ]
+
+TRANSFER_ROLES = {
+    "Researcher",
+    "Reviewer",
+    "Faculty",
+    "Institution Admin",
+    "Student",
+}
 
 
 # =====================================================
@@ -130,6 +139,7 @@ def change_role(
     user_id: int,
 
     role: str,
+    replacement_role: str = "Researcher",
 
     current_user: User = Depends(
         require_permission("*")
@@ -156,6 +166,26 @@ def change_role(
             status_code=404,
             detail="User not found."
         )
+
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Use ownership transfer to change the current System Admin.")
+
+    if role == "System Admin":
+        if db.query(User).filter(User.role == "System Admin").count() != 1:
+            raise HTTPException(
+                status_code=409,
+                detail="System Admin ownership is inconsistent; resolve the existing administrators first.",
+            )
+        if replacement_role not in TRANSFER_ROLES:
+            raise HTTPException(status_code=400, detail="Invalid replacement role.")
+        if not user.is_verified:
+            raise HTTPException(status_code=400, detail="Only a verified user can become System Admin.")
+        current_user.role = replacement_role
+        db.flush()
+        user.role = "System Admin"
+        db.commit()
+        db.refresh(user)
+        return {"message": "System Admin ownership transferred successfully.", "user": user}
 
     user.role = role
 
@@ -361,4 +391,39 @@ def update_publication_status(
 
         "publication": publication
 
+    }
+
+
+@router.post("/transfer-ownership")
+def transfer_ownership(
+    new_admin_id: int,
+    replacement_role: str = "Researcher",
+    current_user: User = Depends(require_permission("*")),
+    db: Session = Depends(get_db),
+):
+    if replacement_role not in TRANSFER_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid replacement role.")
+    if new_admin_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Choose a different verified user.")
+    if db.query(User).filter(User.role == "System Admin").count() != 1:
+        raise HTTPException(
+            status_code=409,
+            detail="System Admin ownership is inconsistent; resolve the existing administrators first.",
+        )
+
+    new_admin = db.query(User).filter(User.id == new_admin_id).first()
+    if not new_admin:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if not new_admin.is_verified:
+        raise HTTPException(status_code=400, detail="Only a verified user can become System Admin.")
+
+    current_user.role = replacement_role
+    db.flush()
+    new_admin.role = "System Admin"
+    db.commit()
+    db.refresh(new_admin)
+    return {
+        "message": "System Admin ownership transferred successfully.",
+        "previous_admin_role": replacement_role,
+        "user": new_admin,
     }

@@ -8,21 +8,19 @@ import {
     FaPeopleArrows,
     FaSchool,
     FaCalendarAlt,
-    FaComments
+    FaComments,
+    FaEnvelope,
+    FaShieldAlt
 } from "react-icons/fa";
-
-import { hasPermission } from "../utils/permissions";
 
 function Sidebar() {
 
     const navigate = useNavigate();
     const location = useLocation();
-    const user = JSON.parse(
-    localStorage.getItem("user")
-);
     return (
 
         <div
+            className="sidebar-shell"
             style={{
                 width: "260px",
                 background: "var(--sidebar)",
@@ -135,6 +133,14 @@ function Sidebar() {
 />
 
             <MenuItem
+                icon={<FaShieldAlt />}
+                text="Verification Requests"
+                roles={["Faculty", "System Admin"]}
+                active={location.pathname === "/verification-requests"}
+                onClick={() => navigate("/verification-requests")}
+            />
+
+            <MenuItem
     icon={<FaPeopleArrows />}
     text="Research Groups"
     active={location.pathname.startsWith("/groups")}
@@ -156,9 +162,17 @@ function Sidebar() {
 
             <MenuItem
                 icon={<FaSchool />}
-                text="Institution Management"
+                text="Institutions"
                 active={location.pathname === "/institution"}
                 onClick={() => navigate("/institution")}
+            />
+
+            <MenuItem
+                icon={<FaSchool />}
+                text="Institution Management"
+                roles={["Institution Admin", "System Admin"]}
+                active={location.pathname === "/institution/manage"}
+                onClick={() => navigate("/institution/manage")}
             />
 
             </div>
@@ -169,7 +183,11 @@ function Sidebar() {
 
 }
 
-function MenuItem({ icon, text, active, onClick }) {
+function MenuItem({ icon, text, active, onClick, roles }) {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (roles && user?.role !== "System Admin" && !roles.includes(user?.role)) {
+        return null;
+    }
 
     return (
 

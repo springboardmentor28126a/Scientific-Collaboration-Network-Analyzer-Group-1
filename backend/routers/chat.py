@@ -6,7 +6,7 @@ from backend.database.models import ChatMessage, User
 from backend.models.research_group import ResearchGroup
 from backend.schemas.chat import ChatCreate, ChatResponse
 from backend.models.research_group_member import ResearchGroupMember
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_verified_user
 
 router = APIRouter(
     prefix="/chat",
@@ -21,7 +21,7 @@ router = APIRouter(
 )
 def send_message(
     chat: ChatCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -67,7 +67,7 @@ def send_message(
 @router.get("/group/{group_id}")
 def get_messages(
     group_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     if current_user.role != "System Admin" and not db.query(ResearchGroupMember).filter(

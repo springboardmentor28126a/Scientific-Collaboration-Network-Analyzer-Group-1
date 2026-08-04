@@ -21,6 +21,7 @@ export default function GroupFiles({ groupId, userId }) {
 
     useEffect(() => {
         loadFiles();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleUpload = async (file) => {

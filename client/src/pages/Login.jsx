@@ -140,6 +140,27 @@ const handleLogin = async () => {
 
         const user = response.data.user;
 
+        // Confirm the document state from the verification table. This keeps
+        // an old/stale user-table value of "Pending" from blocking a user
+        // who has never submitted a document.
+        let verificationStatus = user.verification_status;
+        let isVerified = user.is_verified;
+
+        if (user.role !== "System Admin" && !isVerified) {
+            try {
+                const statusResponse = await api.get("/verification/status");
+                verificationStatus = statusResponse.data.status;
+                isVerified = statusResponse.data.verified === true;
+
+                user.verification_status = verificationStatus;
+                user.is_verified = isVerified;
+                localStorage.setItem("user", JSON.stringify(user));
+            } catch {
+                // Keep the login response as a fallback if status checking
+                // is temporarily unavailable.
+            }
+        }
+
         // System Admin
         if (user.role === "System Admin") {
 
@@ -148,21 +169,21 @@ const handleLogin = async () => {
         }
 
         // Verified User
-        else if (user.is_verified) {
+        else if (isVerified || verificationStatus === "Approved") {
 
             navigate("/dashboard");
 
         }
 
         // Pending Verification
-        else if (user.verification_status === "Pending") {
+        else if (verificationStatus === "Pending") {
 
             navigate("/verification-pending");
 
         }
 
         // Rejected Verification
-        else if (user.verification_status === "Rejected") {
+        else if (verificationStatus === "Rejected") {
 
             navigate("/verification");
 

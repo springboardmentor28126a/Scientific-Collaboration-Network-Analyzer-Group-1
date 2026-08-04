@@ -17,6 +17,7 @@ function Notifications() {
         loadRequests();
         loadNotifications();
 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadRequests = async () => {
@@ -73,6 +74,28 @@ function Notifications() {
         }
     };
 
+    const reviewPublication = async (notification, decision) => {
+        const comments = window.prompt(
+            decision === "approve"
+                ? "Approval comments (optional)"
+                : "Rejection reason",
+            ""
+        );
+
+        if (comments === null) return;
+
+        try {
+            await api.put(
+                `/reviewer/${decision}/${notification.resource_id}`,
+                { review_comments: comments }
+            );
+            await markRead(notification.id);
+            loadNotifications();
+        } catch (error) {
+            alert(error.response?.data?.detail || "Unable to submit the review.");
+        }
+    };
+
     return (
 
         <div>
@@ -99,6 +122,38 @@ function Notifications() {
                     <h3>{notification.title}</h3>
                     <p>{notification.message}</p>
                     <small>{new Date(notification.created_at).toLocaleString()}</small>
+
+                    {notification.notification_type === "publication_review_request" &&
+                        !notification.is_read && (
+                            <div style={{ marginTop: "12px" }}>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        reviewPublication(notification, "approve");
+                                    }}
+                                >
+                                    Accept
+                                </button>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        navigate(`/publications?publication=${notification.resource_id}`);
+                                    }}
+                                    style={{ marginLeft: "10px" }}
+                                >
+                                    View Publication
+                                </button>
+                                <button
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        reviewPublication(notification, "reject");
+                                    }}
+                                    style={{ marginLeft: "10px" }}
+                                >
+                                    Reject
+                                </button>
+                            </div>
+                        )}
                 </div>
             ))}
 

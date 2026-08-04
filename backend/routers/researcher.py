@@ -265,7 +265,7 @@ def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "System Admin" and user_id != current_user.id:
+    if user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can update only your own profile.")
 
     user = db.query(User).filter(
@@ -328,7 +328,7 @@ def delete_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != "System Admin" and user_id != current_user.id:
+    if user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can delete only your own profile.")
 
     user = db.query(User).filter(

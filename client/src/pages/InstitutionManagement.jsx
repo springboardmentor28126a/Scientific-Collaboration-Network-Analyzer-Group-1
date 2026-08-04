@@ -184,10 +184,6 @@ const loadInstitutions = async () => {
 
     };
 
-    const instituteDashboardCards = useMemo(() => {
-        return dashboardResults;
-    }, [dashboardResults]);
-
     return(
 
         <div style={{padding:"30px"}}>

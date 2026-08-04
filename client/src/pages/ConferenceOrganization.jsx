@@ -5,8 +5,8 @@ import ConferenceDetailsModal from "../components/conference/ConferenceDetailsMo
 function ConferenceOrganization() {
 
     const [conferences, setConferences] = useState([]);
+    const [, setEditingConference] = useState(null);
     const [selectedConference, setSelectedConference] = useState(null);
-    const [editingConference, setEditingConference] = useState(null);
     const currentUser = JSON.parse(localStorage.getItem("user") || "null");
 
     const [searchConference, setSearchConference] = useState("");

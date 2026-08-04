@@ -21,6 +21,7 @@ export default function GroupWorkspace() {
 
         loadGroup();
 
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     const loadGroup = async () => {

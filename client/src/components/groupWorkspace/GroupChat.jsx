@@ -8,7 +8,6 @@ export default function GroupChat({ groupId }) {
 
     const user = JSON.parse(localStorage.getItem("user"));
     const senderId = user?.id;
-    const inputRef = useRef(null);
     const bottomRef = useRef(null);
 
     const fetchMessages = async () => {
@@ -77,6 +76,7 @@ export default function GroupChat({ groupId }) {
 
     return () => clearInterval(interval);
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [groupId]);
 
     useEffect(() => {

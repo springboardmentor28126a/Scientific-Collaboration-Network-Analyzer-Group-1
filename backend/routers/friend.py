@@ -9,7 +9,7 @@ from backend.schemas.friend import (
     FriendRequestCreate,
     FriendRequestResponse
 )
-from backend.utils.security import get_current_user
+from backend.utils.dependencies import require_verified_user
 
 router = APIRouter(
     prefix="/friends",
@@ -21,7 +21,7 @@ router = APIRouter(
 )
 def send_friend_request(
     request: FriendRequestCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -90,7 +90,7 @@ def send_friend_request(
 @router.get("/requests/{user_id}")
 def get_friend_requests(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     if current_user.role != "System Admin" and user_id != current_user.id:
@@ -122,7 +122,7 @@ def get_friend_requests(
 @router.get("/sent/{user_id}")
 def get_sent_friend_requests(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db),
 ):
     if current_user.role != "System Admin" and user_id != current_user.id:
@@ -147,7 +147,7 @@ def get_sent_friend_requests(
 @router.put("/accept/{request_id}")
 def accept_friend_request(
     request_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -216,7 +216,7 @@ def accept_friend_request(
 @router.put("/reject/{request_id}")
 def reject_friend_request(
     request_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -251,7 +251,7 @@ def reject_friend_request(
 @router.get("/list/{user_id}")
 def get_friend_list(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     if current_user.role != "System Admin" and user_id != current_user.id:

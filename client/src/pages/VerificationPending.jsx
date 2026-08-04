@@ -64,6 +64,27 @@ export default function VerificationPending() {
 
                 }
 
+                // A stale user record may say Pending even though no
+                // verification document exists. Send that user to upload.
+                else if (status === "Not Submitted") {
+
+                    const user = JSON.parse(
+                        localStorage.getItem("user") || "null"
+                    );
+
+                    if (user) {
+                        user.is_verified = false;
+                        user.verification_status = "Not Submitted";
+                        localStorage.setItem(
+                            "user",
+                            JSON.stringify(user)
+                        );
+                    }
+
+                    navigate("/verification");
+
+                }
+
             }
 
             catch (err) {

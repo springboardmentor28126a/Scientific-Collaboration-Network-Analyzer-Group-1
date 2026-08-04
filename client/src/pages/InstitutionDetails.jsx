@@ -6,6 +6,7 @@ import InstitutionSearch from "../components/InstitutionSearch";
 function InstitutionDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user") || "null");
     const [data, setData] = useState(null);
 
     const normalizeInstitutionName = (value) => {
@@ -31,10 +32,15 @@ function InstitutionDetails() {
         institution_type: "",
     });
 
+    const canEdit = user?.role === "System Admin" || (
+        user?.role === "Institution Admin" && user.institution_id === data?.institution?.id
+    );
+
     useEffect(() => {
         loadInstitution();
         // reset edit mode when switching institutions
         setEditMode(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const loadInstitution = async () => {
@@ -339,9 +345,11 @@ function InstitutionDetails() {
 
                     <div style={{ minWidth: "220px" }}>
                         {!editMode ? (
+                            canEdit && (
                             <button style={editButtonStyle} onClick={() => setEditMode(true)}>
                                 ✏ Edit
                             </button>
+                            )
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                                 <button style={editButtonStyle} onClick={handleSave}>
@@ -543,20 +551,6 @@ const inputStyle = {
 };
 const editFormWrap = {
     marginTop: "20px",
-    width: "100%",
-};
-const formActions = {
-    display: "flex",
-    gap: "12px",
-    marginTop: "20px",
-};
-const saveButtonStyle = {
-    background: "#16a34a",
-    color: "white",
-    border: "none",
-    padding: "10px 16px",
-    borderRadius: "10px",
-    cursor: "pointer",
     width: "100%",
 };
 const fieldGroup = {

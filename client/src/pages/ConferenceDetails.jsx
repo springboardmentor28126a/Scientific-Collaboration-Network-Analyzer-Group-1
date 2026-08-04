@@ -10,6 +10,7 @@ function ConferenceDetails() {
 
   useEffect(() => {
     loadConference();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadConference = async () => {

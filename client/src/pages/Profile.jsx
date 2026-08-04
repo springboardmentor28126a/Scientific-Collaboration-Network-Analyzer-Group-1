@@ -44,6 +44,7 @@ function Profile() {
 
         loadProfile();
         loadVerification();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
    const loadProfile = async () => {

@@ -16,3 +16,10 @@ export const getCitationStats = async (publicationId) => {
   const response = await axios.get(`${API}/stats/${publicationId}`);
   return response.data;
 };
+
+export const formatCitation = async (publicationId, style) => {
+  const response = await axios.get(`${API}/format/${publicationId}`, {
+    params: { style },
+  });
+  return response.data;
+};

@@ -437,6 +437,7 @@ export default function Register() {
                                 <option value="Reviewer">Reviewer</option>
                                 <option value="Student">Student</option>
                                 <option value="Faculty">Faculty</option>
+                                <option value="Institution Admin">Institution Admin</option>
                                 <option value="System Admin">System Admin</option>
                             </select>
 

@@ -83,28 +83,36 @@ function EditPublicationModal({
     return (
 
         <div
+            className="edit-modal-backdrop"
             style={{
                 position: "fixed",
                 top: 0,
                 left: 0,
                 width: "100%",
                 height: "100%",
-                background: "rgba(0,0,0,.5)",
+                background: "rgba(2, 8, 23, .76)",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                zIndex: 999
+                zIndex: 1100,
+                padding: "16px",
+                overflowY: "auto",
+                backdropFilter: "blur(8px)"
             }}
         >
 
             <div
+                className="edit-modal"
                 style={{
-                    width: "700px",
-                    background: "rgba(255,255,255,0.06)",
-                    padding: "30px",
-                    borderRadius: "15px",
-                    maxHeight: "90vh",
-                    overflowY: "auto"
+                    width: "min(700px, 100%)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border)",
+                    padding: "clamp(20px, 4vw, 30px)",
+                    borderRadius: "var(--radius-lg)",
+                    maxHeight: "calc(100vh - 32px)",
+                    overflowY: "auto",
+                    boxShadow: "var(--shadow)"
                 }}
             >
 
@@ -182,7 +190,7 @@ function EditPublicationModal({
 
                     <option>Draft</option>
 
-                    <option>Submitted</option>
+                    <option>Pending Review</option>
 
                     <option>Published</option>
 
@@ -224,11 +232,13 @@ function EditPublicationModal({
                 </select>
 
                 <div
-                    style={{
+                        className="edit-modal-actions"
+                        style={{
                         display: "flex",
                         justifyContent: "flex-end",
                         gap: "10px",
-                        marginTop: "20px"
+                        marginTop: "20px",
+                        flexWrap: "wrap"
                     }}
                 >
 

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from fastapi.staticfiles import StaticFiles
 import os
@@ -40,6 +41,7 @@ from backend.models.friend_request import FriendRequest
 from backend.models.verification_document import VerificationDocument
 from backend.routers import reviewer
 from backend.routers import faculty
+from backend.routers import admin
 
 
 
@@ -63,6 +65,14 @@ app.mount(
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Existing deployments do not receive new indexes from create_all(). Keep the
+# one-System-Admin invariant enforced by the database as well as the API.
+with engine.begin() as connection:
+    connection.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_single_system_admin "
+        "ON users (role) WHERE role = 'System Admin'"
+    ))
 
 # CORS
 app.add_middleware(
@@ -124,6 +134,8 @@ app.include_router(citation.router)
 app.include_router(group_file.router)
 app.include_router(verification.router)
 app.include_router(reviewer.router)
+app.include_router(faculty.router)
+app.include_router(admin.router)
 # Home
 
 @app.get("/")

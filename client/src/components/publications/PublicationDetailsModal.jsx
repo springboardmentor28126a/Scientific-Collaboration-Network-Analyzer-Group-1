@@ -2,6 +2,12 @@ function PublicationDetailsModal({ publication, onClose }) {
 
     if (!publication) return null;
 
+    const pdfUrl = publication.pdf_file
+        ? publication.pdf_file.startsWith("http")
+            ? publication.pdf_file
+            : `http://127.0.0.1:8000${publication.pdf_file}`
+        : "";
+
     return (
 
         <div
@@ -91,7 +97,7 @@ function PublicationDetailsModal({ publication, onClose }) {
 
                 {
 
-                    publication.pdf_file && (
+                    pdfUrl && (
 
                         <div
                             style={{
@@ -102,7 +108,7 @@ function PublicationDetailsModal({ publication, onClose }) {
                         >
 
                             <a
-                                href={publication.pdf_file}
+                                href={pdfUrl}
                                 target="_blank"
                                 rel="noreferrer"
                             >
@@ -112,7 +118,7 @@ function PublicationDetailsModal({ publication, onClose }) {
                             </a>
 
                             <a
-                                href={publication.pdf_file}
+                                href={pdfUrl}
                                 download
                             >
 
