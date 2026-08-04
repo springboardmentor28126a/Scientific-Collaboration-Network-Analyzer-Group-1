@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text
 from app.database import Base
+from sqlalchemy.orm import relationship
 
 
 class Researcher(Base):
@@ -26,3 +27,9 @@ class Researcher(Base):
     skills = Column(Text)
 
     bio = Column(Text)
+
+    papers = relationship(
+    "Paper",
+    secondary="researcher_papers",
+    back_populates="researchers"
+)

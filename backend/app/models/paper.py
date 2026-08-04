@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text
 
 from app.database import Base
+from sqlalchemy.orm import relationship
 
 
 class Paper(Base):
@@ -25,3 +26,9 @@ class Paper(Base):
     publication_status = Column(String(50), nullable=False)
 
     pdf_file = Column(String(255), nullable=True)
+
+    researchers = relationship(
+    "Researcher",
+    secondary="researcher_papers",
+    back_populates="papers"
+)

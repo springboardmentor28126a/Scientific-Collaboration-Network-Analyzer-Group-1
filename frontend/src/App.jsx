@@ -3,6 +3,7 @@ import api from "./services/api";
 
 function App() {
   const [message, setMessage] = useState("");
+  <Route path="/projects" element={<Projects />} />
 
   useEffect(() => {
     api

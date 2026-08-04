@@ -1,10 +1,11 @@
 from pydantic import BaseModel
-
+from typing import List
 
 class PaperCreate(BaseModel):
     title: str
     abstract: str
     authors: str
+    researcher_ids: List[int] = []
     keywords: str
     publication_year: int
     journal: str
@@ -17,6 +18,7 @@ class PaperUpdate(BaseModel):
     title: str
     abstract: str
     authors: str
+    researcher_ids: List[int] = []
     keywords: str
     publication_year: int
     journal: str
@@ -30,6 +32,7 @@ class PaperResponse(BaseModel):
     title: str
     abstract: str
     authors: str
+    researcher_ids: List[int] = []
     keywords: str
     publication_year: int
     journal: str
