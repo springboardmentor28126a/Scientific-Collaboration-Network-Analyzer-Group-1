@@ -20,4 +20,5 @@ class Researcher(Base):
     user = relationship("User", back_populates="researcher")
     institution = relationship("Institution", back_populates="researchers")
     department = relationship("Department", back_populates="researchers")
+    publications = relationship("PublicationAuthor", back_populates="researcher")
 

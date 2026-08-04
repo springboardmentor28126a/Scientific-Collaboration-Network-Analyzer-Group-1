@@ -17,7 +17,6 @@ class User(Base):
 
     id= Column(Integer, primary_key=True, index=True)
     # Integer column auto-Increment, the row's unique identifier
-    #index=True -> Postgre build a B-tree so lookups by id are fast
 
     email= Column(String(150), unique=True, nullable=False, index=True)
     #Varchar(150),email should be unique, column should not empty
@@ -31,15 +30,9 @@ class User(Base):
     is_active=Column(Boolean,default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    # ↑ server_default=func.now() → Postgres itself sets this timestamp on INSERT
     # This works even if someone inserts a row using raw SQL, bypassing your Python code entirely
 
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     # ↑ onupdate=func.now() → SQLAlchemy sets this automatically whenever you .commit() a change
-    # NOTE: this only fires through SQLAlchemy, not raw SQL updates
 
     researcher = relationship("Researcher", back_populates="user", uselist=False)
-    #researcher = relationship("Researcher", back_populates="user", uselist=False)
-    # ↑ NOT a database column — pure Python convenience.
-    # Lets you write `some_user.researcher` to get the linked Researcher object
-    # uselist=False → this is a ONE-to-one relationship (a user has at most one researcher profile)

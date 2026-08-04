@@ -1,0 +1,130 @@
+.reports-page {
+  display: grid;
+  gap: 20px;
+}
+
+.reports-header {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.reports-title {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+.reports-subtitle {
+  color: var(--text-muted);
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 20px;
+}
+
+.reports-sidebar,
+.reports-content-panel,
+.reports-saved-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.report-tab-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.report-tab-btn:hover,
+.report-tab-btn--active {
+  border-color: var(--accent);
+  color: var(--text-h);
+  background: var(--accent-bg);
+}
+
+.report-data-display {
+  display: grid;
+  gap: 16px;
+}
+
+.report-stat-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0;
+  font-size: 0.95rem;
+}
+
+.report-stat-row:last-child {
+  border-bottom: none;
+}
+
+.report-export-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.report-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.report-export-btn--csv {
+  background: var(--accent-secondary, #10b981);
+}
+
+.report-export-btn--csv:hover {
+  background: #059669;
+}
+
+.report-export-btn--pdf {
+  background: var(--accent);
+}
+
+.report-export-btn--pdf:hover {
+  background: var(--accent-hover);
+}
+
+.saved-reports-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.saved-report-item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+@media (max-width: 800px) {
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}
