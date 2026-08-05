@@ -7,6 +7,8 @@ from sqlalchemy.sql import func
 from app.models.collaboration import Collaboration
 from app.models.researcher import Researcher
 from app.schemas.collaboration import CollaborationCreate
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import create_notification
 from app.utils.constants import CollaborationStatus
 
 
@@ -56,6 +58,17 @@ def send_collaboration_request(db: Session, user_id: int, payload: Collaboration
         raise HTTPException(status_code=400, detail="A collaboration request already exists between you and this researcher.")
 
     db.refresh(collaboration)
+    # Create notification for recipient
+    create_notification(
+        db,
+        NotificationCreate(
+            user_id=recipient.user_id,
+            title="New Collaboration Request",
+            message=f"You have received a collaboration request from Researcher ID {requester.id}.",
+            notification_type="COLLABORATION_REQUEST",
+            reference_id=collaboration.id,
+        ),
+    )
     return collaboration
 
 
@@ -97,6 +110,26 @@ def respond_to_request(db: Session, user_id: int, collaboration_id: int, accept:
 
     db.commit()
     db.refresh(collaboration)
+    requester = (
+        db.query(Researcher)
+        .filter(Researcher.id == collaboration.requester_id)
+        .first()
+    )
+
+    create_notification(
+        db,
+        NotificationCreate(
+            user_id=requester.user_id,
+            title="Collaboration Request Updated",
+            message=(
+                "Your collaboration request has been accepted."
+                if accept
+                else "Your collaboration request has been rejected."
+            ),
+            notification_type="COLLABORATION_RESPONSE",
+            reference_id=collaboration.id,
+        ),
+    )
     return collaboration
 
 
