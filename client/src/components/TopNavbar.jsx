@@ -10,6 +10,8 @@ function TopNavbar() {
     const user = JSON.parse(localStorage.getItem("user"));
 
     const [showMenu, setShowMenu] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const menuRef = useRef();
     useEffect(() => {
@@ -94,15 +96,35 @@ function TopNavbar() {
                 }}
             >
 
+                <div style={{ position: "relative" }}>
                 <button
                     type="button"
                     aria-label="Notifications"
-                    onClick={() => navigate("/notifications")}
+                    onClick={async () => {
+                        setShowNotifications((visible) => !visible);
+                        const response = await API.get("/dashboard/notifications");
+                        setNotifications(response.data || []);
+                    }}
                     style={notificationButtonStyle}
                 >
                     <FaBell />
                     {unreadCount > 0 && <span style={notificationBadgeStyle}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </button>
+                {showNotifications && <div style={notificationPanelStyle}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", padding: "12px 14px", borderBottom: "1px solid var(--border)" }}>
+                        <strong>Notifications</strong>
+                        <button type="button" onClick={() => navigate("/notifications")} style={{ padding: "4px 8px" }}>View all</button>
+                    </div>
+                    {notifications.slice(0, 5).map((notification) => <button key={notification.id} type="button" onClick={async () => {
+                        if (!notification.is_read) {
+                            await API.put(`/dashboard/notifications/${notification.id}/read`);
+                            setUnreadCount((count) => Math.max(0, count - 1));
+                        }
+                        navigate("/notifications");
+                    }} style={{ display: "block", width: "100%", textAlign: "left", borderRadius: 0, borderBottom: "1px solid var(--border)", background: notification.is_read ? "transparent" : "var(--button-bg)" }}><strong>{notification.title}</strong><br /><small>{notification.message}</small></button>)}
+                    {notifications.length === 0 && <p style={{ padding: "14px" }}>No notifications.</p>}
+                </div>}
+                </div>
 
 
                 <div
@@ -230,6 +252,20 @@ const notificationBadgeStyle = {
     display: "grid",
     placeItems: "center",
     padding: "0 4px",
+};
+
+const notificationPanelStyle = {
+    position: "absolute",
+    right: 0,
+    top: 48,
+    width: "340px",
+    maxWidth: "80vw",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: "14px",
+    boxShadow: "var(--shadow)",
+    overflow: "hidden",
+    zIndex: 1000,
 };
 
 

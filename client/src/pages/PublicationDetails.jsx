@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../services/api";
+import { formatCitation, getCitationStats } from "../services/citationService";
 
 function PublicationDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [publicationDetails, setPublicationDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [citationStyle, setCitationStyle] = useState("APA");
+    const [citation, setCitation] = useState("");
+    const [citationStats, setCitationStats] = useState(null);
 
     useEffect(() => {
         loadPublicationDetails();
@@ -17,11 +21,38 @@ function PublicationDetails() {
         try {
             const response = await API.get(`/publications/details/${id}`);
             setPublicationDetails(response.data);
+            const [formatted, stats] = await Promise.all([
+                formatCitation(id, "APA"),
+                getCitationStats(id),
+            ]);
+            setCitation(formatted.citation);
+            setCitationStats(stats);
         } catch (error) {
             console.log(error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const updateCitation = async (style) => {
+        setCitationStyle(style);
+        const response = await formatCitation(id, style);
+        setCitation(response.citation);
+    };
+
+    const copyCitation = async () => {
+        await navigator.clipboard.writeText(citation);
+    };
+
+    const downloadBibtex = async () => {
+        const response = await formatCitation(id, "BibTeX");
+        const blob = new Blob([response.citation], { type: "application/x-bibtex" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `publication-${id}.bib`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     if (loading) return <h2>Loading publication...</h2>;
@@ -52,6 +83,22 @@ function PublicationDetails() {
                 <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px" }}>
                     {publication.abstract || "No abstract available."}
                 </div>
+                <section style={sectionStyle}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                        <div>
+                            <h2>Citation</h2>
+                            <p>{citationStats?.times_cited || 0} citations · {citationStats?.reference_count || 0} references</p>
+                        </div>
+                        <select value={citationStyle} onChange={(event) => updateCitation(event.target.value)}>
+                            {['APA', 'IEEE', 'MLA', 'Chicago', 'BibTeX'].map((style) => <option key={style}>{style}</option>)}
+                        </select>
+                    </div>
+                    <pre style={citationStyleBox}>{citation || "Citation unavailable."}</pre>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                        <button type="button" onClick={copyCitation}>Copy Citation</button>
+                        <button type="button" onClick={downloadBibtex}>Download BibTeX</button>
+                    </div>
+                </section>
                 <p><b>PDF:</b> {publication.pdf_file ? <a href={publication.pdf_file} target="_blank" rel="noreferrer">Download PDF</a> : "Not available"}</p>
                 {institution && (
                     <p><b>Institution:</b> <span onClick={() => navigate(`/institution/${institution.id}`)} style={{ cursor: "pointer", color: "#2563eb" }}>{institution.name}</span></p>
@@ -112,5 +159,8 @@ const cardStyle = {
     borderRadius: "15px",
     boxShadow: "0 18px 60px rgba(0,0,0,0.18)",
 };
+
+const sectionStyle = { marginTop: "24px", padding: "20px", borderRadius: "14px", border: "1px solid var(--border)", background: "var(--surface-alt)" };
+const citationStyleBox = { whiteSpace: "pre-wrap", wordBreak: "break-word", padding: "16px", borderRadius: "10px", background: "var(--bg)", color: "var(--text)", lineHeight: 1.6 };
 
 export default PublicationDetails;

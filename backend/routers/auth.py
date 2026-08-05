@@ -1,18 +1,12 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 from backend.utils.security import create_access_token, get_current_user
+from backend.utils.passwords import hash_password, verify_password
 from backend.database.database import get_db
 from backend.database.models import User
 from backend.models.verification_document import VerificationDocument
-from backend.schemas.user import UserCreate, UserLogin, UserUpdate, UserResponse
-from backend.schemas.user import (
-    RegisterRequest,
-    UserLogin,
-    UserUpdate,
-    UserResponse
-)
+from backend.schemas.user import RegisterRequest, UserLogin, UserUpdate, UserResponse
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -26,9 +20,6 @@ VALID_ROLES = {
     "Institution Admin",
     "System Admin",
 }
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 @router.post("/register")
 def register(
@@ -49,16 +40,13 @@ def register(
     if user.role not in VALID_ROLES:
         raise HTTPException(status_code=400, detail="Invalid role.")
 
-    is_first_system_admin = user.role == "System Admin" and not db.query(User).filter(
-        User.role == "System Admin"
-    ).first()
-    if user.role == "System Admin" and not is_first_system_admin:
+    if user.role == "System Admin":
         raise HTTPException(
             status_code=403,
-            detail="A System Admin already exists. Ownership must be transferred by the current System Admin.",
+            detail="There is already an active System Administrator. Contact the current administrator if administrative ownership needs to be transferred.",
         )
 
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = hash_password(user.password)
 
     # --------------------------
     # Create User
@@ -95,9 +83,9 @@ def register(
         orcid=user.orcid or "",
 
         google_scholar=user.google_scholar or "",
-        verification_status="Approved" if is_first_system_admin else "Not Submitted",
+        verification_status="Not Submitted",
 
-        is_verified=bool(is_first_system_admin)
+        is_verified=False
 
     )
 
@@ -176,6 +164,12 @@ def update_user(
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    if existing_user.role != "System Admin" and existing_user.account_status != "Active":
+        raise HTTPException(
+            status_code=403,
+            detail="Your account is blocked or suspended. Contact a System Administrator.",
+        )
+
     # -------- User Table --------
 
     if user.name is not None:
@@ -185,7 +179,7 @@ def update_user(
         existing_user.email = user.email
 
     if user.password is not None:
-        existing_user.password = pwd_context.hash(user.password)
+        existing_user.password = hash_password(user.password)
 
     if user.role is not None:
         existing_user.role = user.role
@@ -285,7 +279,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not pwd_context.verify(user.password, existing_user.password):
+    if not verify_password(user.password, existing_user.password):
         raise HTTPException(status_code=401, detail="Invalid Password")
 
     # The user-table default must not imply that a document was submitted.

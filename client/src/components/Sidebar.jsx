@@ -4,7 +4,6 @@ import {
     FaBookOpen,
     FaSearch,
     FaChartBar,
-    FaProjectDiagram,
     FaPeopleArrows,
     FaSchool,
     FaCalendarAlt,
@@ -120,12 +119,6 @@ function Sidebar() {
             />
 
             <MenuItem
-                icon={<FaProjectDiagram />}
-                text="Network Graph"
-                active={location.pathname === "/network"}
-                onClick={() => navigate("/network")}
-            />
-            <MenuItem
     icon={<FaEnvelope />}
     text="Invitations"
     active={location.pathname === "/invitations"}
@@ -149,7 +142,7 @@ function Sidebar() {
             <MenuItem
     icon={<FaComments />}
     text="Chat"
-    active={location.pathname.startsWith("/groups")}
+    active={location.pathname === "/chat"}
     onClick={() => navigate("/chat")}
 />
 

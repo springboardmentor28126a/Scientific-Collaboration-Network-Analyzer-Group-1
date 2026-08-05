@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import api from "../services/api";
 
 function CitationForm({ onSubmit }) {
   const [publications, setPublications] = useState([]);
@@ -6,10 +7,9 @@ function CitationForm({ onSubmit }) {
   const [citedPublicationId, setCitedPublicationId] = useState("");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/publications/")
-      .then((res) => res.json())
-      .then((data) => setPublications(data))
-      .catch((err) => console.log(err));
+    api.get("/publications/")
+      .then(({ data }) => setPublications(data))
+      .catch(() => setPublications([]));
   }, []);
 
   const handleSubmit = (e) => {

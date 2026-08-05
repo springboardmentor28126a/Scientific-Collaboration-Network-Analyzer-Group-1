@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.database.models import Citation, Publication
+from backend.database.models import Citation, Publication, User
+from backend.utils.dependencies import require_verified_user
 from backend.schemas.citation import (
     CitationCreate,
     CitationResponse,
@@ -21,6 +22,7 @@ router = APIRouter(
 @router.post("/", response_model=CitationResponse)
 def create_citation(
     citation: CitationCreate,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     citing_publication = db.query(Publication).filter(
@@ -42,6 +44,9 @@ def create_citation(
             status_code=404,
             detail="Cited publication not found"
         )
+
+    if current_user.role != "System Admin" and citing_publication.researcher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only add references to your own publication.")
 
     if citation.citing_publication_id == citation.cited_publication_id:
         raise HTTPException(
@@ -77,6 +82,7 @@ def create_citation(
 @router.post("/bulk")
 def create_bulk_citations(
     data: BulkCitationCreate,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     publication = db.query(Publication).filter(
@@ -89,33 +95,36 @@ def create_bulk_citations(
             detail="Publication not found"
         )
 
-    added = 0
+    if current_user.role != "System Admin" and publication.researcher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only manage references for your own publication.")
 
-    for cited_id in data.cited_publication_ids:
+    cited_ids = {
+        cited_id for cited_id in data.cited_publication_ids
+        if cited_id != data.citing_publication_id
+    }
+    if not cited_ids:
+        return {"message": "0 citations added"}
 
-        if cited_id == data.citing_publication_id:
-            continue
-
-        cited_pub = db.query(Publication).filter(
-            Publication.id == cited_id
-        ).first()
-
-        if not cited_pub:
-            continue
-
-        exists = db.query(Citation).filter(
+    valid_cited_ids = {
+        publication.id
+        for publication in db.query(Publication.id).filter(Publication.id.in_(cited_ids)).all()
+    }
+    existing_pairs = {
+        cited_id
+        for (cited_id,) in db.query(Citation.cited_publication_id).filter(
             Citation.citing_publication_id == data.citing_publication_id,
-            Citation.cited_publication_id == cited_id
-        ).first()
-
-        if not exists:
-            db.add(
-                Citation(
-                    citing_publication_id=data.citing_publication_id,
-                    cited_publication_id=cited_id
-                )
-            )
-            added += 1
+            Citation.cited_publication_id.in_(valid_cited_ids),
+        ).all()
+    }
+    new_citations = [
+        Citation(
+            citing_publication_id=data.citing_publication_id,
+            cited_publication_id=cited_id,
+        )
+        for cited_id in valid_cited_ids - existing_pairs
+    ]
+    db.add_all(new_citations)
+    added = len(new_citations)
 
     db.commit()
 
@@ -129,6 +138,7 @@ def create_bulk_citations(
 @router.get("/stats/{publication_id}", response_model=CitationStatsResponse)
 def get_citation_stats(
     publication_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     publication = db.query(Publication).filter(
@@ -156,6 +166,7 @@ def get_citation_stats(
 def format_citation(
     publication_id: int,
     style: str = Query("APA", pattern="^(APA|IEEE|MLA|Chicago|BibTeX)$"),
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db),
 ):
     publication = db.query(Publication).filter(Publication.id == publication_id).first()
@@ -190,6 +201,7 @@ def format_citation(
 @router.get("/{publication_id}", response_model=list[CitationResponse])
 def get_citations(
     publication_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     publication = db.query(Publication).filter(
@@ -214,6 +226,7 @@ def get_citations(
 @router.delete("/{citation_id}")
 def delete_citation(
     citation_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     citation = db.query(Citation).filter(
@@ -225,6 +238,9 @@ def delete_citation(
             status_code=404,
             detail="Citation not found"
         )
+
+    if current_user.role != "System Admin" and citation.citing_publication.researcher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only delete references from your own publication.")
 
     db.delete(citation)
     db.commit()

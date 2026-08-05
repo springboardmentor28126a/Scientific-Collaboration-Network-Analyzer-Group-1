@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import os
 
 from jose import JWTError, jwt
 
@@ -13,7 +14,12 @@ from backend.database.database import get_db
 from backend.database.models import User
 
 
-SECRET_KEY = "scientific_collaboration_secret_key"
+SECRET_KEY = os.getenv("SCNA_SECRET_KEY")
+if not SECRET_KEY:
+    if os.getenv("SCNA_ENV", "development").lower() == "production":
+        raise RuntimeError("SCNA_SECRET_KEY must be configured before starting the API")
+    # Local development fallback. Set SCNA_SECRET_KEY for any deployed API.
+    SECRET_KEY = "scna-development-secret-change-in-production"
 
 ALGORITHM = "HS256"
 
@@ -23,11 +29,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24   # 24 hours
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> str:
 
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
+    expire = datetime.now(timezone.utc) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
@@ -44,9 +50,6 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
-    print("=" * 60)
-    print("TOKEN:", token)
-
     credentials_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials"
@@ -59,24 +62,23 @@ def get_current_user(
             algorithms=[ALGORITHM]
         )
 
-        print("PAYLOAD:", payload)
-
         email = payload.get("sub")
-        print("EMAIL:", email)
 
         if email is None:
             raise credentials_exception
 
-    except JWTError as e:
-        print("JWT ERROR:", str(e))
+    except JWTError:
         raise credentials_exception
 
     user = db.query(User).filter(User.email == email).first()
 
-    print("USER:", user)
-    print("=" * 60)
-
     if user is None:
         raise credentials_exception
+
+    if user.role != "System Admin" and getattr(user, "account_status", "Active") != "Active":
+        raise HTTPException(
+            status_code=403,
+            detail="Your account is blocked or suspended. Contact a System Administrator.",
+        )
 
     return user

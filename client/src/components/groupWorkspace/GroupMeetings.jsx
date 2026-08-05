@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import Pagination from "../../components/Pagination";
 
 export default function GroupMeetings({ groupId }) {
 
     const user = JSON.parse(localStorage.getItem("user"));
 
     const [meetings, setMeetings] = useState([]);
+    const [search, setSearch] = useState("");
+    const [sort, setSort] = useState("date");
+    const [page, setPage] = useState(1);
+    const pageSize = 5;
 
     const [showModal, setShowModal] = useState(false);
 
@@ -90,6 +95,10 @@ export default function GroupMeetings({ groupId }) {
 
     };
 
+    const filteredMeetings = meetings.filter((meeting) => `${meeting.title} ${meeting.description || ""}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => sort === "title" ? a.title.localeCompare(b.title) : `${a.meeting_date}${a.meeting_time}`.localeCompare(`${b.meeting_date}${b.meeting_time}`));
+    const pageCount = Math.max(1, Math.ceil(filteredMeetings.length / pageSize));
+    const paginatedMeetings = filteredMeetings.slice((page - 1) * pageSize, page * pageSize);
+
     return (
 
         <div>
@@ -109,6 +118,7 @@ export default function GroupMeetings({ groupId }) {
                 </button>
 
             </div>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}><input placeholder="Search meetings" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} /><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="date">Sort by date</option><option value="title">Sort by title</option></select></div>
 
             {
                 meetings.length === 0 && (
@@ -128,7 +138,7 @@ export default function GroupMeetings({ groupId }) {
             }
 
             {
-                meetings.map(meeting => (
+                paginatedMeetings.map(meeting => (
 
                     <div
                         key={meeting.id}
@@ -179,6 +189,7 @@ export default function GroupMeetings({ groupId }) {
 
                 ))
             }
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
             {
                 showModal && (

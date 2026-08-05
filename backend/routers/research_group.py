@@ -1,10 +1,12 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from backend.database.database import get_db
 from backend.models.research_group import ResearchGroup
 from backend.models.research_group_member import ResearchGroupMember
-from backend.database.models import User
+from backend.database.models import User, Notification
 from backend.models.group_file import GroupFile
 from backend.services.storage import delete_file
 from backend.schemas.research_group import (
@@ -21,6 +23,7 @@ router = APIRouter(
     prefix="/groups",
     tags=["Research Groups"]
 )
+logger = logging.getLogger(__name__)
 @router.post(
     "/create",
     response_model=ResearchGroupResponse
@@ -48,6 +51,18 @@ def create_group(
     )
 
     db.add(owner)
+    members = db.query(User).filter(User.id != current_user.id, User.role != "System Admin", User.account_status == "Active").all()
+    db.add_all([
+        Notification(
+            user_id=user.id,
+            title="New research group",
+            message=f"{current_user.name} created the research group {new_group.name}.",
+            notification_type="research_group_created",
+            resource_type="research_group",
+            resource_id=new_group.id,
+        )
+        for user in members
+    ])
     db.commit()
 
     return new_group
@@ -146,8 +161,8 @@ def delete_group(
 
         try:
             delete_file(file.storage_path)
-        except Exception as e:
-            print(f"Storage delete failed: {e}")
+        except Exception:
+            logger.warning("Storage delete failed for %s", file.storage_path, exc_info=True)
 
         db.delete(file)
 
@@ -170,6 +185,7 @@ def delete_group(
     }
 @router.get("/")
 def get_all_groups(
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     groups = (
@@ -204,6 +220,7 @@ def get_all_groups(
 @router.get("/search")
 def search_groups(
     q: str,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
     groups = (
@@ -247,8 +264,16 @@ def search_groups(
 )
 def get_group_members(
     group_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin":
+        membership = db.query(ResearchGroupMember).filter(
+            ResearchGroupMember.group_id == group_id,
+            ResearchGroupMember.user_id == current_user.id,
+        ).first()
+        if not membership:
+            raise HTTPException(status_code=403, detail="Only group members can view group members.")
     members = (
         db.query(ResearchGroupMember)
         .filter(
@@ -283,8 +308,11 @@ def get_group_members(
 )
 def get_my_groups(
     user_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can view only your own groups.")
     memberships = (
         db.query(ResearchGroupMember)
         .filter(
@@ -334,6 +362,7 @@ def get_my_groups(
 )
 def get_group_details(
     group_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
 
@@ -349,6 +378,14 @@ def get_group_details(
             status_code=404,
             detail="Research group not found"
         )
+
+    if current_user.role != "System Admin" and group.visibility != "Public":
+        membership = db.query(ResearchGroupMember).filter(
+            ResearchGroupMember.group_id == group_id,
+            ResearchGroupMember.user_id == current_user.id,
+        ).first()
+        if not membership:
+            raise HTTPException(status_code=403, detail="Only group members can view this private group.")
 
     member_count = (
         db.query(ResearchGroupMember)

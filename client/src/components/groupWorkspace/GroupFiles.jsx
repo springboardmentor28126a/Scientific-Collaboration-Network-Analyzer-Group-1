@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import FileUpload from "../FileUpload";
 import FileCard from "../FileCard";
+import Pagination from "../../components/Pagination";
 
 import {
     getGroupFiles,
@@ -14,6 +15,10 @@ export default function GroupFiles({ groupId }) {
     const user = JSON.parse(localStorage.getItem("user") || "null");
 
     const [files, setFiles] = useState([]);
+    const [search, setSearch] = useState("");
+    const [sort, setSort] = useState("newest");
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
 
     // Temporary user ID for now.
     // Later we'll read it from the logged-in user.
@@ -64,19 +69,24 @@ export default function GroupFiles({ groupId }) {
         }
     };
 
+    const filteredFiles = files.filter((file) => file.file_name.toLowerCase().includes(search.toLowerCase())).sort((a, b) => sort === "name" ? a.file_name.localeCompare(b.file_name) : new Date(b.uploaded_at) - new Date(a.uploaded_at));
+    const pageCount = Math.max(1, Math.ceil(filteredFiles.length / pageSize));
+    const paginatedFiles = filteredFiles.slice((page - 1) * pageSize, page * pageSize);
+
     return (
         <div>
 
             <h2>Shared Files</h2>
 
             <FileUpload onUpload={handleUpload} />
+            <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}><input placeholder="Search files" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} /><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Newest first</option><option value="name">Name</option></select></div>
 
             <div style={{ marginTop: 20 }}>
 
                 {files.length === 0 ? (
                     <p>No files uploaded yet.</p>
                 ) : (
-                    files.map(file => (
+                    paginatedFiles.map(file => (
                         <FileCard
                             key={file.id}
                             file={file}
@@ -86,6 +96,7 @@ export default function GroupFiles({ groupId }) {
                         />
                     ))
                 )}
+                <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
             </div>
 

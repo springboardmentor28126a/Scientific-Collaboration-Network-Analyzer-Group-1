@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import ConferenceDetailsModal from "../components/conference/ConferenceDetailsModal";
+import Pagination from "../components/Pagination";
 
 function ConferenceOrganization() {
 
@@ -11,6 +12,8 @@ function ConferenceOrganization() {
 
     const [searchConference, setSearchConference] = useState("");
     const [typeFilter, setTypeFilter] = useState("All");
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
 
     const [form, setForm] = useState({
 
@@ -254,6 +257,8 @@ function ConferenceOrganization() {
             );
         }
     );
+    const pageCount = Math.max(1, Math.ceil(filteredConferences.length / pageSize));
+    const paginatedConferences = filteredConferences.slice((page - 1) * pageSize, page * pageSize);
 
     const statsCard = {
 
@@ -537,7 +542,7 @@ function ConferenceOrganization() {
 
                 {
 
-                    filteredConferences.map((conference)=>(
+                    paginatedConferences.map((conference)=>(
 
                         <div
 
@@ -735,6 +740,7 @@ function ConferenceOrganization() {
                 }
 
             </div>
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
             {
 

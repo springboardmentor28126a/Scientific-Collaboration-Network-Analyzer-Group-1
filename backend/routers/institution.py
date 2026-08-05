@@ -270,33 +270,6 @@ def get_institutions(db: Session = Depends(get_db)):
 
     return result
 
-    for inst in institutions:
-        print(f"Processing {inst.id}")
-        researcher_count = (
-            db.query(User)
-            .filter(User.institution_name.ilike(f"%{inst.name}%"))
-            .count()
-        )
-
-        result.append({
-            "id": inst.id,
-            "name": inst.name,
-            "address": inst.address,
-            "city": inst.city,
-            "state": inst.state,
-            "country": inst.country,
-            "website": inst.website,
-            "email": inst.email,
-            "phone": inst.phone,
-            "description": inst.description,
-            "aishe_code": inst.aishe_code,
-            "district": inst.district,
-            "institution_type": inst.institution_type,
-            "researcher_count": researcher_count
-        })
-
-    print("4. Returning response")
-    return result
 # ===========================
 # Get Institution by ID
 # ==========================

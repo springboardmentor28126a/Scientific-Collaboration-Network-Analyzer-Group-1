@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import Pagination from "../components/Pagination";
 
 function SearchPublications() {
 
@@ -14,6 +15,8 @@ function SearchPublications() {
     const [filterValue, setFilterValue] = useState("");
     const [sortOption, setSortOption] = useState("Title (A-Z)");
     const [selectedPublication, setSelectedPublication] = useState(null);
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
 
     useEffect(() => {
 
@@ -132,6 +135,8 @@ function SearchPublications() {
                 return a.title?.localeCompare(b.title || "") || 0;
         }
     });
+    const pageCount = Math.max(1, Math.ceil(sortedPublications.length / pageSize));
+    const paginatedPublications = sortedPublications.slice((page - 1) * pageSize, page * pageSize);
 
     return (
 
@@ -389,7 +394,7 @@ function SearchPublications() {
 
                 {
 
-                    sortedPublications.map((publication) => (
+                    paginatedPublications.map((publication) => (
 
                         <div
 
@@ -498,6 +503,7 @@ function SearchPublications() {
                 }
 
             </div>
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
       {
     selectedPublication && (
 

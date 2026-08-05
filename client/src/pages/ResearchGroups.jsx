@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { createGroup,updateGroup,deleteGroup,leaveGroup } from "../services/groupService";
+import Pagination from "../components/Pagination";
 export default function ResearchGroups() {
 
     const navigate = useNavigate();
@@ -21,6 +22,10 @@ const [openEditModal, setOpenEditModal] = useState(false);
 const [editing, setEditing] = useState(false);
 
 const [selectedGroup, setSelectedGroup] = useState(null);
+const [page, setPage] = useState(1);
+const pageSize = 6;
+const [search, setSearch] = useState("");
+const [sortBy, setSortBy] = useState("name");
 
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -44,6 +49,17 @@ const [selectedGroup, setSelectedGroup] = useState(null);
         }
 
     };
+    const filteredGroups = useMemo(() => {
+        const term = search.trim().toLowerCase();
+        return groups
+            .filter((group) => !term || `${group.name} ${group.description || ""}`.toLowerCase().includes(term))
+            .sort((a, b) => {
+                if (sortBy === "members") return (b.member_count || 0) - (a.member_count || 0);
+                return (a.name || "").localeCompare(b.name || "");
+            });
+    }, [groups, search, sortBy]);
+    const pageCount = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
+    const paginatedGroups = filteredGroups.slice((page - 1) * pageSize, page * pageSize);
 const handleCreateGroup = async () => {
 
     if (!groupData.name.trim()) {
@@ -249,8 +265,16 @@ const handleLeaveGroup = async (groupId) => {
     </button>
 </div>
 
+            <div className="page-toolbar">
+                <input className="search-input" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search groups" aria-label="Search groups" />
+                <select className="filter-select" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }} aria-label="Sort groups">
+                    <option value="name">Sort by name</option>
+                    <option value="members">Sort by members</option>
+                </select>
+            </div>
+
             {
-                groups.length === 0 ? (
+                filteredGroups.length === 0 ? (
 
                     <div
                         style={{
@@ -266,7 +290,7 @@ const handleLeaveGroup = async (groupId) => {
 
                 ) : (
 
-                    groups.map(group => (
+                    paginatedGroups.map(group => (
 
                         <div
                             key={group.id}
@@ -395,6 +419,7 @@ const handleLeaveGroup = async (groupId) => {
 
                 )
             }
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
             {
 openCreateModal && (
 

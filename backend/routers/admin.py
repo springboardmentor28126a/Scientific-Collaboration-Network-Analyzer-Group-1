@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.database.models import (
     User,
     Institution,
-    Publication
+    Publication,
+    Notification,
+    ModerationEvent,
 )
 
 from backend.utils.dependencies import require_permission
@@ -82,6 +85,14 @@ def admin_dashboard(
 @router.get("/users")
 def get_users(
 
+    search: str | None = Query(None),
+    role: str | None = Query(None),
+    status: str | None = Query(None),
+    sort_by: str = Query("name"),
+    sort_order: str = Query("asc"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+
     current_user: User = Depends(
         require_permission("*")
     ),
@@ -90,7 +101,120 @@ def get_users(
 
 ):
 
-    return db.query(User).all()
+    query = db.query(User)
+    if search:
+        term = f"%{search.strip()}%"
+        query = query.filter((User.name.ilike(term)) | (User.email.ilike(term)))
+    if role:
+        query = query.filter(User.role == role)
+    if status:
+        query = query.filter(User.account_status == status)
+    total = query.count()
+    sort_column = {
+        "name": User.name,
+        "email": User.email,
+        "role": User.role,
+        "status": User.account_status,
+    }.get(sort_by, User.name)
+    users = query.order_by((desc if sort_order == "desc" else asc)(sort_column)).offset((page - 1) * page_size).limit(page_size).all()
+    return {
+        "items": [
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role,
+                "institution": user.institution_name,
+                "is_verified": user.is_verified,
+                "verification_status": user.verification_status,
+                "account_status": user.account_status,
+                "warning_count": user.warning_count,
+            }
+            for user in users
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+def get_admin_target(user_id: int, current_user: User, db: Session) -> User:
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot moderate your own account.")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if user.role == "System Admin":
+        raise HTTPException(status_code=400, detail="Transfer ownership before moderating the current System Admin.")
+    return user
+
+
+def log_moderation(db: Session, target_user_id: int, moderator_id: int, action: str, reason: str | None = None):
+    db.add(ModerationEvent(
+        target_user_id=target_user_id,
+        moderator_id=moderator_id,
+        action=action,
+        reason=reason,
+    ))
+
+
+@router.put("/users/{user_id}/status")
+def update_user_status(
+    user_id: int,
+    status: str = Query(..., pattern="^(Active|Blocked|Suspended)$"),
+    current_user: User = Depends(require_permission("*")),
+    db: Session = Depends(get_db),
+):
+    user = get_admin_target(user_id, current_user, db)
+    user.account_status = status
+    log_moderation(db, user.id, current_user.id, status.lower(), user.moderation_reason)
+    db.commit()
+    return {"message": f"User {status.lower()} successfully.", "status": status}
+
+
+@router.post("/users/{user_id}/warn")
+def warn_user(
+    user_id: int,
+    reason: str = Query(..., min_length=3, max_length=1000),
+    current_user: User = Depends(require_permission("*")),
+    db: Session = Depends(get_db),
+):
+    user = get_admin_target(user_id, current_user, db)
+    user.warning_count = (user.warning_count or 0) + 1
+    user.moderation_reason = reason
+    log_moderation(db, user.id, current_user.id, "warning", reason)
+    db.add(Notification(
+        user_id=user.id,
+        title="System Administrator Warning",
+        message=reason,
+        notification_type="admin_warning",
+        resource_type="user",
+        resource_id=user.id,
+    ))
+    db.commit()
+    return {"message": "Warning sent successfully.", "warning_count": user.warning_count}
+
+
+@router.post("/broadcast")
+def broadcast_notification(
+    title: str = Query(..., min_length=1, max_length=200),
+    message: str = Query(..., min_length=1, max_length=2000),
+    current_user: User = Depends(require_permission("*")),
+    db: Session = Depends(get_db),
+):
+    recipients = db.query(User).filter(User.role != "System Admin", User.account_status == "Active").all()
+    db.add_all([
+        Notification(
+            user_id=user.id,
+            title=title,
+            message=message,
+            notification_type="admin_broadcast",
+            resource_type="announcement",
+        )
+        for user in recipients
+    ])
+    db.commit()
+    return {"message": "Broadcast sent successfully.", "recipients": len(recipients)}
 
 
 @router.delete("/users/{user_id}")
@@ -125,6 +249,8 @@ def delete_user(
         )
 
     db.delete(user)
+
+    log_moderation(db, user.id, current_user.id, "removed", "User removed by System Administrator")
 
     db.commit()
 
@@ -188,6 +314,7 @@ def change_role(
         return {"message": "System Admin ownership transferred successfully.", "user": user}
 
     user.role = role
+    log_moderation(db, user.id, current_user.id, "role_changed", f"Role changed to {role}")
 
     db.commit()
 
@@ -394,6 +521,41 @@ def update_publication_status(
     }
 
 
+@router.get("/moderation-history")
+def moderation_history(
+    search: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(require_permission("*")),
+    db: Session = Depends(get_db),
+):
+    query = db.query(ModerationEvent).order_by(ModerationEvent.created_at.desc())
+    if search:
+        query = query.filter(ModerationEvent.action.ilike(f"%{search.strip()}%"))
+    total = query.count()
+    events = query.offset((page - 1) * page_size).limit(page_size).all()
+    moderator_ids = {event.moderator_id for event in events}
+    target_ids = {event.target_user_id for event in events}
+    users = db.query(User).filter(User.id.in_(moderator_ids | target_ids)).all() if moderator_ids | target_ids else []
+    names = {user.id: user.name for user in users}
+    return {
+        "items": [
+            {
+                "id": event.id,
+                "action": event.action,
+                "reason": event.reason,
+                "timestamp": event.created_at,
+                "moderator": names.get(event.moderator_id, "Unknown"),
+                "target": names.get(event.target_user_id, f"User #{event.target_user_id}"),
+            }
+            for event in events
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
 @router.post("/transfer-ownership")
 def transfer_ownership(
     new_admin_id: int,
@@ -420,6 +582,13 @@ def transfer_ownership(
     current_user.role = replacement_role
     db.flush()
     new_admin.role = "System Admin"
+    log_moderation(
+        db,
+        new_admin.id,
+        current_user.id,
+        "admin_transfer",
+        f"System Admin role transferred from {current_user.name}.",
+    )
     db.commit()
     db.refresh(new_admin)
     return {

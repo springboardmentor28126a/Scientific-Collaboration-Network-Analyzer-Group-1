@@ -1,15 +1,14 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
-
-from fastapi.staticfiles import StaticFiles
+import asyncio
+import logging
 import os
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 
-
-from backend.database.database import Base, engine
-import backend.database.models
-# Routers
+from backend.database.database import Base, engine, SessionLocal
+from backend.database.models import User
 from backend.routers.auth import router as auth_router
 from backend.routers.researcher import router as researcher_router
 from backend.routers.publication import router as publication_router
@@ -42,7 +41,9 @@ from backend.models.verification_document import VerificationDocument
 from backend.routers import reviewer
 from backend.routers import faculty
 from backend.routers import admin
+from backend.routers.dashboard import run_due_reminders
 
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -50,6 +51,32 @@ app = FastAPI(
     description="Research Collaboration Management Platform",
     version="1.0.0"
 )
+
+reminder_task = None
+
+
+async def reminder_scheduler():
+    while True:
+        db = SessionLocal()
+        try:
+            run_due_reminders(db)
+        except Exception as exc:
+            logger.exception("Reminder scheduler error")
+        finally:
+            db.close()
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def start_reminder_scheduler():
+    global reminder_task
+    reminder_task = asyncio.create_task(reminder_scheduler())
+
+
+@app.on_event("shutdown")
+async def stop_reminder_scheduler():
+    if reminder_task:
+        reminder_task.cancel()
 
 
 os.makedirs("uploads/papers", exist_ok=True)
@@ -65,6 +92,36 @@ app.mount(
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+
+def apply_sqlite_schema_migration() -> None:
+    """Backfill columns added after the bundled SQLite database was created."""
+    if engine.dialect.name != "sqlite":
+        return
+
+    required_columns = {
+        "users": {
+            "verification_status": "VARCHAR NOT NULL DEFAULT 'Pending'",
+            "is_verified": "BOOLEAN NOT NULL DEFAULT 0",
+            "verified_by": "INTEGER",
+            "verified_at": "DATETIME",
+            "account_status": "VARCHAR NOT NULL DEFAULT 'Active'",
+            "warning_count": "INTEGER NOT NULL DEFAULT 0",
+            "moderation_reason": "TEXT",
+        },
+    }
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        for table_name, columns in required_columns.items():
+            existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+            for column_name, definition in columns.items():
+                if column_name not in existing_columns:
+                    connection.execute(text(
+                        f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {definition}'
+                    ))
+
+
+apply_sqlite_schema_migration()
 
 # Existing deployments do not receive new indexes from create_all(). Keep the
 # one-System-Admin invariant enforced by the database as well as the API.
@@ -162,6 +219,15 @@ def apply_publication_review_migration():
         "ALTER TABLE publications ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE publications ADD COLUMN IF NOT EXISTS review_comments TEXT",
         "ALTER TABLE conferences ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status VARCHAR DEFAULT 'Pending' NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_by INTEGER REFERENCES users(id)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR DEFAULT 'Active' NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS warning_count INTEGER DEFAULT 0 NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS moderation_reason TEXT",
+        "CREATE TABLE IF NOT EXISTS conference_registrations (id SERIAL PRIMARY KEY, conference_id INTEGER NOT NULL REFERENCES conferences(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, registered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, CONSTRAINT uq_conference_registration UNIQUE (conference_id, user_id))",
+        "CREATE TABLE IF NOT EXISTS moderation_events (id SERIAL PRIMARY KEY, target_user_id INTEGER NOT NULL, moderator_id INTEGER REFERENCES users(id) ON DELETE SET NULL, action VARCHAR NOT NULL, reason TEXT, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)",
     )
 
     with engine.begin() as connection:
@@ -170,15 +236,3 @@ def apply_publication_review_migration():
 
 
 apply_publication_review_migration()
-
-with engine.connect() as conn:
-    print("Database:", conn.execute(text("SELECT current_database()")).scalar())
-    print("Schema:", conn.execute(text("SELECT current_schema()")).scalar())
-
-    tables = conn.execute(text("""
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-    """)).fetchall()
-
-    print("Tables:", tables)

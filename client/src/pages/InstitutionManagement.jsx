@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import Pagination from "../components/Pagination";
 
 function InstitutionManagement() {
 
@@ -9,6 +10,8 @@ function InstitutionManagement() {
 
     const [search, setSearch] = useState("");
     const navigate = useNavigate();
+    const [page, setPage] = useState(1);
+    const pageSize = 9;
 
     const [form, setForm] = useState({
         id: null,
@@ -41,7 +44,6 @@ const loadInstitutions = async () => {
 
         const response = await API.get("/institution/");
 
-        alert(JSON.stringify(response.data[0], null, 2));
 
         setInstitutions(response.data);
 
@@ -169,6 +171,8 @@ const loadInstitutions = async () => {
             )
 
         );
+    const pageCount = Math.max(1, Math.ceil(filteredInstitutions.length / pageSize));
+    const paginatedInstitutions = filteredInstitutions.slice((page - 1) * pageSize, page * pageSize);
 
     const statsCard={
 
@@ -521,7 +525,7 @@ marginTop:"40px"
 
 {
 
-filteredInstitutions.map((institution)=>(
+paginatedInstitutions.map((institution)=>(
 
 <div
 
@@ -641,6 +645,8 @@ institution.id
 </button>
 
 </div>
+
+<Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
 </div>
 

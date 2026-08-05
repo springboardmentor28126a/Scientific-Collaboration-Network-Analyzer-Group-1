@@ -6,4 +6,5 @@ __pycache__/
 backend/venv/
 venv/
 .env
+backend/.env
 dist/

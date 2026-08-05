@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 
 export default function VerificationPending() {
 
     const navigate = useNavigate();
+    const [verification, setVerification] = useState(null);
 
     useEffect(() => {
 
@@ -17,6 +18,7 @@ export default function VerificationPending() {
                 );
 
                 const status = response.data.status;
+                setVerification(response.data);
 
                 // Approved
                 if (status === "Approved") {
@@ -60,7 +62,8 @@ export default function VerificationPending() {
                         "❌ Your verification was rejected."
                     );
 
-                    navigate("/verification");
+                    // Keep the reason visible so the user can decide when to
+                    // upload a replacement document.
 
                 }
 
@@ -133,7 +136,7 @@ export default function VerificationPending() {
                 }}
             >
 
-                <h1>🟡 Verification Pending</h1>
+                    <h1>{verification?.status === "Rejected" ? "🔴 Verification Rejected" : "🟡 Verification Pending"}</h1>
 
                 <p
                     style={{
@@ -141,7 +144,7 @@ export default function VerificationPending() {
                         marginTop: "20px"
                     }}
                 >
-                    Your verification document has been submitted successfully.
+                    {verification?.status === "Rejected" ? "Your verification document was rejected." : "Your verification document has been submitted successfully."}
                 </p>
 
                 <p
@@ -151,8 +154,7 @@ export default function VerificationPending() {
                         lineHeight: "28px"
                     }}
                 >
-                    Please wait while the appropriate authority reviews
-                    your submitted document.
+                    {verification?.status === "Rejected" ? `Reason: ${verification.remarks || "No reason provided."}` : "Please wait while the appropriate authority reviews your submitted document."}
                 </p>
 
                 <br />
@@ -170,8 +172,7 @@ export default function VerificationPending() {
                         color: "#999"
                     }}
                 >
-                    This page automatically checks your verification
-                    status every 5 seconds.
+                    {verification?.status === "Rejected" ? <button type="button" onClick={() => navigate("/verification")}>Upload New Document</button> : "This page automatically checks your verification status every 5 seconds."}
                 </p>
 
             </div>

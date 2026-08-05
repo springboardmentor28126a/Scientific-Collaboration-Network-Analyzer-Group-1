@@ -27,6 +27,12 @@ def require_permission(permission):
 
             return current_user
 
+        if getattr(current_user, "account_status", "Active") != "Active":
+            raise HTTPException(
+                status_code=403,
+                detail="Your account is blocked or suspended. Contact a System Administrator.",
+            )
+
         # ---------------------------------
         # User must be verified first
         # ---------------------------------
@@ -91,6 +97,12 @@ def require_verified_user(
     if current_user.role == "System Admin":
 
         return current_user
+
+    if getattr(current_user, "account_status", "Active") != "Active":
+        raise HTTPException(
+            status_code=403,
+            detail="Your account is blocked or suspended. Contact a System Administrator.",
+        )
 
     if not current_user.is_verified:
 

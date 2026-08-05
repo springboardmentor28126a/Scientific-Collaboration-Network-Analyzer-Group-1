@@ -1,11 +1,11 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.database.models import ActivityEvent, Citation, Conference, Institution, Notification, Publication, User
+from backend.database.models import ActivityEvent, Citation, Conference, ConferenceRegistration, Institution, Notification, Publication, User
 from backend.utils.security import get_current_user
 from backend.utils.dependencies import require_verified_user
 from fastapi import HTTPException
@@ -20,11 +20,83 @@ router = APIRouter(
 )
 
 
+def create_due_event_notifications(current_user: User, db: Session) -> None:
+    """Materialize reminders when the notification feed is opened.
+
+    This keeps reminders reliable without requiring a second worker process;
+    duplicate reminders are prevented by resource/type checks.
+    """
+    if current_user.role == "System Admin":
+        return
+    now = datetime.utcnow()
+    group_ids = [group_id for (group_id,) in db.query(ResearchGroupMember.group_id).filter(
+        ResearchGroupMember.user_id == current_user.id
+    ).all()]
+    meetings = db.query(Meeting).filter(
+        Meeting.group_id.in_(group_ids) if group_ids else False,
+        Meeting.meeting_date >= date.today(),
+    ).all()
+    for meeting in meetings:
+        start = datetime.combine(meeting.meeting_date, meeting.meeting_time or time.min)
+        if timedelta(0) <= start - now <= timedelta(hours=24):
+            exists = db.query(Notification).filter(
+                Notification.user_id == current_user.id,
+                Notification.notification_type == "meeting_reminder",
+                Notification.resource_id == meeting.id,
+            ).first()
+            if not exists:
+                db.add(Notification(
+                    user_id=current_user.id,
+                    title="Upcoming meeting reminder",
+                    message=f"{meeting.title} starts on {meeting.meeting_date} at {meeting.meeting_time}.",
+                    notification_type="meeting_reminder",
+                    resource_type="meeting",
+                    resource_id=meeting.id,
+                ))
+
+    conferences = db.query(Conference).outerjoin(
+        Publication, Publication.conference_id == Conference.id
+    ).outerjoin(
+        ConferenceRegistration, ConferenceRegistration.conference_id == Conference.id
+    ).filter(
+        Conference.start_date >= date.today(),
+        (Publication.researcher_id == current_user.id) | (ConferenceRegistration.user_id == current_user.id),
+    ).distinct().all()
+    for conference in conferences:
+        if conference.start_date and conference.start_date - date.today() <= timedelta(days=7):
+            exists = db.query(Notification).filter(
+                Notification.user_id == current_user.id,
+                Notification.notification_type == "conference_reminder",
+                Notification.resource_id == conference.id,
+            ).first()
+            if not exists:
+                db.add(Notification(
+                    user_id=current_user.id,
+                    title="Upcoming conference reminder",
+                    message=f"{conference.name} starts on {conference.start_date}.",
+                    notification_type="conference_reminder",
+                    resource_type="conference",
+                    resource_id=conference.id,
+                ))
+    db.commit()
+
+
+def run_due_reminders(db: Session) -> None:
+    users = db.query(User).filter(
+        User.role != "System Admin",
+        User.account_status == "Active",
+        User.is_verified.is_(True),
+    ).all()
+    for user in users:
+        create_due_event_notifications(user, db)
+
+
 @router.get("/notifications")
 def my_notifications(
     current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db),
 ):
+    create_due_event_notifications(current_user, db)
     return db.query(Notification).filter(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).limit(50).all()
 
 
@@ -50,6 +122,35 @@ def mark_notification_read(
     notification.is_read = True
     db.commit()
     return {"message": "Notification marked as read"}
+
+
+@router.put("/notifications/read-all")
+def mark_all_notifications_read(
+    current_user: User = Depends(require_verified_user),
+    db: Session = Depends(get_db),
+):
+    updated = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read.is_(False),
+    ).update({Notification.is_read: True}, synchronize_session=False)
+    db.commit()
+    return {"message": "Notifications marked as read", "updated": updated}
+
+
+@router.delete("/notifications/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    current_user: User = Depends(require_verified_user),
+    db: Session = Depends(get_db),
+):
+    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    db.delete(notification)
+    db.commit()
+    return {"message": "Notification deleted"}
 
 
 @router.get("/overview")
@@ -162,7 +263,26 @@ def dashboard_overview(
                     Publication, Publication.institution_id == Institution.id
                 ).group_by(Institution.id, Institution.name).order_by(func.count(Publication.id).desc()).limit(5).all()
             ],
+            "reviewers": [
+                {"name": name, "publications": count}
+                for name, count in db.query(User.name, func.count(Publication.id)).join(
+                    Publication, Publication.reviewed_by == User.id
+                ).filter(User.role == "Reviewer").group_by(User.id, User.name)
+                .order_by(func.count(Publication.id).desc()).limit(5).all()
+            ],
         },
+        "trending_topics": [
+            {"topic": topic, "count": count}
+            for topic, count in sorted(
+                ((keyword.strip(), sum(1 for item in my_publications if keyword.strip().lower() in (item.keywords or "").lower()))
+                 for keyword in {part for item in my_publications for part in (item.keywords or "").split(",") if part.strip()}),
+                key=lambda item: item[1], reverse=True
+            )[:5]
+        ],
+        "latest_publications": [
+            {"id": item.id, "title": item.title, "status": item.status, "year": item.publication_year}
+            for item in my_publications[:5]
+        ],
     }
 
 

@@ -13,6 +13,9 @@ function Publications() {
   const [publications, setPublications] = useState([]);
   const [searchTitle, setSearchTitle] = useState("");
   const [sortOption, setSortOption] = useState("Title (A-Z)");
+  const [publicationPage, setPublicationPage] = useState(1);
+  const publicationPageSize = 6;
+  const [viewMode, setViewMode] = useState("card");
   const [selectedFile, setSelectedFile] = useState(null);
   const [customType, setCustomType] = useState("");
   const fileInputRef = useRef(null);
@@ -54,6 +57,10 @@ function Publications() {
     loadReviewers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setPublicationPage(1);
+  }, [searchTitle, sortOption]);
 
     const loadPublications = async () => {
         try {
@@ -175,6 +182,11 @@ function Publications() {
                 return a.title?.localeCompare(b.title || "") || 0;
         }
     });
+    const publicationPageCount = Math.max(1, Math.ceil(sortedPublications.length / publicationPageSize));
+    const paginatedPublications = sortedPublications.slice(
+        (publicationPage - 1) * publicationPageSize,
+        publicationPage * publicationPageSize,
+    );
 
     const handleChange = (e) => {
         setForm({
@@ -775,6 +787,11 @@ function Publications() {
 
             </div>
 
+            <div className="view-toggle" role="group" aria-label="Publication view">
+                <button type="button" className={viewMode === "card" ? "active" : ""} onClick={() => setViewMode("card")}>Card View</button>
+                <button type="button" className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>Table View</button>
+            </div>
+
             {/* Add Publication */}
 
             <div style={{ marginBottom: "20px" }}>
@@ -1256,6 +1273,24 @@ function Publications() {
                 </div>
             </div>
 
+            {viewMode === "table" ? (
+                <div className="table-container publication-table-container">
+                    <table className="data-table">
+                        <thead><tr><th>Publication</th><th>Status</th><th>Reviewer</th><th>Institution</th><th>Year</th><th>DOI</th><th>Actions</th></tr></thead>
+                        <tbody>{paginatedPublications.map((publication) => (
+                            <tr key={publication.id}>
+                                <td><strong>{publication.title}</strong><div className="muted-text">{publication.authors || "Authors unavailable"}</div></td>
+                                <td><span className="status-badge">{publication.status}</span></td>
+                                <td>{publication.reviewer_name || publication.selected_reviewer_name || "Not assigned"}</td>
+                                <td>{publication.institution_name || "—"}</td>
+                                <td>{publication.publication_year || "—"}</td>
+                                <td>{publication.doi || "—"}</td>
+                                <td><button type="button" onClick={() => loadPublication(publication.id)}>View</button></td>
+                            </tr>
+                        ))}</tbody>
+                    </table>
+                </div>
+            ) : (
             <div
                 style={{
                     display: "grid",
@@ -1264,7 +1299,7 @@ function Publications() {
                     marginTop: "30px",
                 }}
             >
-                {sortedPublications.map((publication) => (
+                {paginatedPublications.map((publication) => (
 
                     <div
                         key={publication.id}
@@ -1413,6 +1448,12 @@ function Publications() {
                     </div>
 
                 ))}
+            </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "14px", marginTop: "24px" }}>
+                <button type="button" disabled={publicationPage <= 1} onClick={() => setPublicationPage((page) => page - 1)}>Previous</button>
+                <span>Page {publicationPage} of {publicationPageCount}</span>
+                <button type="button" disabled={publicationPage >= publicationPageCount} onClick={() => setPublicationPage((page) => page + 1)}>Next</button>
             </div>
             {
                 selectedPublication && (

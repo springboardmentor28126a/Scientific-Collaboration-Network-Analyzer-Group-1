@@ -8,7 +8,7 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 from backend.utils.dependencies import require_verified_user
-from backend.database.models import User
+from backend.database.models import User, Notification
 from backend.database.database import get_db
 from backend.database.models import User
 from backend.models.group_file import GroupFile
@@ -83,6 +83,24 @@ def upload_group_file(
     db.add(db_file)
     db.commit()
     db.refresh(db_file)
+
+    members = db.query(ResearchGroupMember.user_id).join(User, User.id == ResearchGroupMember.user_id).filter(
+        ResearchGroupMember.group_id == group_id,
+        ResearchGroupMember.user_id != current_user.id,
+        User.role != "System Admin",
+    ).all()
+    db.add_all([
+        Notification(
+            user_id=member_id,
+            title="New workspace file",
+            message=f"{current_user.name} uploaded {file.filename} to {group.name}.",
+            notification_type="workspace_file_uploaded",
+            resource_type="group_file",
+            resource_id=db_file.id,
+        )
+        for (member_id,) in members
+    ])
+    db.commit()
 
     return {
         "message": "File uploaded successfully",

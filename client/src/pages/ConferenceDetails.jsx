@@ -7,6 +7,7 @@ function ConferenceDetails() {
   const navigate = useNavigate();
   const [conference, setConference] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     loadConference();
@@ -15,13 +16,22 @@ function ConferenceDetails() {
 
   const loadConference = async () => {
     try {
-      const response = await API.get(`/conference/details/${id}`);
+      const [response, registration] = await Promise.all([
+        API.get(`/conference/details/${id}`),
+        API.get(`/conference/${id}/registration`),
+      ]);
       setConference(response.data);
+      setRegistered(registration.data.registered);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const register = async () => {
+    await API.post(`/conference/${id}/register`);
+    setRegistered(true);
   };
 
   if (loading) {
@@ -62,6 +72,9 @@ function ConferenceDetails() {
               <div style={{ color: "#64748b", fontSize: "13px", marginBottom: "8px" }}>Starts In</div>
               <div style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a" }}>{getCountdown()}</div>
             </div>
+            <button type="button" onClick={register} disabled={registered || status === "Completed"} style={{ ...buttonPrimary, marginTop: "12px", opacity: registered ? 0.65 : 1 }}>
+              {registered ? "Registered" : "Attend Conference"}
+            </button>
           </div>
         </div>
 

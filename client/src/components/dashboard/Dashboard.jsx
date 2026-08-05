@@ -89,6 +89,12 @@ export default function Dashboard() {
             <section className="dashboard-leaderboards">
                 <Leaderboard title="🏆 Top Researchers" items={overview.leaderboards?.researchers} />
                 <Leaderboard title="🏛 Top Institutions" items={overview.leaderboards?.institutions} />
+                <Leaderboard title="🔎 Top Reviewers" items={overview.leaderboards?.reviewers} suffix="reviews" />
+                <Leaderboard title="🔥 Trending Topics" items={overview.trending_topics} nameKey="topic" suffix="mentions" />
+            </section>
+            <section className="card-surface leaderboard-card" style={{ marginTop: "18px" }}>
+                <h2>Latest Publications</h2>
+                {(overview.latest_publications || []).map((item) => <div className="leaderboard-row" key={item.id}><strong>{item.title}</strong><span>{item.year || "—"} · {item.status}</span></div>)}
             </section>
         </div>
     );
@@ -129,15 +135,15 @@ function DashboardDetail({ section, overview, onNavigate }) {
     );
 }
 
-function Leaderboard({ title, items = [] }) {
+function Leaderboard({ title, items = [], nameKey = "name", suffix = "publications" }) {
     return (
         <section className="card-surface leaderboard-card">
             <h2>{title}</h2>
             {items.length === 0 ? <p>No ranking data yet.</p> : items.map((item, index) => (
                 <div className="leaderboard-row" key={`${item.name}-${index}`}>
                     <span className="leaderboard-rank">{index + 1}</span>
-                    <strong>{item.name}</strong>
-                    <span>{item.publications} publications</span>
+                    <strong>{item[nameKey]}</strong>
+                    <span>{item.publications ?? item.count} {suffix}</span>
                 </div>
             ))}
         </section>

@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.database.models import Conference, ConferenceMeetingDetails, Publication, User, Institution
+from backend.database.models import Conference, ConferenceMeetingDetails, ConferenceRegistration, Notification, Publication, User, Institution
 from backend.schemas.conference import (
     ConferenceCreate,
     ConferenceUpdate,
     ConferenceResponse
 )
-from backend.utils.dependencies import require_permission
+from backend.utils.dependencies import require_permission, require_verified_user
 
 router = APIRouter()
 
@@ -111,6 +111,49 @@ def search_conferences(
     )
 
     return conferences
+
+
+@router.post("/{conference_id}/register")
+def register_for_conference(
+    conference_id: int,
+    current_user: User = Depends(require_verified_user),
+    db: Session = Depends(get_db),
+):
+    conference = db.query(Conference).filter(Conference.id == conference_id).first()
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    existing = db.query(ConferenceRegistration).filter(
+        ConferenceRegistration.conference_id == conference_id,
+        ConferenceRegistration.user_id == current_user.id,
+    ).first()
+    if existing:
+        return {"message": "Already registered", "registered": True}
+    registration = ConferenceRegistration(conference_id=conference_id, user_id=current_user.id)
+    db.add(registration)
+    if conference.created_by and conference.created_by != current_user.id:
+        db.add(Notification(
+            user_id=conference.created_by,
+            title="New conference registration",
+            message=f"{current_user.name} registered for {conference.name}.",
+            notification_type="conference_registration",
+            resource_type="conference",
+            resource_id=conference_id,
+        ))
+    db.commit()
+    return {"message": "Registered for conference", "registered": True}
+
+
+@router.get("/{conference_id}/registration")
+def conference_registration_status(
+    conference_id: int,
+    current_user: User = Depends(require_verified_user),
+    db: Session = Depends(get_db),
+):
+    registered = db.query(ConferenceRegistration).filter(
+        ConferenceRegistration.conference_id == conference_id,
+        ConferenceRegistration.user_id == current_user.id,
+    ).first() is not None
+    return {"registered": registered}
 @router.get(
     "/{conference_id}",
     response_model=ConferenceResponse

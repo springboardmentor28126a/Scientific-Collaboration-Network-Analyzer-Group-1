@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.utils.dependencies import require_permission
-from backend.database.models import Publication, User, Institution, Conference
+from backend.database.models import Publication, User, Institution, Conference, Citation
+from backend.models.friend_request import FriendRequest
+from backend.models.meeting import Meeting
 
 router = APIRouter(
     prefix="/analytics",
@@ -88,6 +90,51 @@ def analytics_overview(
         for year, count in publications_by_year.items()
     ]
 
+    publication_status = {
+        status: count
+        for status, count in db.query(Publication.status, func.count(Publication.id))
+        .group_by(Publication.status).all()
+    }
+    department_publications = [
+        {"department": department or "Unspecified", "publications": count}
+        for department, count in db.query(User.department, func.count(Publication.id))
+        .join(Publication, Publication.researcher_id == User.id)
+        .group_by(User.department).order_by(func.count(Publication.id).desc()).limit(10).all()
+    ]
+    reviewer_performance = [
+        {"reviewer": name, "reviewed": count}
+        for name, count in db.query(User.name, func.count(Publication.id))
+        .join(Publication, Publication.reviewed_by == User.id)
+        .group_by(User.id, User.name).order_by(func.count(Publication.id).desc()).limit(10).all()
+    ]
+    citation_trends = [
+        {"year": year, "citations": count}
+        for year, count in db.query(Publication.publication_year, func.count(Citation.id))
+        .join(Citation, Citation.cited_publication_id == Publication.id)
+        .group_by(Publication.publication_year).order_by(Publication.publication_year).all()
+    ]
+    collaboration_growth = [
+        {"year": year, "collaborations": count}
+        for year, count in db.query(func.extract("year", FriendRequest.created_at), func.count(FriendRequest.id))
+        .filter(FriendRequest.status == "Accepted")
+        .group_by(func.extract("year", FriendRequest.created_at))
+        .order_by(func.extract("year", FriendRequest.created_at)).all()
+    ]
+    conference_statistics = [
+        {"conference": name, "publications": count}
+        for name, count in conference_participation
+    ]
+    latest_publications = [
+        {"id": item.id, "title": item.title, "year": item.publication_year, "status": item.status}
+        for item in db.query(Publication).order_by(Publication.uploaded_at.desc()).limit(8).all()
+    ]
+    research_interests = {}
+    for interests, in db.query(User.research_interests).filter(User.research_interests.isnot(None)).all():
+        for interest in interests.split(","):
+            key = interest.strip()
+            if key:
+                research_interests[key] = research_interests.get(key, 0) + 1
+
     return {
         "total_researchers": total_researchers,
         "total_publications": total_publications,
@@ -99,6 +146,15 @@ def analytics_overview(
         "top_researchers": top_researchers,
         "conference_participation": conference_participation,
         "research_growth": research_growth,
+        "publication_status": publication_status,
+        "department_publications": department_publications,
+        "reviewer_performance": reviewer_performance,
+        "top_reviewers": reviewer_performance,
+        "research_interests": dict(sorted(research_interests.items(), key=lambda item: item[1], reverse=True)[:10]),
+        "citation_trends": citation_trends,
+        "collaboration_growth": collaboration_growth,
+        "conference_statistics": conference_statistics,
+        "latest_publications": latest_publications,
     }
 
 

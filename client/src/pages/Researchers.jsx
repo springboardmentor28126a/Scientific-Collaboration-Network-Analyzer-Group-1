@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import ResearcherCard from "../components/ResearcherCard";
+import Pagination from "../components/Pagination";
 
 
 function Researchers() {
@@ -13,6 +14,8 @@ function Researchers() {
     const [search, setSearch] = useState("");
     const [sortOption, setSortOption] = useState("Name (A-Z)");
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const pageSize = 9;
 
 
     useEffect(() => {
@@ -74,6 +77,17 @@ function Researchers() {
         }
 
     });
+
+    const sortedResearchers = [...filteredResearchers].sort((a, b) => {
+        switch (sortOption) {
+            case "Name (Z-A)": return (b.name || "").localeCompare(a.name || "");
+            case "Country (A-Z)": return (a.country || "").localeCompare(b.country || "");
+            case "Country (Z-A)": return (b.country || "").localeCompare(a.country || "");
+            default: return (a.name || "").localeCompare(b.name || "");
+        }
+    });
+    const pageCount = Math.max(1, Math.ceil(sortedResearchers.length / pageSize));
+    const paginatedResearchers = sortedResearchers.slice((page - 1) * pageSize, page * pageSize);
 
     return (
 
@@ -239,20 +253,7 @@ function Researchers() {
                         </div>
 
                     ) : (
-
-                        [...filteredResearchers].sort((a, b) => {
-                            switch (sortOption) {
-                                case "Name (Z-A)":
-                                    return (b.name || "").localeCompare(a.name || "");
-                                case "Country (A-Z)":
-                                    return (a.country || "").localeCompare(b.country || "");
-                                case "Country (Z-A)":
-                                    return (b.country || "").localeCompare(a.country || "");
-                                case "Name (A-Z)":
-                                default:
-                                    return (a.name || "").localeCompare(b.name || "");
-                            }
-                        }).map((researcher) => (
+                        paginatedResearchers.map((researcher) => (
 
 
                             <ResearcherCard
@@ -266,6 +267,7 @@ function Researchers() {
                 }
 
             </div>
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
         </div>
 

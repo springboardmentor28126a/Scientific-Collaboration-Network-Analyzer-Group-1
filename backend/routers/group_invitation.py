@@ -157,8 +157,11 @@ def get_my_invitations(
 def get_available_groups(
     receiver_id: int,
     sender_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and current_user.id != sender_id:
+        raise HTTPException(status_code=403, detail="You can only inspect your own invitations.")
     groups = (
         db.query(ResearchGroup)
         .filter(ResearchGroup.created_by == sender_id)
@@ -217,8 +220,11 @@ def get_available_groups(
 def get_invitation_status(
     sender_id: int,
     receiver_id: int,
+    current_user: User = Depends(require_verified_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "System Admin" and current_user.id not in {sender_id, receiver_id}:
+        raise HTTPException(status_code=403, detail="You can only inspect your own invitation status.")
     # Are they already in a common group?
     common_group = (
         db.query(ResearchGroupMember)

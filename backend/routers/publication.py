@@ -1,10 +1,11 @@
 import os
 import shutil
+import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.database.database import get_db
 from backend.database.models import Institution, Notification, Publication, User
@@ -13,6 +14,15 @@ from backend.utils.dependencies import require_permission
 
 
 router = APIRouter(prefix="/publications", tags=["Publication"])
+logger = logging.getLogger(__name__)
+
+
+def publication_query(db: Session):
+    """Build publication queries with the relationships used by serializers preloaded."""
+    return db.query(Publication).options(
+        joinedload(Publication.selected_reviewer),
+        joinedload(Publication.reviewer),
+    )
 
 
 def publication_payload(publication: Publication) -> dict:
@@ -107,11 +117,29 @@ def create_publication(
                 resource_id=new_publication.id,
             ))
 
+        interested_users = db.query(User).filter(
+            User.id != current_user.id,
+            User.role != "System Admin",
+            User.account_status == "Active",
+        ).all()
+        db.add_all([
+            Notification(
+                user_id=user.id,
+                title="New publication",
+                message=f"{current_user.name} published a new research record: {new_publication.title}.",
+                notification_type="publication_created",
+                resource_type="publication",
+                resource_id=new_publication.id,
+            )
+            for user in interested_users
+            if user.id != new_publication.selected_reviewer_id
+        ])
+
         db.commit()
         db.refresh(new_publication)
     except IntegrityError as exc:
         db.rollback()
-        print("PUBLICATION CREATE DATABASE ERROR:", repr(exc))
+        logger.exception("Publication create failed due to a database error")
         if "publications_doi_key" in str(exc.orig):
             raise HTTPException(
                 status_code=409,
@@ -120,7 +148,7 @@ def create_publication(
         raise HTTPException(status_code=500, detail="Could not create publication.") from exc
     except Exception as exc:
         db.rollback()
-        print("PUBLICATION CREATE DATABASE ERROR:", repr(exc))
+        logger.exception("Publication create failed")
         raise HTTPException(status_code=500, detail="Could not create publication.") from exc
     return {"message": "Publication added successfully", "publication": publication_payload(new_publication)}
 
@@ -130,7 +158,7 @@ def get_publications(
     current_user: User = Depends(require_permission("publication:view")),
     db: Session = Depends(get_db),
 ):
-    return [publication_payload(publication) for publication in db.query(Publication).all()]
+    return [publication_payload(publication) for publication in publication_query(db).all()]
 
 
 @router.get("/search")
@@ -147,7 +175,7 @@ def search_publications(
     current_user: User = Depends(require_permission("publication:view")),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Publication)
+    query = publication_query(db)
     term = q or title
     if term:
         query = query.filter(or_(*[

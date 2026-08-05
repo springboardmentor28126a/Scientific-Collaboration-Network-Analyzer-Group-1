@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import Pagination from "../components/Pagination";
 
 export default function VerificationRequests() {
 
     const [requests, setRequests] = useState([]);
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [sort, setSort] = useState("newest");
+    const pageSize = 6;
 
     useEffect(() => {
 
@@ -105,11 +110,22 @@ export default function VerificationRequests() {
         }
     };
 
+    const filteredRequests = [...requests]
+        .filter((request) => `${request.name} ${request.email} ${request.role}`.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => sort === "name" ? (a.name || "").localeCompare(b.name || "") : new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    const pageCount = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
+    const paginatedRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
+
     return (
 
         <div style={{ padding: "30px" }}>
 
             <h1>Verification Requests</h1>
+
+            <div className="page-toolbar">
+                <input className="search-input" placeholder="Search verification requests" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+                <select className="filter-select" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="newest">Newest first</option><option value="name">Sort by name</option></select>
+            </div>
 
             <br />
 
@@ -121,7 +137,7 @@ export default function VerificationRequests() {
 
                 ) : (
 
-                    requests.map((request) => (
+                    paginatedRequests.map((request) => (
 
                         <div
 
@@ -283,6 +299,7 @@ export default function VerificationRequests() {
                 )
 
             }
+            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
 
         </div>
 

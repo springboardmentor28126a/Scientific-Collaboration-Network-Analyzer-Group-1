@@ -6,6 +6,7 @@ import {
   getCitationStats,
   formatCitation,
 } from "../services/citationService";
+import api from "../services/api";
 
 function Citations() {
   const [publicationId, setPublicationId] = useState("");
@@ -15,8 +16,7 @@ function Citations() {
   const [formattedCitation, setFormattedCitation] = useState("");
   const loadPublications = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/publications/");
-      const data = await res.json();
+      const { data } = await api.get("/publications/");
       setPublications(data);
 
       if (data.length > 0) {
@@ -74,6 +74,21 @@ function Citations() {
     }
   };
 
+  const copyCitation = async () => {
+    if (formattedCitation) await navigator.clipboard.writeText(formattedCitation);
+  };
+
+  const downloadCitation = () => {
+    if (!formattedCitation) return;
+    const blob = new Blob([formattedCitation], { type: style === "BibTeX" ? "application/x-bibtex" : "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `citation-${publicationId}.${style === "BibTeX" ? "bib" : "txt"}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="container mt-4">
 
@@ -121,7 +136,11 @@ function Citations() {
               {['APA', 'IEEE', 'MLA', 'Chicago', 'BibTeX'].map((option) => <option key={option}>{option}</option>)}
             </select>
             <button className="btn btn-secondary mt-3" onClick={loadFormattedCitation}>Generate</button>
-            {formattedCitation && <pre className="mt-3" style={{ whiteSpace: "pre-wrap" }}>{formattedCitation}</pre>}
+            {formattedCitation && <>
+              <pre className="mt-3" style={{ whiteSpace: "pre-wrap" }}>{formattedCitation}</pre>
+              <button className="btn btn-primary mt-3" onClick={copyCitation}>Copy Citation</button>
+              <button className="btn btn-secondary mt-3" onClick={downloadCitation} style={{ marginLeft: "8px" }}>Download Citation</button>
+            </>}
           </div>
 
           <button

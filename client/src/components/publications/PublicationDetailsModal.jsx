@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../../services/api";
+
 function PublicationDetailsModal({ publication, onClose }) {
 
     if (!publication) return null;
@@ -5,7 +7,7 @@ function PublicationDetailsModal({ publication, onClose }) {
     const pdfUrl = publication.pdf_file
         ? publication.pdf_file.startsWith("http")
             ? publication.pdf_file
-            : `http://127.0.0.1:8000${publication.pdf_file}`
+            : `${API_BASE_URL}${publication.pdf_file}`
         : "";
 
     return (

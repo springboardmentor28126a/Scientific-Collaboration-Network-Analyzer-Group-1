@@ -12,16 +12,10 @@ from supabase import create_client
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / ".env"
 
-print(f"[Storage] Looking for .env at: {ENV_PATH}")
-print(f"[Storage] .env exists: {ENV_PATH.exists()}")
-
 load_dotenv(dotenv_path=ENV_PATH)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-print(f"[Storage] SUPABASE_URL Loaded: {SUPABASE_URL is not None}")
-print(f"[Storage] SUPABASE_KEY Loaded: {SUPABASE_KEY is not None}")
 
 if not SUPABASE_URL:
     raise ValueError("SUPABASE_URL not found in backend/.env")
@@ -42,10 +36,8 @@ BUCKET = "group-files"
 # ---------------------------------------------------
 
 def upload_file(folder: str, file):
-
-    extension = file.filename.split(".")[-1]
-
-    unique_name = f"{uuid4()}.{extension}"
+    extension = Path(file.filename or "").suffix.lower()
+    unique_name = f"{uuid4()}{extension}"
 
     storage_path = f"{folder}/{unique_name}"
 

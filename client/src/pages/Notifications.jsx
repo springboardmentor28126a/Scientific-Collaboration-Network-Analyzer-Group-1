@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import Pagination from "../components/Pagination";
 
 function Notifications() {
 
@@ -11,6 +12,11 @@ function Notifications() {
 
     const [requests, setRequests] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [notificationPage, setNotificationPage] = useState(1);
+    const notificationPageSize = 8;
+    const [search, setSearch] = useState("");
+    const [readFilter, setReadFilter] = useState("all");
+    const [sort, setSort] = useState("newest");
 
     useEffect(() => {
 
@@ -74,6 +80,24 @@ function Notifications() {
         }
     };
 
+    const markAllRead = async () => {
+        try {
+            await api.put("/dashboard/notifications/read-all");
+            setNotifications((current) => current.map((notification) => ({ ...notification, is_read: true })));
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const removeNotification = async (id) => {
+        try {
+            await api.delete(`/dashboard/notifications/${id}`);
+            setNotifications((current) => current.filter((notification) => notification.id !== id));
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const reviewPublication = async (notification, decision) => {
         const comments = window.prompt(
             decision === "approve"
@@ -96,17 +120,34 @@ function Notifications() {
         }
     };
 
+    const filteredNotifications = [...notifications]
+        .filter((notification) => {
+            const matchesText = `${notification.title} ${notification.message}`.toLowerCase().includes(search.toLowerCase());
+            const matchesRead = readFilter === "all" || (readFilter === "read" ? notification.is_read : !notification.is_read);
+            return matchesText && matchesRead;
+        })
+        .sort((a, b) => sort === "oldest"
+            ? new Date(a.created_at) - new Date(b.created_at)
+            : new Date(b.created_at) - new Date(a.created_at));
+    const notificationPageCount = Math.max(1, Math.ceil(filteredNotifications.length / notificationPageSize));
+    const paginatedNotifications = filteredNotifications.slice((notificationPage - 1) * notificationPageSize, notificationPage * notificationPageSize);
+
     return (
 
         <div>
 
-            <h1>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                <h1>Notifications</h1>
+                <button type="button" onClick={markAllRead}>Mark all as read</button>
+            </div>
 
-                Notifications
+            <div className="page-toolbar">
+                <input className="search-input" placeholder="Search notifications" value={search} onChange={(event) => { setSearch(event.target.value); setNotificationPage(1); }} />
+                <select className="filter-select" value={readFilter} onChange={(event) => { setReadFilter(event.target.value); setNotificationPage(1); }}><option value="all">All notifications</option><option value="unread">Unread</option><option value="read">Read</option></select>
+                <select className="filter-select" value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+            </div>
 
-            </h1>
-
-            {notifications.map((notification) => (
+            {paginatedNotifications.map((notification) => (
                 <div
                     key={notification.id}
                     onClick={() => !notification.is_read && markRead(notification.id)}
@@ -122,6 +163,7 @@ function Notifications() {
                     <h3>{notification.title}</h3>
                     <p>{notification.message}</p>
                     <small>{new Date(notification.created_at).toLocaleString()}</small>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); removeNotification(notification.id); }} style={{ marginLeft: "12px" }}>Delete</button>
 
                     {notification.notification_type === "publication_review_request" &&
                         !notification.is_read && (
@@ -156,6 +198,7 @@ function Notifications() {
                         )}
                 </div>
             ))}
+            <Pagination page={Math.min(notificationPage, notificationPageCount)} pageCount={notificationPageCount} onChange={setNotificationPage} />
 
             {
 
