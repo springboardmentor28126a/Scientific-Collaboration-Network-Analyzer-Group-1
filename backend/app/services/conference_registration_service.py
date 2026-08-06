@@ -63,7 +63,7 @@ def register_for_conference(db: Session, user_id: int, conference_id: int, paylo
         NotificationCreate(
             user_id=user_id,
             title="Conference Registration Successful",
-            message=f"You have successfully registered for '{conference.title}'.",
+            message=f"You have successfully registered for '{conference.title}' as {payload.role.value.title()}.",
             notification_type="CONFERENCE",
             reference_id=conference.id,
         ),

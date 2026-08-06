@@ -6,6 +6,7 @@ from sqlalchemy.sql import func
 
 from app.models.collaboration import Collaboration
 from app.models.researcher import Researcher
+from app.models.notification import Notification
 from app.schemas.collaboration import CollaborationCreate
 from app.schemas.notification import NotificationCreate
 from app.services.notification_service import create_notification
@@ -64,10 +65,10 @@ def send_collaboration_request(db: Session, user_id: int, payload: Collaboration
         NotificationCreate(
             user_id=recipient.user_id,
             title="New Collaboration Request",
-            message=f"You have received a collaboration request from Researcher ID {requester.id}.",
+            message=f"{requester.first_name} {requester.last_name} wants to collaborate with you.",
             notification_type="COLLABORATION_REQUEST",
             reference_id=collaboration.id,
-        ),
+        )
     )
     return collaboration
 
@@ -110,26 +111,14 @@ def respond_to_request(db: Session, user_id: int, collaboration_id: int, accept:
 
     db.commit()
     db.refresh(collaboration)
-    requester = (
-        db.query(Researcher)
-        .filter(Researcher.id == collaboration.requester_id)
-        .first()
-    )
-
-    create_notification(
-        db,
-        NotificationCreate(
-            user_id=requester.user_id,
-            title="Collaboration Request Updated",
-            message=(
-                "Your collaboration request has been accepted."
-                if accept
-                else "Your collaboration request has been rejected."
-            ),
-            notification_type="COLLABORATION_RESPONSE",
-            reference_id=collaboration.id,
-        ),
-    )
+    requester_researcher = db.query(Researcher).filter(Researcher.id == collaboration.requester_id).first()
+    create_notification(db, NotificationCreate(
+        user_id=requester_researcher.user_id,
+        title="Collaboration request " + ("accepted" if accept else "rejected"),
+        message=f"{researcher.first_name} {researcher.last_name} has {'accepted' if accept else 'rejected'} your collaboration request.",
+        notification_type="COLLABORATION_RESPONSE",
+        reference_id=collaboration.id,
+    ))
     return collaboration
 
 

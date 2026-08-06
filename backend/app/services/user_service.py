@@ -14,7 +14,8 @@ from app.schemas.user import (
 )
 from app.core.security import hash_password, verify_password
 from app.utils.constants import UserRole, UserStatus
-
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import create_notification
 
 def validate_password(password: str):
     if len(password) < 8:
@@ -191,6 +192,13 @@ def approve_user(db: Session, user_id: int, approver_id: int, approver_instituti
     db_user.approved_at = func.now()
     db.commit()
     db.refresh(db_user)
+    create_notification(db, NotificationCreate(
+        user_id=db_user.id,
+        title="Account approved",
+        message="Your researcher account has been approved. You can now log in.",
+        notification_type="ACCOUNT_STATUS",
+        reference_id=db_user.id,
+    ))
     return db_user
 
 
@@ -206,6 +214,13 @@ def reject_user(db: Session, user_id: int, approver_institution_id: int):
     db_user.status = UserStatus.REJECTED
     db.commit()
     db.refresh(db_user)
+    create_notification(db, NotificationCreate(
+        user_id=db_user.id,
+        title="Account registration rejected",
+        message="Your researcher registration was not approved. Please contact your institution admin for details.",
+        notification_type="ACCOUNT_STATUS",
+        reference_id=db_user.id,
+    ))
     return db_user
 
 

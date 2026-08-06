@@ -79,9 +79,13 @@ def get_notification(
 def mark_as_read(
     db: Session,
     notification_id: int,
+    user_id: int,
     payload: NotificationUpdate,
 ):
     notification = get_notification(db, notification_id)
+
+    if notification.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You can only update your own notifications.")
 
     notification.is_read = payload.is_read
 
@@ -94,8 +98,12 @@ def mark_as_read(
 def delete_notification(
     db: Session,
     notification_id: int,
+    user_id: int,
 ):
     notification = get_notification(db, notification_id)
+
+    if notification.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You can only delete your own notifications.")
 
     db.delete(notification)
     db.commit()
