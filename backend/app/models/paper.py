@@ -29,3 +29,9 @@ class Paper(Base):
         back_populates="paper",
         cascade="all, delete-orphan"
     )
+
+    references = relationship(
+        "Reference",
+        back_populates="paper",
+        cascade="all, delete-orphan"
+    )
