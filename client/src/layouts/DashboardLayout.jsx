@@ -7,6 +7,7 @@ function DashboardLayout({ theme, toggleTheme }) {
     return (
 
         <div
+            className="dashboard-layout"
             style={{
                 display: "flex",
                 height: "100vh",
@@ -22,6 +23,7 @@ function DashboardLayout({ theme, toggleTheme }) {
             {/* Right Content */}
 
             <div
+                className="dashboard-content"
                 style={{
                     flex: 1,
                     padding: "28px",

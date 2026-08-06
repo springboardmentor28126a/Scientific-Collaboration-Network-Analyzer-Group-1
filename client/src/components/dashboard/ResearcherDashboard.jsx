@@ -48,7 +48,7 @@ export default function ResearcherDashboard() {
 
         <div>
 
-            <h1>👨‍🔬 Researcher Dashboard</h1>
+            <h1>Researcher Dashboard</h1>
 
            <div
 style={{
@@ -85,7 +85,7 @@ fontWeight:"bold"
 }}
 >
 
-🟢 Verified
+Verified
 
 </span>
 
@@ -100,7 +100,7 @@ fontWeight:"bold"
 }}
 >
 
-🟡 Pending
+Pending
 
 </span>
 
@@ -115,7 +115,7 @@ fontWeight:"bold"
 }}
 >
 
-🔴 Rejected
+Rejected
 
 </span>
 

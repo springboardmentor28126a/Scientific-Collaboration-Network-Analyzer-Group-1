@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     FaHome,
@@ -9,13 +10,81 @@ import {
     FaCalendarAlt,
     FaComments,
     FaEnvelope,
-    FaShieldAlt
+    FaShieldAlt,
+    FaUser,
+    FaFileAlt,
+    FaUniversity,
+    FaUsers
 } from "react-icons/fa";
+import API from "../services/api";
 
 function Sidebar() {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const searchRef = useRef(null);
+
+    useEffect(() => {
+        const term = query.trim();
+        if (term.length < 2) {
+            setResults([]);
+            setActiveIndex(0);
+            return undefined;
+        }
+        const timer = setTimeout(async () => {
+            try {
+                const [response, groupsResponse] = await Promise.all([
+                    API.get("/search/global", { params: { query: term } }),
+                    API.get("/groups/search", { params: { q: term } }).catch(() => ({ data: [] })),
+                ]);
+                const data = response.data || {};
+                setResults([
+                    ...(data.researchers || []).slice(0, 3).map((item) => ({ ...item, type: "researcher", label: "Researcher", icon: <FaUser /> })),
+                    ...(data.publications || []).slice(0, 3).map((item) => ({ ...item, type: "publication", label: "Publication", icon: <FaFileAlt /> })),
+                    ...(data.institutions || []).slice(0, 3).map((item) => ({ ...item, type: "institution", label: "Institution", icon: <FaUniversity /> })),
+                    ...(data.conferences || []).slice(0, 3).map((item) => ({ ...item, type: "conference", label: "Conference", icon: <FaCalendarAlt /> })),
+                    ...(groupsResponse.data || []).slice(0, 3).map((item) => ({ ...item, type: "group", label: "Research Group", icon: <FaUsers /> })),
+                ]);
+                setActiveIndex(0);
+            } catch {
+                setResults([]);
+            }
+        }, 250);
+        return () => clearTimeout(timer);
+    }, [query]);
+
+    const openResult = (result) => {
+        const routes = {
+            researcher: `/researcher/${result.id}`,
+            publication: `/publication/${result.id}`,
+            institution: `/institution/${result.id}`,
+            conference: `/conference/${result.id}`,
+            group: `/groups/${result.id}`,
+        };
+        navigate(routes[result.type]);
+        setQuery("");
+        setResults([]);
+    };
+
+    const handleSearchKeyDown = (event) => {
+        if (!results.length) return;
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setActiveIndex((index) => (index + 1) % results.length);
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setActiveIndex((index) => (index - 1 + results.length) % results.length);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            openResult(results[activeIndex]);
+        } else if (event.key === "Escape") {
+            setQuery("");
+            setResults([]);
+        }
+    };
     return (
 
         <div
@@ -53,7 +122,7 @@ function Sidebar() {
                             color: "var(--accent)"
                         }}
                     >
-                        ⚡
+                        <FaPeopleArrows aria-hidden="true" />
                     </span>
 
                     <div>
@@ -73,6 +142,37 @@ function Sidebar() {
                     </div>
 
                 </div>
+            </div>
+
+            <div className="sidebar-search" ref={searchRef}>
+                <FaSearch aria-hidden="true" />
+                <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search Researchers, Publications, Institutions..."
+                    aria-label="Global search"
+                    aria-autocomplete="list"
+                    aria-controls="sidebar-search-results"
+                />
+                {results.length > 0 && (
+                    <div className="sidebar-search-results" id="sidebar-search-results" role="listbox">
+                        {results.map((result, index) => (
+                            <button
+                                type="button"
+                                role="option"
+                                aria-selected={index === activeIndex}
+                                className={index === activeIndex ? "is-active" : ""}
+                                key={`${result.type}-${result.id}`}
+                                onMouseEnter={() => setActiveIndex(index)}
+                                onClick={() => openResult(result)}
+                            >
+                                <span className="search-result-icon">{result.icon}</span>
+                                <span><strong>{result.name || result.title}</strong><small>{result.label}{result.institution_name ? ` · ${result.institution_name}` : ""}</small></span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div style={{ display: "grid", gap: "10px" }}>

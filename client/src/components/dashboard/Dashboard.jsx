@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
+import { FaBookOpen, FaUsers, FaUniversity, FaCalendarAlt, FaUserFriends, FaBell, FaTrophy, FaFire, FaUserCheck } from "react-icons/fa";
 
 export default function Dashboard() {
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -30,19 +31,19 @@ export default function Dashboard() {
 
     const sections = overview.sections || {};
     const cards = [
-        ["publications", "📚", "My Publications", overview.stats.publications],
-        ["groups", "👥", "My Research Groups", overview.stats.groups],
-        ["conferences", "🏛", "My Conferences", sections.conferences?.length || 0],
-        ["meetings", "📅", "My Meetings", overview.stats.meetings],
-        ["collaborations", "🤝", "My Collaborations", overview.stats.collaborations],
-        ["notifications", "🔔", "My Notifications", overview.stats.notifications],
+        ["publications", <FaBookOpen />, "My Publications", overview.stats.publications],
+        ["groups", <FaUsers />, "My Research Groups", overview.stats.groups],
+        ["conferences", <FaUniversity />, "My Conferences", sections.conferences?.length || 0],
+        ["meetings", <FaCalendarAlt />, "My Meetings", overview.stats.meetings],
+        ["collaborations", <FaUserFriends />, "My Collaborations", overview.stats.collaborations],
+        ["notifications", <FaBell />, "My Notifications", overview.stats.notifications],
     ];
 
     return (
         <div className="page-container">
             <div style={headerStyle}>
                 <div>
-                    <h1>Welcome, {user?.name || "Researcher"} 👋</h1>
+                    <h1>Welcome, {user?.name || "Researcher"}</h1>
                     <p style={{ marginTop: "8px" }}>{user?.role}</p>
                 </div>
                 <span style={verificationStyle(verification?.status)}>
@@ -87,10 +88,10 @@ export default function Dashboard() {
             </section>
 
             <section className="dashboard-leaderboards">
-                <Leaderboard title="🏆 Top Researchers" items={overview.leaderboards?.researchers} />
-                <Leaderboard title="🏛 Top Institutions" items={overview.leaderboards?.institutions} />
-                <Leaderboard title="🔎 Top Reviewers" items={overview.leaderboards?.reviewers} suffix="reviews" />
-                <Leaderboard title="🔥 Trending Topics" items={overview.trending_topics} nameKey="topic" suffix="mentions" />
+                <Leaderboard title="Top Researchers" icon={<FaTrophy />} items={overview.leaderboards?.researchers} />
+                <Leaderboard title="Top Institutions" icon={<FaUniversity />} items={overview.leaderboards?.institutions} />
+                <Leaderboard title="Top Reviewers" icon={<FaUserCheck />} items={overview.leaderboards?.reviewers} suffix="reviews" />
+                <Leaderboard title="Trending Topics" icon={<FaFire />} items={overview.trending_topics} nameKey="topic" suffix="mentions" />
             </section>
             <section className="card-surface leaderboard-card" style={{ marginTop: "18px" }}>
                 <h2>Latest Publications</h2>
@@ -135,10 +136,10 @@ function DashboardDetail({ section, overview, onNavigate }) {
     );
 }
 
-function Leaderboard({ title, items = [], nameKey = "name", suffix = "publications" }) {
+function Leaderboard({ title, icon, items = [], nameKey = "name", suffix = "publications" }) {
     return (
         <section className="card-surface leaderboard-card">
-            <h2>{title}</h2>
+            <h2 className="section-title-with-icon">{icon}<span>{title}</span></h2>
             {items.length === 0 ? <p>No ranking data yet.</p> : items.map((item, index) => (
                 <div className="leaderboard-row" key={`${item.name}-${index}`}>
                     <span className="leaderboard-rank">{index + 1}</span>

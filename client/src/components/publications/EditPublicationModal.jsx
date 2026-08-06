@@ -181,22 +181,9 @@ function EditPublicationModal({
                     }}
                 />
 
-                <select
-                    name="status"
-                    value={form.status}
-                    onChange={handleChange}
-                    style={inputStyle}
-                >
-
-                    <option>Draft</option>
-
-                    <option>Pending Review</option>
-
-                    <option>Published</option>
-
-                    <option>Archived</option>
-
-                </select>
+                <p style={{ marginTop: "12px", color: "var(--muted)" }}>
+                    Status is managed automatically by the review workflow.
+                </p>
                 <label style={{ marginTop: "15px", display: "block" }}>
                     References (Citations)
                 </label>

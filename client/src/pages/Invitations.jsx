@@ -105,7 +105,7 @@ export default function Invitations() {
 
             {/* ---------------- GROUP INVITATIONS ---------------- */}
 
-            <h2>👥 Research Group Invitations</h2>
+            <h2>Research Group Invitations</h2>
 
             {invitations.length === 0 ? (
 
@@ -161,7 +161,7 @@ export default function Invitations() {
 
             {/* ---------------- FRIEND REQUESTS ---------------- */}
 
-            <h2>👤 Friend Requests</h2>
+            <h2>Friend Requests</h2>
 
             {friendRequests.length === 0 ? (
 

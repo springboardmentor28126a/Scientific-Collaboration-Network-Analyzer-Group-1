@@ -1174,16 +1174,9 @@ function Publications() {
                     )}
 
                 </div>
-        <select
-          name="status"
-          value={form.status}
-          onChange={handleChange}
-        >
-          <option>Draft</option>
-          <option>Pending Review</option>
-          <option>Published</option>
-          <option>Archived</option>
-        </select>
+        <p className="publication-form-help">
+          Status is assigned automatically by the review workflow.
+        </p>
 
                 <button
 
@@ -1235,12 +1228,12 @@ function Publications() {
                 }}
             >
                 <div style={statsCard}>
-                    <h3>📚 Total</h3>
+                    <h3>Total Publications</h3>
                     <h1>{publications.length}</h1>
                 </div>
 
                 <div style={statsCard}>
-                    <h3>🟢 Published</h3>
+                    <h3>Published</h3>
                     <h1>
                         {
                             publications.filter(
@@ -1251,7 +1244,7 @@ function Publications() {
                 </div>
 
                 <div style={statsCard}>
-                    <h3>🟡 Draft</h3>
+                    <h3>Draft</h3>
                     <h1>
                         {
                             publications.filter(
@@ -1262,7 +1255,7 @@ function Publications() {
                 </div>
 
                 <div style={statsCard}>
-                    <h3>🔵 Pending Review</h3>
+                    <h3>Pending Review</h3>
                     <h1>
                         {
                             publications.filter(
@@ -1312,24 +1305,24 @@ function Publications() {
                     >
 
                         <h2 style={{ color: "#2563eb" }}>
-                            📄 {publication.title}
+                            {publication.title}
                         </h2>
 
                         <p>
-                            <b>👨‍🔬 Authors:</b> {publication.authors}
+                            <b>Authors:</b> {publication.authors}
                         </p>
 
                         <p>
-                            <b>📑 Publication Type:</b>{" "}
+                            <b>Publication Type:</b>{" "}
                             {publication.publication_type}
                         </p>
 
                         <p>
-                            <b>📚 Journal:</b> {publication.journal}
+                            <b>Journal:</b> {publication.journal}
                         </p>
 
                         <p>
-                            <b>📅 Year:</b> {publication.publication_year}
+                            <b>Year:</b> {publication.publication_year}
                         </p>
 
                         <p>
@@ -1374,12 +1367,12 @@ function Publications() {
                         )}
 
                         <p>
-                            <b>🔗 DOI:</b>{" "}
+                            <b>DOI:</b>{" "}
                             {publication.doi || "N/A"}
                         </p>
 
         <p>
-            <b>🏷 Keywords:</b>{" "}
+            <b>Keywords:</b>{" "}
             {publication.keywords || "N/A"}
         </p>
 
@@ -1404,7 +1397,7 @@ function Publications() {
                                     cursor: "pointer",
                                 }}
                             >
-                                👁 View
+                                View
                             </button>
 
             {(currentUser?.role === "System Admin" || publication.researcher_id === currentUser?.id) && <button
@@ -1418,7 +1411,7 @@ function Publications() {
                     cursor: "pointer",
                 }}
             >
-                ✏ Edit
+                Edit
             </button>}
 
             {(currentUser?.role === "System Admin" || publication.researcher_id === currentUser?.id) && <button
@@ -1440,7 +1433,7 @@ function Publications() {
                     cursor: "pointer",
                 }}
             >
-                🗑 Delete
+                Delete
             </button>}
 
                         </div>

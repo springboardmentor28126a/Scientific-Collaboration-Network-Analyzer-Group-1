@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
+import { FaEllipsisV, FaUserCircle } from "react-icons/fa";
 
 const PAGE_SIZE = 8;
 const roles = ["Researcher", "Reviewer", "Student", "Faculty", "Institution Admin"];
@@ -23,12 +24,14 @@ export default function AdminDashboard() {
     const [broadcastMessage, setBroadcastMessage] = useState("");
     const [history, setHistory] = useState([]);
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState(null);
 
     useEffect(() => {
         API.get("/admin/dashboard").then(({ data }) => setStats(data)).catch(console.error);
     }, []);
 
     useEffect(() => {
+        if (!usersOpen) return;
         API.get("/admin/users", { params: { search: search || undefined, role: role || undefined, status: status || undefined, sort_by: sort, sort_order: sortOrder, page, page_size: PAGE_SIZE } })
             .then(({ data }) => {
                 setUsers(data.items || []);
@@ -112,7 +115,7 @@ export default function AdminDashboard() {
 
     return (
         <div className="page-container">
-            <h1>⚙ System Admin Dashboard</h1>
+            <h1>System Admin Dashboard</h1>
             <div className="dashboard-grid">
                 <button className="card" type="button" onClick={() => setUsersOpen((open) => !open)}>
                     <h2>{stats.users ?? 0}</h2><p>Users</p><small>{usersOpen ? "Hide users" : "Manage users"}</small>
@@ -134,17 +137,22 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Verification</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Avatar</th><th>Name</th><th>Email</th><th>Role</th><th>Institution</th><th>Verification</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody>{users.map((user) => <tr key={user.id}>
-                            <td>{user.name}</td><td>{user.email}</td>
-                            <td><select value={user.role} onChange={(event) => changeRole(user, event.target.value)}>{roles.map((item) => <option key={item}>{item}</option>)}</select></td>
+                            <td><FaUserCircle aria-hidden="true" size={24} /></td><td>{user.name}</td><td>{user.email}</td>
+                            <td><span className="status-badge">{user.role}</span></td>
                             <td>{user.institution || "—"}</td><td>{user.is_verified ? "Verified" : user.verification_status}</td>
                             <td><span className="status-badge">{user.account_status}</span>{user.warning_count ? ` (${user.warning_count} warnings)` : ""}</td>
-                            <td style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                                <button type="button" onClick={() => navigate(`/researcher/${user.id}`)}>View</button>
-                                <button type="button" onClick={() => warnUser(user)}>Warn</button>
-                                <button type="button" onClick={() => updateStatus(user, user.account_status === "Active" ? "Blocked" : "Active")}>{user.account_status === "Active" ? "Block" : "Unblock"}</button>
-                                <button type="button" onClick={() => removeUser(user)}>Remove</button>
+                            <td className="action-menu-cell">
+                                <button type="button" aria-label={`Actions for ${user.name}`} className="icon-button" onClick={() => setOpenMenuId((current) => current === user.id ? null : user.id)}><FaEllipsisV /></button>
+                                {openMenuId === user.id && <div className="action-menu">
+                                    <button type="button" onClick={() => { setOpenMenuId(null); navigate(`/researcher/${user.id}`); }}>View</button>
+                                    <label>Edit Role<select value={user.role} onChange={(event) => { setOpenMenuId(null); changeRole(user, event.target.value); }}>{roles.map((item) => <option key={item}>{item}</option>)}</select></label>
+                                    <button type="button" onClick={() => { setOpenMenuId(null); warnUser(user); }}>Warn</button>
+                                    <button type="button" onClick={() => { setOpenMenuId(null); updateStatus(user, user.account_status === "Active" ? "Blocked" : "Active"); }}>{user.account_status === "Active" ? "Block" : "Unblock"}</button>
+                                    <button type="button" onClick={() => { setOpenMenuId(null); setNewAdminId(String(user.id)); }}>Transfer Admin</button>
+                                    <button type="button" className="danger-action" onClick={() => { setOpenMenuId(null); removeUser(user); }}>Remove</button>
+                                </div>}
                             </td>
                         </tr>)}</tbody>
                     </table>

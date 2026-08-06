@@ -51,7 +51,7 @@ export default function ReviewerDashboard() {
 
         <div>
 
-            <h1>📝 Reviewer Dashboard</h1>
+            <h1>Reviewer Dashboard</h1>
 
             {
 

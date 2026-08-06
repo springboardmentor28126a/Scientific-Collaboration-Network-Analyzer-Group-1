@@ -44,12 +44,14 @@ function TopNavbar() {
 
     useEffect(() => {
         let active = true;
-        API.get("/dashboard/notifications")
+        const refreshUnreadCount = () => API.get("/dashboard/notifications")
             .then(({ data }) => {
                 if (active) setUnreadCount(data.filter((item) => !item.is_read).length);
             })
             .catch(() => {});
-        return () => { active = false; };
+        refreshUnreadCount();
+        const interval = window.setInterval(refreshUnreadCount, 30000);
+        return () => { active = false; window.clearInterval(interval); };
     }, []);
     const logout = () => {
 
@@ -58,6 +60,25 @@ function TopNavbar() {
 
         navigate("/");
 
+    };
+
+    const openNotification = async (notification) => {
+        if (!notification.is_read) {
+            await API.put(`/dashboard/notifications/${notification.id}/read`);
+            setUnreadCount((count) => Math.max(0, count - 1));
+        }
+        const routes = {
+            publication: `/publication/${notification.resource_id}`,
+            conference: `/conference/${notification.resource_id}`,
+            verification: "/verification",
+            group_invitation: "/invitations",
+            research_group: `/groups/${notification.resource_id}`,
+            meeting: "/groups",
+            friend_request: "/collaborations",
+            user: `/researcher/${notification.resource_id}`,
+        };
+        navigate(routes[notification.resource_type] || "/notifications");
+        setShowNotifications(false);
     };
 
     return (
@@ -115,13 +136,7 @@ function TopNavbar() {
                         <strong>Notifications</strong>
                         <button type="button" onClick={() => navigate("/notifications")} style={{ padding: "4px 8px" }}>View all</button>
                     </div>
-                    {notifications.slice(0, 5).map((notification) => <button key={notification.id} type="button" onClick={async () => {
-                        if (!notification.is_read) {
-                            await API.put(`/dashboard/notifications/${notification.id}/read`);
-                            setUnreadCount((count) => Math.max(0, count - 1));
-                        }
-                        navigate("/notifications");
-                    }} style={{ display: "block", width: "100%", textAlign: "left", borderRadius: 0, borderBottom: "1px solid var(--border)", background: notification.is_read ? "transparent" : "var(--button-bg)" }}><strong>{notification.title}</strong><br /><small>{notification.message}</small></button>)}
+                    {notifications.slice(0, 5).map((notification) => <button key={notification.id} type="button" onClick={() => openNotification(notification)} style={{ display: "block", width: "100%", textAlign: "left", borderRadius: 0, borderBottom: "1px solid var(--border)", background: notification.is_read ? "transparent" : "var(--button-bg)" }}><strong>{notification.title}</strong><br /><small>{notification.message}</small></button>)}
                     {notifications.length === 0 && <p style={{ padding: "14px" }}>No notifications.</p>}
                 </div>}
                 </div>
@@ -198,7 +213,7 @@ function TopNavbar() {
                                 onClick={() => navigate("/profile")}
                                 style={itemStyle}
                             >
-                                👤 My Profile
+                                My Profile
                             </div>
 
                             <div
@@ -212,7 +227,7 @@ function TopNavbar() {
                                 onClick={logout}
                                 style={itemStyle}
                             >
-                                🚪 Logout
+                                Logout
                             </div>
                         </div>
                     )}

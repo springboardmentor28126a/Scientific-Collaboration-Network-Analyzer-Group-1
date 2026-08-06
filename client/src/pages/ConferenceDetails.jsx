@@ -63,7 +63,7 @@ function ConferenceDetails() {
       <div style={panelCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", flexWrap: "wrap" }}>
           <div>
-            <h1>🏛 {meetingInfo.name}</h1>
+            <h1>{meetingInfo.name}</h1>
             <p style={{ color: "#475569", marginTop: "10px" }}>{meetingInfo.description}</p>
           </div>
           <div style={{ textAlign: "right", minWidth: "220px" }}>

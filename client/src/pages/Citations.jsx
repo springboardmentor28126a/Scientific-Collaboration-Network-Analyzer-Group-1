@@ -14,6 +14,7 @@ function Citations() {
   const [publications, setPublications] = useState([]);
   const [style, setStyle] = useState("APA");
   const [formattedCitation, setFormattedCitation] = useState("");
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const loadPublications = async () => {
     try {
       const { data } = await api.get("/publications/");
@@ -69,6 +70,7 @@ function Citations() {
     try {
       const data = await formatCitation(publicationId, style);
       setFormattedCitation(data.citation);
+      setShowGenerateModal(false);
     } catch {
       setFormattedCitation("");
     }
@@ -135,11 +137,12 @@ function Citations() {
             <select className="form-control" value={style} onChange={(e) => setStyle(e.target.value)}>
               {['APA', 'IEEE', 'MLA', 'Chicago', 'BibTeX'].map((option) => <option key={option}>{option}</option>)}
             </select>
-            <button className="btn btn-secondary mt-3" onClick={loadFormattedCitation}>Generate</button>
+            <button className="btn btn-secondary mt-3" onClick={() => setShowGenerateModal(true)} disabled={!publicationId}>Generate</button>
             {formattedCitation && <>
               <pre className="mt-3" style={{ whiteSpace: "pre-wrap" }}>{formattedCitation}</pre>
               <button className="btn btn-primary mt-3" onClick={copyCitation}>Copy Citation</button>
               <button className="btn btn-secondary mt-3" onClick={downloadCitation} style={{ marginLeft: "8px" }}>Download Citation</button>
+              <button className="btn btn-secondary mt-3" onClick={() => setFormattedCitation("")} style={{ marginLeft: "8px" }}>Clear</button>
             </>}
           </div>
 
@@ -152,6 +155,19 @@ function Citations() {
 
         </div>
       </div>
+
+      {showGenerateModal && (
+        <div className="dialog-backdrop" role="presentation" onClick={() => setShowGenerateModal(false)}>
+          <div className="dialog-card" role="dialog" aria-modal="true" aria-labelledby="generate-citation-title" onClick={(event) => event.stopPropagation()}>
+            <h3 id="generate-citation-title">Generate Citation</h3>
+            <p>Do you want to generate a citation for this publication?</p>
+            <div className="dialog-actions">
+              <button type="button" onClick={() => setShowGenerateModal(false)}>Cancel</button>
+              <button type="button" className="primary-action" onClick={loadFormattedCitation}>Generate</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

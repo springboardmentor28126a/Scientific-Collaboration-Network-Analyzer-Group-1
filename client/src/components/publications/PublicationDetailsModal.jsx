@@ -46,42 +46,42 @@ function PublicationDetailsModal({ publication, onClose }) {
                         marginBottom: "20px",
                     }}
                 >
-                    📄 {publication.title}
+                    {publication.title}
                 </h1>
 
                 <hr />
 
                 <p>
-                    <b>👨‍🔬 Authors:</b> {publication.authors}
+                    <b>Authors:</b> {publication.authors}
                 </p>
 
                 <p>
-                    <b>📑 Publication Type:</b>{" "}
+                    <b>Publication Type:</b>{" "}
                     {publication.publication_type}
                 </p>
 
                 <p>
-                    <b>📚 Journal:</b>{" "}
+                    <b>Journal:</b>{" "}
                     {publication.journal || "N/A"}
                 </p>
 
                 <p>
-                    <b>📅 Publication Year:</b>{" "}
+                    <b>Publication Year:</b>{" "}
                     {publication.publication_year}
                 </p>
 
                 <p>
-                    <b>🔗 DOI:</b>{" "}
+                    <b>DOI:</b>{" "}
                     <span style={{ color: "var(--text)" }}>{publication.doi || "N/A"}</span>
                 </p>
 
                 <p>
-                    <b>🏷 Keywords:</b>{" "}
+                    <b>Keywords:</b>{" "}
                     <span style={{ color: "var(--text)" }}>{publication.keywords || "N/A"}</span>
                 </p>
 
                 <p>
-                    <b>📖 Abstract:</b>
+                    <b>Abstract:</b>
                 </p>
 
                 <div
@@ -115,7 +115,7 @@ function PublicationDetailsModal({ publication, onClose }) {
                                 rel="noreferrer"
                             >
 
-                                📄 View PDF
+                                View PDF
 
                             </a>
 

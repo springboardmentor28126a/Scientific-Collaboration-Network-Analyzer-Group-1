@@ -23,13 +23,13 @@ function PublicationCard({
 
             <h2 style={{ color: "#2563eb" }}>
 
-                📄 {publication.title}
+                {publication.title}
 
             </h2>
 
             <p>
 
-                <b>👨‍🔬 Authors:</b>
+                <b>Authors:</b>
 
                 {publication.authors}
 
@@ -37,7 +37,7 @@ function PublicationCard({
 
             <p>
 
-                <b>📑 Type:</b>
+                <b>Type:</b>
 
                 {publication.publication_type}
 
@@ -45,7 +45,7 @@ function PublicationCard({
 
             <p>
 
-                <b>📚 Journal:</b>
+                <b>Journal:</b>
 
                 {publication.journal}
 
@@ -53,7 +53,7 @@ function PublicationCard({
 
             <p>
 
-                <b>📅 Year:</b>
+                <b>Year:</b>
 
                 {publication.publication_year}
 
@@ -100,7 +100,7 @@ function PublicationCard({
 
                 <button onClick={() => onView(publication.id)}>
 
-                    👁 View
+                    View
 
                 </button>
 
@@ -112,7 +112,7 @@ function PublicationCard({
 
                 <button onClick={() => onDelete(publication.id)}>
 
-                    🗑 Delete
+                    Delete
 
                 </button>
 

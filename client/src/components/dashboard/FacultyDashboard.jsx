@@ -25,7 +25,7 @@ export default function FacultyDashboard() {
 
         <div>
 
-            <h1>🏫 Faculty Dashboard</h1>
+                  <h1>Faculty Dashboard</h1>
 
             <div className="dashboard-grid">
 

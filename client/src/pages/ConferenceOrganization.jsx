@@ -280,7 +280,7 @@ function ConferenceOrganization() {
 
             <h1>
 
-                🏛 Conference Organization
+                Conference Organization
 
             </h1>
 
@@ -304,7 +304,7 @@ function ConferenceOrganization() {
 
                 <div style={statsCard}>
 
-                    <h3>🏛 Total</h3>
+                    <h3>Total Conferences</h3>
 
                     <h1>{totalConferences}</h1>
 
@@ -312,7 +312,7 @@ function ConferenceOrganization() {
 
                 <div style={statsCard}>
 
-                    <h3>🟢 Upcoming</h3>
+                    <h3>Upcoming</h3>
 
                     <h1>{upcomingConferences}</h1>
 
@@ -320,7 +320,7 @@ function ConferenceOrganization() {
 
                 <div style={statsCard}>
 
-                    <h3>🔵 Ongoing</h3>
+                    <h3>Ongoing</h3>
 
                     <h1>{ongoingConferences}</h1>
 
@@ -691,7 +691,7 @@ function ConferenceOrganization() {
 
                                 >
 
-                                    👁 View
+                                    View
 
                                 </button>
 
@@ -727,7 +727,7 @@ function ConferenceOrganization() {
 
                                 >
 
-                                    🗑 Delete
+                                    Delete
 
                                 </button>}
 

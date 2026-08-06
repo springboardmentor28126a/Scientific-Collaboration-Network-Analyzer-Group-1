@@ -85,7 +85,7 @@ function GroupChat() {
 
             <h1>
 
-                💬 Research Chat
+                Research Chat
 
             </h1>
 

@@ -120,6 +120,21 @@ function Notifications() {
         }
     };
 
+    const openNotification = async (notification) => {
+        if (!notification.is_read) await markRead(notification.id);
+        const routes = {
+            publication: `/publication/${notification.resource_id}`,
+            conference: `/conference/${notification.resource_id}`,
+            verification: "/verification",
+            group_invitation: "/invitations",
+            research_group: `/groups/${notification.resource_id}`,
+            meeting: "/groups",
+            friend_request: "/collaborations",
+            user: `/researcher/${notification.resource_id}`,
+        };
+        navigate(routes[notification.resource_type] || "/notifications");
+    };
+
     const filteredNotifications = [...notifications]
         .filter((notification) => {
             const matchesText = `${notification.title} ${notification.message}`.toLowerCase().includes(search.toLowerCase());
@@ -150,7 +165,7 @@ function Notifications() {
             {paginatedNotifications.map((notification) => (
                 <div
                     key={notification.id}
-                    onClick={() => !notification.is_read && markRead(notification.id)}
+                    onClick={() => openNotification(notification)}
                     style={{
                         background: "rgba(255,255,255,0.06)",
                         padding: "20px",
@@ -238,25 +253,25 @@ function Notifications() {
 
                         <h3>
 
-    👤 {request.sender_name}
+    {request.sender_name}
 
 </h3>
 
                        <p>
 
-    🏫 {request.institution || "Institution not added"}
+    {request.institution || "Institution not added"}
 
 </p>
 
 <p>
 
-    💻 {request.department || "Department not added"}
+    {request.department || "Department not added"}
 
 </p>
 
 <p>
 
-    🔬 {request.research_interest || "Research interests not added"}
+    {request.research_interest || "Research interests not added"}
 
 </p>
 

@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { FaArrowRight } from "react-icons/fa";
 
 function Analytics() {
   const [overview, setOverview] = useState(null);
   const [network, setNetwork] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadAnalytics();
@@ -37,7 +40,7 @@ function Analytics() {
     <div style={{ padding: "30px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "16px", flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ color: "var(--text)" }}>📊 Analytics Dashboard</h1>
+          <h1 style={{ color: "var(--text)" }}>Analytics Dashboard</h1>
           <p style={{ color: "var(--muted)", maxWidth: "720px" }}>
             Get a quick view of collaboration activity, publication growth, and institutional leadership in the network.
           </p>
@@ -73,9 +76,9 @@ function Analytics() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "20px", marginTop: "30px" }}>
-        <PanelCard title="Top Institutions" items={overview.top_institutions} labelKey="institution" valueKey="publications" />
-        <PanelCard title="Top Researchers" items={overview.top_researchers} labelKey="researcher" valueKey="publications" />
-        <PanelCard title="Top Conferences" items={overview.conference_participation} labelKey="conference" valueKey="publications" />
+        <PanelCard title="Top 5 Institutions" items={overview.top_institutions} labelKey="institution" valueKey="publications" onViewMore={() => navigate("/institution")} />
+        <PanelCard title="Top 5 Researchers" items={overview.top_researchers} labelKey="researcher" valueKey="publications" onViewMore={() => navigate("/researchers")} />
+        <PanelCard title="Top 5 Conferences" items={overview.conference_participation} labelKey="conference" valueKey="publications" onViewMore={() => navigate("/conference")} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "20px", marginTop: "30px" }}>
@@ -111,10 +114,10 @@ function StatCard({ label, value }) {
   );
 }
 
-function PanelCard({ title, items, labelKey, valueKey }) {
+function PanelCard({ title, items, labelKey, valueKey, onViewMore }) {
   return (
     <div style={panelCard}>
-      <h2 style={{ color: "var(--text)" }}>{title}</h2>
+      <div className="panel-heading"><h2 style={{ color: "var(--text)" }}>{title}</h2>{onViewMore && <button type="button" className="inline-action" onClick={onViewMore}>View more <FaArrowRight aria-hidden="true" /></button>}</div>
       {items.length === 0 ? (
         <p style={{ color: "var(--muted)" }}>No records found.</p>
       ) : (

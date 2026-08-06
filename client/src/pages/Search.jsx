@@ -3,6 +3,7 @@ import API from "../services/api";
 import ResearcherCard from "../components/ResearcherCard";
 import { useNavigate } from "react-router-dom";
 import SearchSuggestions from "../components/SearchSuggestions";
+import { FaUser, FaFileAlt, FaUsers, FaUniversity, FaLandmark } from "react-icons/fa";
 const SECTION_OPTIONS = [
     "All",
     "Researchers",
@@ -218,7 +219,7 @@ const filteredConferences = useMemo(() => (
         data.push({
             id: r.id,
             type: "researcher",
-            icon: "👨",
+            icon: <FaUser />,
             title: r.name,
             subtitle: "Researcher"
         });
@@ -228,7 +229,7 @@ const filteredConferences = useMemo(() => (
         data.push({
             id: p.id,
             type: "publication",
-            icon: "📄",
+            icon: <FaFileAlt />,
             title: p.title,
             subtitle: "Publication"
         });
@@ -238,7 +239,7 @@ const filteredConferences = useMemo(() => (
         data.push({
             id: g.id,
             type: "group",
-            icon: "👥",
+            icon: <FaUsers />,
             title: g.name,
             subtitle: "Research Group"
         });
@@ -248,7 +249,7 @@ const filteredConferences = useMemo(() => (
         data.push({
             id: i.id,
             type: "institution",
-            icon: "🏫",
+            icon: <FaUniversity />,
             title: i.name,
             subtitle: "Institution"
         });
@@ -258,7 +259,7 @@ const filteredConferences = useMemo(() => (
         data.push({
             id: c.id,
             type: "conference",
-            icon: "🏛",
+            icon: <FaLandmark />,
             title: c.name,
             subtitle: "Conference"
         });
@@ -281,7 +282,7 @@ const filteredConferences = useMemo(() => (
 }, [search, filteredConferences, filteredGroups, filteredInstitutions, filteredPublications, filteredResearchers]);
   return (
     <div style={{ padding: "30px" }}>
-      <h1>🔍 Research Search</h1>
+      <h1>Research Search</h1>
 
       <div
         style={{
