@@ -1,7 +1,10 @@
+
 from datetime import datetime, timedelta
 import os
-
 from jose import JWTError, jwt
+
+
+
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(
@@ -9,52 +12,38 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "change-this-secret-key"
-)
+SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def hash_password(password: str):
     return pwd_context.hash(password)
 
-
-def verify_password(
-    plain_password,
-    hashed_password
-):
+def verify_password(plain_password, hashed_password):
     return pwd_context.verify(
         plain_password,
         hashed_password
     )
 
-
 def create_access_token(data: dict):
-
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode.update({
-        "exp": expire
-    })
+    to_encode.update({"exp": expire})
 
-    return jwt.encode(
+    encoded_jwt = jwt.encode(
         to_encode,
         SECRET_KEY,
         algorithm=ALGORITHM
     )
 
+    return encoded_jwt
 
 def verify_access_token(token: str):
-
     try:
-
         payload = jwt.decode(
             token,
             SECRET_KEY,
@@ -63,11 +52,13 @@ def verify_access_token(token: str):
 
         email = payload.get("sub")
         role = payload.get("role")
+        user_id = payload.get("id")
 
         if email is None:
             return None
 
         return {
+            "id": user_id,
             "email": email,
             "role": role
         }

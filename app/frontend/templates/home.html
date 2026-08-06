@@ -6,11 +6,12 @@
       <div>
         <p class="eyebrow">Scientific Collaboration Network Analyzer</p>
         <h1>Research collaboration management dashboard</h1>
-        <p class="subtle">Track the high-level state of users, researchers, publications, projects, and partnerships.</p>
+        <p class="subtle">Track the high-level state of users, researchers, publications, projects, conferences, citations, and partnerships.</p>
       </div>
       <a class="btn btn-dark" href="/docs" target="_blank">API Docs</a>
     </section>
 
+    <!-- Dashboard Statistics Metrics -->
     <section class="metric-grid" id="metrics">
       <div class="metric"><span>Users</span><strong id="metricUsers">0</strong></div>
       <div class="metric"><span>Researchers</span><strong id="metricResearchers">0</strong></div>
@@ -18,43 +19,79 @@
       <div class="metric"><span>Publications</span><strong id="metricPublications">0</strong></div>
       <div class="metric"><span>Projects</span><strong id="metricProjects">0</strong></div>
       <div class="metric"><span>Collaborations</span><strong id="metricCollaborations">0</strong></div>
+      <div class="metric"><span>Conferences</span><strong id="metricConferences">0</strong></div>
+      <div class="metric"><span>Citations</span><strong id="metricCitations">0</strong></div>
     </section>
 
+    <!-- Quick Access Module Cards -->
     <section class="panel-grid">
       <div class="panel">
         <div class="panel-heading">
           <div>
-            <h2>Researcher Dashboard</h2>
-            <p>Open profile and academic management tools.</p>
+            <h2><i class="bi bi-people me-2"></i>Researchers</h2>
+            <p>Academic profiles, departments, skills, interests, and completion metrics.</p>
           </div>
-          <a class="panel-link" href="{{ url_for('researchers_page') }}">Open</a>
+          <a class="btn btn-outline-dark" href="{{ url_for('researchers_page') }}">Open</a>
         </div>
       </div>
+
       <div class="panel">
         <div class="panel-heading">
           <div>
-            <h2>Publication Repository</h2>
-            <p>Manage journal papers, conference papers, books, patents, and reports.</p>
+            <h2><i class="bi bi-building me-2"></i>Institutions</h2>
+            <p>University & lab profiles, departments, contact info, and activity stats.</p>
           </div>
-          <a class="panel-link" href="{{ url_for('publications_page') }}">Open</a>
+          <a class="btn btn-outline-dark" href="{{ url_for('institutions_page') }}">Open</a>
         </div>
       </div>
+
       <div class="panel">
         <div class="panel-heading">
           <div>
-            <h2>Collaboration Network</h2>
-            <p>Manage co-authors, projects, conferences, and collaboration records.</p>
+            <h2><i class="bi bi-journal-text me-2"></i>Publications</h2>
+            <p>Journal papers, conference papers, books, patents, abstracts, & PDF downloads.</p>
           </div>
-          <a class="panel-link" href="{{ url_for('collaborations_page') }}">Open</a>
+          <a class="btn btn-outline-dark" href="{{ url_for('publications_page') }}">Open</a>
         </div>
       </div>
+
       <div class="panel">
         <div class="panel-heading">
           <div>
-            <h2>Reports</h2>
-            <p>Review publication analytics, research summaries, and audit records.</p>
+            <h2><i class="bi bi-bookmark-check me-2"></i>Citations</h2>
+            <p>Citation records, reference links, average citations, and trend analytics.</p>
           </div>
-          <a class="panel-link" href="{{ url_for('reports_page') }}">Open</a>
+          <a class="btn btn-outline-dark" href="{{ url_for('citations_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-calendar-event me-2"></i>Conferences</h2>
+            <p>Upcoming & past academic conferences, registrations, and presentation records.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('conferences_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-diagram-3 me-2"></i>Collaborations</h2>
+            <p>Co-author records, team assignments, institutional partnerships, and network map.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('collaborations_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel wide">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-bar-chart me-2"></i>Reports & Analytics</h2>
+            <p>Publication analytics, research summaries, Excel spreadsheet export, and PDF generation.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('reports_page') }}">Open Reports</a>
         </div>
       </div>
     </section>

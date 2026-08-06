@@ -1,35 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
 from app.backend.database.database import get_db
 from app.backend.models.citation import Citation
 from app.backend.models.publication import Publication
-from app.backend.models.user import User
-from app.backend.utils.rbac import get_current_user
+from app.backend.schemas.citation import CitationCreate, CitationResponse
+from app.backend.utils.permissions import require_role, get_current_user
+from app.backend.routers.audit import log_audit_event
 
-from app.backend.schemas.citation import (
-    CitationCreate,
-    CitationResponse,
-)
+router = APIRouter(prefix="/citations", tags=["Citations"])
 
-router = APIRouter(
-    prefix="/citations",
-    tags=["Citations"]
-)
-
-
-# ------------------------------------
-# Create Citation
-# ------------------------------------
 
 @router.post("/", response_model=CitationResponse)
 def create_citation(
     citation: CitationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(
+        require_role(
+            "Admin",
+            "System Admin",
+            "Institution Admin"
+        )
+    )
 ):
-
     publication = (
         db.query(Publication)
         .filter(Publication.id == citation.publication_id)
@@ -43,20 +36,16 @@ def create_citation(
         )
 
     if citation.cited_publication_id is not None:
-
         cited_publication = (
             db.query(Publication)
-            .filter(
-                Publication.id ==
-                citation.cited_publication_id
-            )
+            .filter(Publication.id == citation.cited_publication_id)
             .first()
         )
 
         if not cited_publication:
             raise HTTPException(
                 status_code=404,
-                detail="Cited publication not found"
+                detail="Citation publication not found"
             )
 
     if not citation.citation_text.strip():
@@ -74,139 +63,109 @@ def create_citation(
             detail="Reference order cannot be negative"
         )
 
-    new_citation = Citation(
-        **citation.model_dump()
-    )
+    new_citation = Citation(**citation.model_dump())
 
     db.add(new_citation)
+
+    # Increment publication citation count
+    publication.citation_count = (publication.citation_count or 0) + 1
+
     db.commit()
     db.refresh(new_citation)
+
+    log_audit_event(
+        db,
+        "Create Citation",
+        "Citation",
+        f"Added citation for publication ID {citation.publication_id}",
+        current_user.get("id")
+    )
 
     return new_citation
 
 
-# ------------------------------------
-# List Citations
-# ------------------------------------
-
 @router.get("/", response_model=list[CitationResponse])
 def list_citations(
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(
+        get_current_user
+    )
 ):
+    skip = (page - 1) * limit
+    return db.query(Citation).offset(skip).limit(limit).all()
 
-    return (
-        db.query(Citation)
-        .offset(skip)
-        .limit(limit)
+
+@router.get("/analytics/summary")
+def get_citation_analytics(
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+    total_citations_records = db.query(Citation).count()
+    total_pub_citations = db.query(func.sum(Publication.citation_count)).scalar() or 0
+    total_pubs = db.query(Publication).count()
+
+    avg_citations = (
+        round(total_pub_citations / total_pubs, 2)
+        if total_pubs > 0
+        else 0
+    )
+
+    most_cited = (
+        db.query(Publication)
+        .order_by(Publication.citation_count.desc())
+        .first()
+    )
+
+    citations_by_year = dict(
+        db.query(Publication.publication_year, func.sum(Publication.citation_count))
+        .filter(Publication.publication_year.isnot(None))
+        .group_by(Publication.publication_year)
+        .order_by(Publication.publication_year)
         .all()
     )
 
+    return {
+        "total_citations_records": total_citations_records,
+        "total_publication_citations": total_pub_citations,
+        "average_citations_per_publication": avg_citations,
+        "most_cited_publication": {
+            "id": most_cited.id,
+            "title": most_cited.title,
+            "citation_count": most_cited.citation_count,
+            "authors": most_cited.authors
+        } if most_cited else None,
+        "citations_by_year": citations_by_year
+    }
 
-# ------------------------------------
-# Search Citations
-# ------------------------------------
 
 @router.get("/search", response_model=list[CitationResponse])
 def search_citations(
-    citation_text: str = "",
+    citation_text: str = Query(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(
+        get_current_user
+    )
 ):
-
     return (
         db.query(Citation)
-        .filter(
-            Citation.citation_text.ilike(
-                f"%{citation_text}%"
-            )
-        )
+        .filter(Citation.citation_text.ilike(f"%{citation_text}%"))
         .all()
     )
 
-
-# ------------------------------------
-# Filter Citations
-# ------------------------------------
-
-@router.get("/filter", response_model=list[CitationResponse])
-def filter_citations(
-    publication_id: int | None = None,
-    doi: str = "",
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-
-    query = db.query(Citation)
-
-    if publication_id is not None:
-        query = query.filter(
-            Citation.publication_id ==
-            publication_id
-        )
-
-    if doi:
-        query = query.filter(
-            Citation.doi.ilike(f"%{doi}%")
-        )
-
-    return query.all()
-
-
-# ------------------------------------
-# Sort Citations
-# ------------------------------------
-
-@router.get("/sort", response_model=list[CitationResponse])
-def sort_citations(
-    sort_by: str = "reference_order",
-    order: str = "asc",
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-
-    sort_columns = {
-        "reference_order": Citation.reference_order,
-        "doi": Citation.doi,
-        "publication_id": Citation.publication_id,
-    }
-
-    column = sort_columns.get(
-        sort_by,
-        Citation.reference_order
-    )
-
-    if order.lower() == "desc":
-        query = (
-            db.query(Citation)
-            .order_by(desc(column))
-        )
-    else:
-        query = (
-            db.query(Citation)
-            .order_by(asc(column))
-        )
-
-    return query.all()
-
-# ------------------------------------
-# Get Citation by ID
-# ------------------------------------
 
 @router.get("/{citation_id}", response_model=CitationResponse)
 def get_citation(
     citation_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-
-    citation = (
-        db.query(Citation)
-        .filter(Citation.id == citation_id)
-        .first()
+    current_user=Depends(
+        get_current_user
     )
+):
+    citation = db.query(Citation).filter(Citation.id == citation_id).first()
 
     if not citation:
         raise HTTPException(
@@ -217,28 +176,19 @@ def get_citation(
     return citation
 
 
-# ------------------------------------
-# Update Citation
-# ------------------------------------
-
 @router.put("/{citation_id}", response_model=CitationResponse)
 def update_citation(
     citation_id: int,
     citation_data: CitationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-
-    # RBAC
-    if current_user.role not in [
-        "system_admin",
-        "institution_admin"
-    ]:
-        raise HTTPException(
-            status_code=403,
-            detail="Only System Admin and Institution Admin can update citations."
+    current_user=Depends(
+        require_role(
+            "System Admin",
+            "Admin",
+            "Institution Admin"
         )
-
+    )
+):
     citation = (
         db.query(Citation)
         .filter(Citation.id == citation_id)
@@ -253,9 +203,7 @@ def update_citation(
 
     publication = (
         db.query(Publication)
-        .filter(
-            Publication.id == citation_data.publication_id
-        )
+        .filter(Publication.id == citation_data.publication_id)
         .first()
     )
 
@@ -266,12 +214,10 @@ def update_citation(
         )
 
     if citation_data.cited_publication_id is not None:
-
         cited_publication = (
             db.query(Publication)
             .filter(
-                Publication.id ==
-                citation_data.cited_publication_id
+                Publication.id == citation_data.cited_publication_id
             )
             .first()
         )
@@ -303,27 +249,28 @@ def update_citation(
     db.commit()
     db.refresh(citation)
 
+    log_audit_event(
+        db,
+        "Update Citation",
+        "Citation",
+        f"Updated citation ID {citation_id}",
+        current_user.get("id")
+    )
+
     return citation
 
-
-# ------------------------------------
-# Delete Citation
-# ------------------------------------
 
 @router.delete("/{citation_id}")
 def delete_citation(
     citation_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-
-    # RBAC
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Only System Admin can delete citations."
+    current_user=Depends(
+        require_role(
+            "System Admin",
+            "Admin"
         )
-
+    )
+):
     citation = (
         db.query(Citation)
         .filter(Citation.id == citation_id)
@@ -339,6 +286,60 @@ def delete_citation(
     db.delete(citation)
     db.commit()
 
+    log_audit_event(
+        db,
+        "Delete Citation",
+        "Citation",
+        f"Deleted citation ID {citation_id}",
+        current_user.get("id")
+    )
+
     return {
         "message": "Citation deleted successfully"
     }
+
+# ---------------------------------------------------------------------------
+# Additive search/sort/pagination endpoint (does not replace search_citations
+# or list_citations)
+# ---------------------------------------------------------------------------
+@router.get("/search/filter")
+def filter_citations(
+    query: str = Query("", description="Case-insensitive match on citation text or DOI"),
+    sort_by: str = Query("id", pattern="^(id|reference_order|publication_id)$"),
+    order: str = Query("asc", pattern="^(asc|desc)$"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    q = db.query(Citation)
+
+    if query:
+        like = f"%{query.lower()}%"
+        q = q.filter(
+            func.lower(Citation.citation_text).like(like)
+            | func.lower(func.coalesce(Citation.doi, "")).like(like)
+        )
+
+    sort_column = getattr(Citation, sort_by)
+    q = q.order_by(sort_column.desc() if order == "desc" else sort_column.asc())
+
+    skip = (page - 1) * limit
+    citations = q.offset(skip).limit(limit).all()
+
+    # Enrich with the citing publication's title/year (read-only join; the
+    # existing CitationResponse-based endpoints are untouched).
+    results = []
+    for c in citations:
+        pub = db.query(Publication).filter(Publication.id == c.publication_id).first()
+        results.append({
+            "id": c.id,
+            "publication_id": c.publication_id,
+            "publication_title": pub.title if pub else None,
+            "publication_year": pub.publication_year if pub else None,
+            "cited_publication_id": c.cited_publication_id,
+            "citation_text": c.citation_text,
+            "doi": c.doi,
+            "reference_order": c.reference_order,
+        })
+    return results

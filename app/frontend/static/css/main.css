@@ -25,6 +25,7 @@ body {
   background: var(--nav);
   color: #ffffff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  min-height: 64px;
 }
 
 .app-nav .navbar-brand,
@@ -35,16 +36,55 @@ body {
 
 .app-nav .nav-link {
   opacity: 0.84;
+  white-space: nowrap;
+  font-size: 14px;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
 }
 
 .app-nav .nav-link:hover {
   opacity: 1;
 }
 
+/* Keep the whole nav row on one line at desktop widths instead of wrapping */
+@media (min-width: 1200px) {
+  .app-nav .navbar-collapse {
+    flex-wrap: nowrap;
+  }
+
+  .app-nav .navbar-nav {
+    flex-wrap: nowrap;
+    flex-direction: row;
+  }
+
+  .app-nav .navbar-nav.me-auto {
+    margin-right: 0.75rem !important;
+  }
+
+  .app-nav .d-flex.align-items-center.gap-3 {
+    flex-wrap: nowrap;
+    gap: 0.6rem !important;
+  }
+}
+
+.app-nav .nav-user {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
 .workspace {
   padding: 28px;
   max-width: 1240px;
   margin: 0 auto;
+}
+
+.workspace > section + section {
+  margin-top: 24px;
 }
 
 .page-header {
@@ -120,6 +160,29 @@ body {
 .panel.wide,
 #reports {
   grid-column: 1 / -1;
+}
+
+/* Reports page: consistent chart sizing/spacing (previously undefined,
+   causing charts to render at inconsistent default sizes) */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  margin-top: 4px;
+}
+
+.chart-container.status-chart {
+  height: 220px;
+}
+
+.panel-grid .panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.panel-grid {
+  align-items: stretch;
 }
 
 .panel-heading {
@@ -248,6 +311,19 @@ pre {
 .auth-card button {
   width: 100%;
   margin-top: 18px;
+  background: var(--ink);
+  color: #ffffff;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.auth-card button:hover {
+  opacity: 0.9;
 }
 
 .auth-card a {
@@ -280,77 +356,166 @@ pre {
     grid-template-columns: 1fr;
   }
 }
-.search-box{
-    width:190px;
-    background:#ffffff;
-    border-radius:20px;
-    overflow:hidden;
-    border:1px solid #d9dee7;
+
+
+}
+/* ===========================
+   Audit Page
+=========================== */
+
+.audit-header th {
+    background-color: #115e59 !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-color: #115e59 !important;
 }
 
-.search-box .form-control{
-    border:none;
-    box-shadow:none;
-    font-size:13px;
-    padding:6px 10px;
+.audit-header th:first-child {
+    border-top-left-radius: 8px;
 }
 
-.search-box .form-control:focus{
-    box-shadow:none;
+.audit-header th:last-child {
+    border-top-right-radius: 8px;
 }
 
-.search-box .input-group-text{
-    border:none;
-    background:#ffffff;
-    padding:6px 10px;
+#auditId {
+    border-radius: 8px 0 0 8px;
+}
+
+.btn-primary {
+    background-color: #115e59;
+    border-color: #115e59;
+}
+
+.btn-primary:hover {
+    background-color:#115e59;
+    border-color: #115e59;
+}
+
+.table tbody tr:hover {
+    background-color: #f3fffb;
+}
+
+.card {
+    border-radius: 12px;
 }
 /* ==========================================
-   Search Module
+   Card consistency (Dashboard, Researchers, Institutions,
+   Publications, Conferences, Citations, Collaborations, Search)
+   Reuses the same tokens/shadow already defined for .metric/.panel
+   above -- no new colors introduced.
 ========================================== */
 
-.search-results{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:18px;
+.metric,
+.panel,
+.auth-card,
+.card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.search-card{
-    padding:20px;
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(24, 33, 47, 0.06);
 }
 
-.search-card table{
-    margin-top:10px;
+.metric:hover,
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(24, 33, 47, 0.1);
 }
 
-.search-card th{
-    width:170px;
-    font-size:14px;
-    font-weight:600;
-    color:var(--ink);
-    padding:8px 0;
+.card .card-title {
+  font-size: 17px;
 }
 
-.search-card td{
-    font-size:14px;
-    color:var(--muted);
-    padding:8px 0;
+.card .badge {
+  font-weight: 600;
 }
 
-.search-card h2{
-    margin:0;
-    font-size:22px;
+/* ==========================================
+   Standard module search/filter toolbar
+   (Researchers, Institutions, Publications, Conferences,
+   Collaborations, Citations)
+========================================== */
+
+.module-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 18px;
 }
 
-.search-card:hover{
-    border-color:#0f766e;
+.module-toolbar .module-search {
+  flex: 1 1 260px;
+  max-width: 320px;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
 }
 
-@media(max-width:900px){
-
-.search-results{
-
-grid-template-columns:1fr;
-
+.module-toolbar .module-search .form-control {
+  border: none;
+  box-shadow: none;
+  font-size: 13px;
+  padding: 6px 10px;
 }
 
+.module-toolbar .module-search .form-control:focus {
+  box-shadow: none;
+}
+
+.module-toolbar .module-search .input-group-text {
+  border: none;
+  background: #ffffff;
+  padding: 6px 10px;
+}
+
+.module-toolbar .module-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.module-toolbar .module-filters select {
+  min-height: 34px;
+  width: auto;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+@media (max-width: 640px) {
+  .module-toolbar .module-search {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  .module-toolbar .module-filters {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
+/* ==========================================
+   Empty states
+========================================== */
+
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state i {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 10px 0 14px;
 }

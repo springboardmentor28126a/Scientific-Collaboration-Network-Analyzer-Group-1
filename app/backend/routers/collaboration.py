@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.backend.utils.permissions import require_role, get_current_user
 from app.backend.database.database import get_db
 from app.backend.models.collaboration import Collaboration, PublicationAuthor
 from app.backend.models.publication import Publication
@@ -12,8 +13,13 @@ from app.backend.schemas.collaboration import (
     PublicationAuthorCreate,
     PublicationAuthorResponse,
 )
+from app.backend.routers.audit import log_audit_event
+from app.backend.routers.notification import create_notification
 
-router = APIRouter(prefix="/collaborations", tags=["Collaborations"])
+router = APIRouter(
+    prefix="/collaborations",
+    tags=["Collaborations"]
+)
 
 
 # ======================================================
@@ -24,6 +30,12 @@ router = APIRouter(prefix="/collaborations", tags=["Collaborations"])
 def create_collaboration(
     collaboration: CollaborationCreate,
     db: Session = Depends(get_db),
+    current_user=Depends(
+        require_role(
+            "Admin",
+            "System Admin"
+        )
+    ),
 ):
     new_collaboration = Collaboration(**collaboration.model_dump())
 
@@ -31,30 +43,35 @@ def create_collaboration(
     db.commit()
     db.refresh(new_collaboration)
 
+    log_audit_event(
+        db,
+        "Create Collaboration",
+        "Collaboration",
+        f"Created collaboration '{new_collaboration.title}' ({new_collaboration.collaboration_type})",
+        current_user.get("id")
+    )
+    create_notification(
+        db,
+        "New Collaboration Created",
+        f"Collaboration '{new_collaboration.title}' has been formed.",
+        None,
+        "collaboration"
+    )
+
     return new_collaboration
 
 
 @router.get("/", response_model=list[CollaborationResponse])
-def list_collaborations(db: Session = Depends(get_db)):
-    return db.query(Collaboration).all()
-
-
-@router.get("/{collaboration_id}", response_model=CollaborationResponse)
-def get_collaboration(collaboration_id: int, db: Session = Depends(get_db)):
-
-    collaboration = (
-        db.query(Collaboration)
-        .filter(Collaboration.id == collaboration_id)
-        .first()
+def list_collaborations(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
     )
-
-    if not collaboration:
-        raise HTTPException(
-            status_code=404,
-            detail="Collaboration not found"
-        )
-
-    return collaboration
+):
+    skip = (page - 1) * limit
+    return db.query(Collaboration).offset(skip).limit(limit).all()
 
 
 # ======================================================
@@ -68,12 +85,26 @@ def get_collaboration(collaboration_id: int, db: Session = Depends(get_db)):
 def add_publication_author(
     author: PublicationAuthorCreate,
     db: Session = Depends(get_db),
+    current_user=Depends(
+        require_role(
+            "Admin",
+            "System Admin"
+        )
+    ),
 ):
     new_author = PublicationAuthor(**author.model_dump())
 
     db.add(new_author)
     db.commit()
     db.refresh(new_author)
+
+    log_audit_event(
+        db,
+        "Add Co-Author",
+        "Collaboration",
+        f"Added researcher ID {author.researcher_id} as author to publication ID {author.publication_id}",
+        current_user.get("id")
+    )
 
     return new_author
 
@@ -83,9 +114,15 @@ def add_publication_author(
     response_model=list[PublicationAuthorResponse]
 )
 def list_publication_authors(
-    db: Session = Depends(get_db)
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
-    return db.query(PublicationAuthor).all()
+    skip = (page - 1) * limit
+    return db.query(PublicationAuthor).offset(skip).limit(limit).all()
 
 
 # ======================================================
@@ -94,10 +131,15 @@ def list_publication_authors(
 
 @router.get("/dashboard")
 def collaboration_dashboard(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
-
-    total_collaborations = db.query(Collaboration).count()
+    # Same "what actually reflects real activity" fix as elsewhere: the
+    # Collaboration table isn't what the Add Collaboration UI writes to,
+    # PublicationAuthor is.
+    total_collaborations = db.query(PublicationAuthor).count()
 
     connected_researchers = (
         db.query(
@@ -150,7 +192,10 @@ def collaboration_dashboard(
 
 @router.get("/recent")
 def recent_collaborations(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
     authors = (
@@ -228,7 +273,10 @@ def recent_collaborations(
 
 @router.get("/network")
 def get_collaboration_network(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
 
     authors = db.query(PublicationAuthor).all()
@@ -312,3 +360,54 @@ def get_collaboration_network(
         "edges": edge_data
 
     }
+
+
+@router.get("/{collaboration_id}", response_model=CollaborationResponse)
+def get_collaboration(
+    collaboration_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    collaboration = (
+        db.query(Collaboration)
+        .filter(Collaboration.id == collaboration_id)
+        .first()
+    )
+
+    if not collaboration:
+        raise HTTPException(
+            status_code=404,
+            detail="Collaboration not found"
+        )
+
+    return collaboration
+# ---------------------------------------------------------------------------
+# Additive search/sort/pagination endpoint (does not replace list_collaborations)
+# ---------------------------------------------------------------------------
+@router.get("/search/filter", response_model=list[CollaborationResponse])
+def filter_collaborations(
+    query: str = Query("", description="Case-insensitive match on title or institution name"),
+    sort_by: str = Query("title", pattern="^(title|status|collaboration_type)$"),
+    order: str = Query("asc", pattern="^(asc|desc)$"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    q = db.query(Collaboration)
+
+    if query:
+        like = f"%{query.lower()}%"
+        q = q.filter(
+            func.lower(Collaboration.title).like(like)
+            | func.lower(func.coalesce(Collaboration.institution_name, "")).like(like)
+        )
+
+    sort_column = getattr(Collaboration, sort_by)
+    q = q.order_by(sort_column.desc() if order == "desc" else sort_column.asc())
+
+    skip = (page - 1) * limit
+    return q.offset(skip).limit(limit).all()

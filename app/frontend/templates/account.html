@@ -33,7 +33,7 @@
                     <label for="email" class="form-label">Email</label>
                     <input type="email" class="form-control" id="email" name="email" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Update Profile</button>
+                <button type="submit" class="btn btn-dark">Update Profile</button>
             </form>
         </div>
         <hr>
@@ -61,13 +61,13 @@
                     <label class="form-label">Confirm New Password</label>
                     <input type="password" class="form-control" disabled>
                 </div>
-                <button type="submit" class="btn btn-primary" disabled>Change Password</button>
+                <button type="submit" class="btn btn-dark" disabled>Change Password</button>
             </form>
         </div>
         <hr>
         <!-- Logout Button -->
         <div class="mb-4">
-            <button type="button" class="btn btn-light" id="logoutBtn">Logout</button>
+            <button type="button" class="btn btn-outline-dark" id="accountLogoutBtn">Logout</button>
         </div>
         <hr>
         <!-- Danger Zone -->
@@ -106,7 +106,7 @@
                     <button type="button"
                             class="btn btn-outline-secondary"
                             data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteAccount">Delete Account</button>
+                    <button type="button" class="btn btn-outline-danger" id="confirmDeleteAccount">Delete Account</button>
                 </div>
             </div>
         </div>
@@ -203,7 +203,7 @@
   });
 
   // Logout Handler
-  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('accountLogoutBtn').addEventListener('click', logout);
 
   // Delete Account Handler
   document.getElementById('confirmDeleteAccount').addEventListener('click', async () => {

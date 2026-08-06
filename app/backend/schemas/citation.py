@@ -1,43 +1,16 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
-# ---------------------------------------------------------
-# Base Schema
-# ---------------------------------------------------------
-
-class CitationBase(BaseModel):
+class CitationCreate(BaseModel):
     publication_id: int
     cited_publication_id: int | None = None
     citation_text: str
+    doi: str | None = None
     reference_order: int | None = None
 
 
-# ---------------------------------------------------------
-# Create Schema
-# ---------------------------------------------------------
-
-class CitationCreate(CitationBase):
-    pass
-
-
-# ---------------------------------------------------------
-# Update Schema
-# ---------------------------------------------------------
-
-class CitationUpdate(BaseModel):
-    publication_id: int | None = None
-    cited_publication_id: int | None = None
-    citation_text: str | None = None
-    reference_order: int | None = None
-
-
-# ---------------------------------------------------------
-# Response Schema
-# ---------------------------------------------------------
-
-class CitationResponse(CitationBase):
+class CitationResponse(CitationCreate):
     id: int
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    class Config:
+        from_attributes = True

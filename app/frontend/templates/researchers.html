@@ -1,350 +1,137 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-<section class="workspace">
-
+  <section class="workspace">
     <section class="page-header">
+      <div>
+        <p class="eyebrow">Researcher Management</p>
+        <h1>Researchers &amp; Academic Profiles</h1>
+        <p class="subtle">Manage academic profiles, departments, skills, research interests, and institutional affiliations.</p>
+      </div>
+      <button type="button" class="btn btn-dark" data-requires="researchers:create" data-bs-toggle="modal" data-bs-target="#addResearcherModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Researcher
+      </button>
+    </section>
 
+    <!-- Researcher List & Pagination -->
+    <section class="panel wide">
+      <div class="panel-heading">
         <div>
-
-            <p class="eyebrow">
-                Researcher Management
-            </p>
-
-            <h1>
-                Researchers and Institutions
-            </h1>
-
-            <p class="subtle">
-                Manage academic profiles, departments, skills, research interests,
-                affiliations, and institution records.
-            </p>
-
+          <h2>Researcher Directory</h2>
+          <p>Academic profiles, departments, skills, interests, and affiliations.</p>
         </div>
+      </div>
 
+      <div class="module-toolbar">
+        <div class="input-group module-search">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="search" class="form-control" id="researcherSearch" placeholder="Search researchers..." autocomplete="off">
+        </div>
+        <div class="module-filters">
+          <select class="form-select" id="researcherSortBy">
+            <option value="full_name">Sort: Name</option>
+            <option value="institution">Sort: Institution</option>
+            <option value="department">Sort: Department</option>
+          </select>
+          <select class="form-select" id="researcherSortOrder">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="researcherList" class="row g-3 my-2">
+        <div class="text-center py-4 text-muted">Loading researcher directory...</div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="researcherPrevPage" disabled>Previous</button>
+        <span class="text-muted small" id="researcherPageNum">Page 1</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="researcherNextPage">Next</button>
+      </div>
     </section>
 
-    <section class="panel-grid">
-
-        <!-- ================= Researchers ================= -->
-
-        <div class="panel">
-
-            <div class="panel-heading">
-
-                <div>
-
-                    <h2>Researchers</h2>
-
-                    <p>
-                        Academic profiles, departments, skills,
-                        interests, and affiliations.
-                    </p>
-
-                </div>
-
-            </div>
-
-            <form
-                class="form-grid"
-                id="researcherForm">
-
-                <input
-                    name="user_id"
-                    type="number"
-                    placeholder="User ID"
-                    required>
-
-                <input
-                    name="full_name"
-                    placeholder="Full Name"
-                    required>
-
-                <input
-                    name="academic_profile"
-                    placeholder="Academic Profile"
-                    required>
-
-                <input
-                    name="department"
-                    placeholder="Department"
-                    required>
-
-                <input
-                    name="institution"
-                    placeholder="Institution"
-                    required>
-
-                <input
-                    name="skills"
-                    placeholder="Skills"
-                    required>
-
-                <input
-                    name="research_interest"
-                    placeholder="Research Interests"
-                    required>
-
-                <input
-                    name="affiliations"
-                    placeholder="Affiliations"
-                    required>
-
-                <button type="submit">
-
-                    Add Researcher
-
-                </button>
-
-            </form>
-
+    <!-- Researcher Detail Section -->
+    <section class="panel wide" id="researcherDetailSection" style="display:none;">
+      <div class="panel-heading">
+        <h2 id="researcherDetailTitle">Researcher Profile</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('researcherDetailSection').style.display='none';">Close</button>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Profile</h5>
+            <ul class="list-unstyled" id="researcherBasicInfo"></ul>
+          </div>
+          <div class="col-md-6">
+            <h5>Research Statistics</h5>
+            <ul class="list-unstyled" id="researcherStatsInfo"></ul>
+          </div>
         </div>
-
-        <!-- ================= Institutions ================= -->
-
-        <div class="panel">
-
-            <div class="panel-heading">
-
-                <div>
-
-                    <h2>Institutions</h2>
-
-                    <p>
-                        Universities, institutes, laboratories,
-                        publishers and funding organizations.
-                    </p>
-
-                </div>
-
-            </div>
-
-            <!-- Add Institution -->
-
-            <form
-                class="form-grid"
-                id="institutionForm">
-
-                <input
-                    name="name"
-                    placeholder="Institution Name"
-                    required>
-
-                <input
-                    name="institution_type"
-                    placeholder="Institution Type">
-
-                <input
-                    name="country"
-                    placeholder="Country">
-
-                <input
-                    name="city"
-                    placeholder="City">
-
-                <input
-                    name="website"
-                    placeholder="Website">
-
-                <input
-                    name="contact_email"
-                    type="email"
-                    placeholder="Contact Email">
-
-                <button type="submit">
-
-                    Add Institution
-
-                </button>
-
-            </form>
-
-            <hr class="my-4">
-
-<!-- ================= Search & Filter ================= -->
-
-<hr class="my-4">
-
-<h3>Search & Filter Institutions</h3>
-
-<div class="row g-3 mb-3">
-
-    <div class="col-md-3">
-        <input
-            id="institutionSearch"
-            type="text"
-            class="form-control"
-            placeholder="Institution Name">
-    </div>
-
-    <div class="col-md-2">
-        <input
-            id="countryFilter"
-            type="text"
-            class="form-control"
-            placeholder="Country">
-    </div>
-
-    <div class="col-md-2">
-        <input
-            id="cityFilter"
-            type="text"
-            class="form-control"
-            placeholder="City">
-    </div>
-
-    <div class="col-md-2">
-        <select
-            id="typeFilter"
-            class="form-select">
-
-            <option value="">All Types</option>
-            <option value="University">University</option>
-            <option value="College">College</option>
-            <option value="Research Institute">Research Institute</option>
-            <option value="Laboratory">Laboratory</option>
-            <option value="Publisher">Publisher</option>
-
-        </select>
-    </div>
-
-    <div class="col-md-3 d-flex gap-2">
-
-        <button
-            id="institutionSearchBtn"
-            type="button"
-            class="btn btn-success flex-fill">
-            Search
-        </button>
-
-        <button
-            id="institutionClearBtn"
-            type="button"
-            class="btn btn-secondary flex-fill">
-            Clear
-        </button>
-
-    </div>
-
-</div>
-
-<!-- ================= Institution Table ================= -->
-
-<div id="institutionTableContainer"
-     style="display:none; margin-top:20px;">
-
-    <div style="
-        width:100%;
-        overflow-x:auto;
-        overflow-y:hidden;
-        border:1px solid #ddd;
-        border-radius:8px;">
-
-        <table
-            class="table table-bordered table-hover mb-0"
-            style="min-width:900px; white-space:nowrap;">
-
-            <thead class="table-success">
-
-                <tr>
-
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Country</th>
-                    <th>City</th>
-                    <th>Website</th>
-                    <th>Email</th>
-                    <th>Action</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody id="institutionTableBody">
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-</div>
-
+        <hr/>
+        <h5>Recent Publications</h5>
+        <div id="researcherRecentPubs" class="mb-3"></div>
+      </div>
     </section>
 
-</section>
-<div class="modal fade" id="institutionModal" tabindex="-1">
-
-    <div class="modal-dialog modal-lg">
-
+    <!-- Modal for Adding / Editing Researcher -->
+    <div class="modal fade" id="addResearcherModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h5 class="modal-title">
-                    Institution Details
-                </h5>
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal">
-                </button>
-
-            </div>
-
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Researcher</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="addResearcherForm">
             <div class="modal-body">
-
-                <table class="table table-bordered">
-
-                    <tr>
-                        <th>Name</th>
-                        <td id="viewName"></td>
-                    </tr>
-
-                    <tr>
-                        <th>Type</th>
-                        <td id="viewType"></td>
-                    </tr>
-
-                    <tr>
-                        <th>Country</th>
-                        <td id="viewCountry"></td>
-                    </tr>
-
-                    <tr>
-                        <th>City</th>
-                        <td id="viewCity"></td>
-                    </tr>
-
-                    <tr>
-                        <th>Website</th>
-                        <td id="viewWebsite"></td>
-                    </tr>
-
-                    <tr>
-                        <th>Email</th>
-                        <td id="viewEmail"></td>
-                    </tr>
-
-                </table>
-
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">User ID *</label>
+                  <input class="form-control" type="number" name="user_id" placeholder="Linked user account ID" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Full Name *</label>
+                  <input class="form-control" name="full_name" placeholder="e.g. Dr. Jane Smith" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Academic Profile *</label>
+                <input class="form-control" name="academic_profile" placeholder="e.g. ORCID / Google Scholar URL" required>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Department *</label>
+                  <input class="form-control" name="department" placeholder="e.g. Computer Science" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Institution *</label>
+                  <input class="form-control" name="institution" placeholder="e.g. MIT" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Skills *</label>
+                <input class="form-control" name="skills" placeholder="Comma separated skills">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Research Interests *</label>
+                <input class="form-control" name="research_interest" placeholder="e.g. Machine Learning, NLP">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Affiliations *</label>
+                <input class="form-control" name="affiliations" placeholder="e.g. IEEE, ACM">
+              </div>
             </div>
-
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-dark">Add Researcher</button>
+            </div>
+          </form>
         </div>
-
+      </div>
     </div>
-
-</div>
-
+  </section>
 {% endblock content %}
 
 {% block scripts %}
-
-<script
-    type="module"
-    src="{{ url_for('static', path='js/app.js') }}">
-</script>
-
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
 {% endblock scripts %}

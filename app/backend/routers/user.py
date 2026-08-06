@@ -1,28 +1,10 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Query,
-    status
-)
-from fastapi.security import (
-    OAuth2PasswordBearer,
-    OAuth2PasswordRequestForm
-)
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
 
-from app.backend.database.database import get_db
-
+from app.backend.database.database import SessionLocal
 from app.backend.models.user import User
-
-from app.backend.schemas.user import (
-    UserCreate,
-    UserLogin,
-    UserResponse,
-    UserUpdate
-)
-
+from app.backend.schemas.user import UserCreate, UserLogin
 from app.backend.utils.security import (
     hash_password,
     verify_password,
@@ -30,58 +12,38 @@ from app.backend.utils.security import (
     verify_access_token
 )
 
-from app.backend.utils.rbac import get_current_user
+from app.backend.routers.audit import log_audit_event
+from app.backend.routers.notification import create_notification
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
 )
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/users/token"
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
-# ---------------------------------------------------------
-# Register User
-# ---------------------------------------------------------
 
-@router.post(
-    "/register",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Register User"
-)
-def register(
-    user: UserCreate,
-    db: Session = Depends(get_db)
-):
+# Database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-    existing_email = (
-        db.query(User)
-        .filter(
-            User.email == user.email
-        )
-        .first()
-    )
 
-    if existing_email:
+# ---------------------------
+# Register
+# ---------------------------
+@router.post("/register")
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == user.email).first()
+
+    if existing_user:
+        log_audit_event(db, "Registration Failed", "User", f"Email already registered: {user.email}")
         raise HTTPException(
             status_code=400,
-            detail="Email already registered."
-        )
-
-    existing_username = (
-        db.query(User)
-        .filter(
-            User.username == user.username
-        )
-        .first()
-    )
-
-    if existing_username:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already exists."
+            detail="Email already registered"
         )
 
     new_user = User(
@@ -95,408 +57,79 @@ def register(
     db.commit()
     db.refresh(new_user)
 
-    return new_user
+    log_audit_event(db, "User Registered", "User", f"New user registered: {new_user.email} with role {new_user.role}", new_user.id)
+    create_notification(db, "New User Registered", f"User {new_user.username} ({new_user.role}) has joined the platform.", None, "user")
+
+    return {
+        "message": "User registered successfully",
+        "id": new_user.id
+    }
 
 
-# ---------------------------------------------------------
+# ---------------------------
 # Login
-# ---------------------------------------------------------
+# ---------------------------
+@router.post("/login")
+def login(user: UserLogin, db: Session = Depends(get_db)):
 
-@router.post(
-    "/login",
-    summary="User Login"
-)
-def login(
-    user: UserLogin,
-    db: Session = Depends(get_db)
-):
-
-    db_user = (
-        db.query(User)
-        .filter(
-            User.email == user.email
-        )
-        .first()
-    )
+    db_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
     if not db_user:
+        log_audit_event(db, "Login Failed", "Security", f"User not found: {user.email}")
         raise HTTPException(
             status_code=404,
-            detail="User not found."
+            detail="User not found"
         )
 
     if not verify_password(
         user.password,
         db_user.password
     ):
+        log_audit_event(db, "Login Failed", "Security", f"Invalid password attempt for: {user.email}", db_user.id)
         raise HTTPException(
             status_code=401,
-            detail="Invalid password."
+            detail="Invalid password"
         )
 
     access_token = create_access_token(
         data={
             "sub": db_user.email,
+            "id": db_user.id,
             "role": db_user.role
         }
     )
+
+    log_audit_event(db, "User Logged In", "User", f"Successful login for: {db_user.email}", db_user.id)
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
+        "id": db_user.id,
+        "username": db_user.username,
+        "email": db_user.email,
         "role": db_user.role
     }
 
 
-# ---------------------------------------------------------
-# OAuth2 Token Login
-# ---------------------------------------------------------
-
-@router.post(
-    "/token",
-    summary="OAuth2 Login"
-)
-def login_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
-
-    db_user = (
-        db.query(User)
-        .filter(
-            User.email == form_data.username
-        )
-        .first()
-    )
-
-    if not db_user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found."
-        )
-
-    if not verify_password(
-        form_data.password,
-        db_user.password
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid password."
-        )
-
-    access_token = create_access_token(
-        data={
-            "sub": db_user.email,
-            "role": db_user.role
-        }
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
-
-
-# ---------------------------------------------------------
-# Current User
-# ---------------------------------------------------------
-
-@router.get(
-    "/me",
-    summary="Current User"
-)
-def current_user(
-    token: str = Depends(oauth2_scheme)
-):
+# ---------------------------
+# Current Logged-in User
+# ---------------------------
+@router.get("/me")
+def get_current_user(token: str = Depends(oauth2_scheme)):
 
     user = verify_access_token(token)
 
     if user is None:
         raise HTTPException(
             status_code=401,
-            detail="Invalid or expired token."
+            detail="Invalid or expired token"
         )
 
     return {
+        "message": "Token is valid",
+        "id": user["id"],
         "email": user["email"],
         "role": user["role"]
-    }
-
-
-# ---------------------------------------------------------
-# List Users
-# ---------------------------------------------------------
-
-@router.get(
-    "/",
-    response_model=list[UserResponse],
-    summary="List Users"
-)
-def list_users(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    return (
-        db.query(User)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-
-
-# ---------------------------------------------------------
-# Search Users
-# ---------------------------------------------------------
-
-@router.get(
-    "/search",
-    response_model=list[UserResponse],
-    summary="Search Users"
-)
-def search_users(
-    keyword: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    return (
-        db.query(User)
-        .filter(
-            or_(
-                User.username.ilike(f"%{keyword}%"),
-                User.email.ilike(f"%{keyword}%"),
-                User.role.ilike(f"%{keyword}%")
-            )
-        )
-        .all()
-    )
-
-
-# ---------------------------------------------------------
-# User Count
-# ---------------------------------------------------------
-
-@router.get(
-    "/count",
-    summary="User Count"
-)
-def user_count(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    return {
-        "total_users": db.query(
-            func.count(User.id)
-        ).scalar()
-    }
-
-# ---------------------------------------------------------
-# Get User By ID
-# ---------------------------------------------------------
-
-@router.get(
-    "/{user_id}",
-    response_model=UserResponse,
-    summary="Get User"
-)
-def get_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    user = (
-        db.query(User)
-        .filter(
-            User.id == user_id
-        )
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found."
-        )
-
-    return user
-
-
-# ---------------------------------------------------------
-# Update User
-# ---------------------------------------------------------
-
-@router.put(
-    "/{user_id}",
-    response_model=UserResponse,
-    summary="Update User"
-)
-def update_user(
-    user_id: int,
-    updated_data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    user = (
-        db.query(User)
-        .filter(
-            User.id == user_id
-        )
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found."
-        )
-
-    # -----------------------------------------------------
-    # Duplicate Email Validation
-    # -----------------------------------------------------
-
-    if (
-        updated_data.email and
-        updated_data.email != user.email
-    ):
-
-        duplicate_email = (
-            db.query(User)
-            .filter(
-                User.email == updated_data.email,
-                User.id != user_id
-            )
-            .first()
-        )
-
-        if duplicate_email:
-            raise HTTPException(
-                status_code=400,
-                detail="Email already exists."
-            )
-
-    # -----------------------------------------------------
-    # Duplicate Username Validation
-    # -----------------------------------------------------
-
-    if (
-        updated_data.username and
-        updated_data.username != user.username
-    ):
-
-        duplicate_username = (
-            db.query(User)
-            .filter(
-                User.username == updated_data.username,
-                User.id != user_id
-            )
-            .first()
-        )
-
-        if duplicate_username:
-            raise HTTPException(
-                status_code=400,
-                detail="Username already exists."
-            )
-
-    # -----------------------------------------------------
-    # Update Fields
-    # -----------------------------------------------------
-
-    data = updated_data.model_dump(
-        exclude_unset=True
-    )
-
-    # Hash password if supplied
-    if (
-        "password" in data and
-        data["password"]
-    ):
-        data["password"] = hash_password(
-            data["password"]
-        )
-
-    for key, value in data.items():
-        setattr(user, key, value)
-
-    db.commit()
-    db.refresh(user)
-
-    return user
-
-
-# ---------------------------------------------------------
-# Delete User
-# ---------------------------------------------------------
-
-@router.delete(
-    "/{user_id}",
-    summary="Delete User"
-)
-def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-
-    if current_user.role != "system_admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied."
-        )
-
-    user = (
-        db.query(User)
-        .filter(
-            User.id == user_id
-        )
-        .first()
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found."
-        )
-
-    db.delete(user)
-    db.commit()
-
-    return {
-        "message": "User deleted successfully."
     }

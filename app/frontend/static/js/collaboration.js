@@ -4,7 +4,8 @@
 
 const dashboardURL = "/collaborations/dashboard";
 const recentURL = "/collaborations/recent";
-const networkURL = "/collaborations/network";
+
+let collaborationChart = null;
 
 
 // ===========================================
@@ -15,18 +16,37 @@ async function loadDashboard() {
 
     try {
 
-        const response = await fetch(dashboardURL);
+        const token = localStorage.getItem("access_token");
+
+        const response = await fetch(dashboardURL, {
+
+            headers: {
+
+                Authorization: `Bearer ${token}`
+
+            }
+
+        });
+
+        if (!response.ok) {
+
+            throw new Error(await response.text());
+
+        }
 
         const data = await response.json();
 
         document.getElementById("totalCollaborations").textContent =
             data.summary.total_collaborations;
 
-        document.getElementById("connectedResearchers").textContent =
+        document.getElementById("activeResearchers").textContent =
             data.summary.connected_researchers;
 
-        document.getElementById("averageAuthors").textContent =
-            data.summary.average_authors;
+        document.getElementById("collaborativePublications").textContent =
+            Math.round(
+                data.summary.connected_researchers *
+                data.summary.average_authors
+            );
 
     }
 
@@ -40,86 +60,240 @@ async function loadDashboard() {
 
 
 
+let lastCollaborationData = [];
+
+function escapeHtmlCollab(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+function renderCollaborationCards(data) {
+    const container = document.getElementById("recentCollaborationList");
+    if (!container) return;
+
+    if (data.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>No collaboration records found.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = data.map(item => `
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">${escapeHtmlCollab(item.publication)}</h5>
+                    <p class="card-text small text-muted mb-2">${escapeHtmlCollab(item.researcher)}</p>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-light text-dark border">Author Order: ${item.author_order ?? "-"}</span>
+                        <span class="badge bg-secondary">${escapeHtmlCollab(item.contribution ?? "Contribution N/A")}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+function applyCollaborationSearchSort() {
+    const query = document.getElementById("collabSearch")?.value.trim().toLowerCase() ?? "";
+    const sortBy = document.getElementById("collabSortBy")?.value || "publication";
+
+    let filtered = lastCollaborationData;
+    if (query) {
+        filtered = filtered.filter(item =>
+            (item.publication ?? "").toLowerCase().includes(query) ||
+            (item.researcher ?? "").toLowerCase().includes(query)
+        );
+    }
+
+    filtered = [...filtered].sort((a, b) =>
+        String(a[sortBy] ?? "").localeCompare(String(b[sortBy] ?? ""))
+    );
+
+    renderCollaborationCards(filtered);
+}
+
 // ===========================================
-// Recent Collaborations Table
+// Recent Collaborations
 // ===========================================
 
 async function loadRecentCollaborations() {
 
     try {
 
-        const response = await fetch(recentURL);
+        const token = localStorage.getItem("access_token");
 
-        const data = await response.json();
+        const container = document.getElementById("recentCollaborationList");
+        if (container) {
+            container.innerHTML = Array.from({ length: 6 }, () => `
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 placeholder-glow">
+                        <div class="card-body">
+                            <h5 class="card-title placeholder col-7"></h5>
+                            <p class="card-text placeholder col-9"></p>
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+        }
 
-        const table = document.getElementById(
-            "recentCollaborationTable"
-        );
+        const response = await fetch(recentURL, {
 
-        table.innerHTML = "";
+            headers: {
 
-        if (data.length === 0) {
+                Authorization: `Bearer ${token}`
 
-            table.innerHTML = `
-                <tr>
+            }
 
-                    <td colspan="4"
-                        class="text-center text-muted py-4">
+        });
 
-                        No collaboration records found.
+        if (!response.ok) {
 
-                    </td>
-
-                </tr>
-            `;
-
-            return;
+            throw new Error(await response.text());
 
         }
 
-        data.forEach(item => {
+        const data = await response.json();
 
-            table.innerHTML += `
-
-                <tr>
-
-                    <td>
-
-                        ${item.publication}
-
-                    </td>
-
-                    <td>
-
-                        ${item.researcher}
-
-                    </td>
-
-                    <td>
-
-                        ${item.author_order ?? "-"}
-
-                    </td>
-
-                    <td>
-
-                        ${item.contribution ?? "-"}
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        });
+        lastCollaborationData = data;
+        applyCollaborationSearchSort();
+        loadChart(data);
+        loadResearcherChart(data);
 
     }
 
     catch (error) {
 
-        console.error(error);
+        console.error("Recent Collaborations Error:", error);
+        window.showToast?.("Error", "Unable to load recent collaborations.", "error");
 
     }
+
+}
+// ===========================================
+// Collaboration Statistics Chart
+// ===========================================
+
+function loadChart(data) {
+
+    const contributionCount = {};
+
+    data.forEach(item => {
+
+        const key = item.contribution || "Unknown";
+
+        contributionCount[key] =
+            (contributionCount[key] || 0) + 1;
+
+    });
+
+    const labels = Object.keys(contributionCount);
+    const values = Object.values(contributionCount);
+
+    const canvas = document.getElementById("collaborationChart");
+
+    if (!canvas) return;
+
+    if (collaborationChart) {
+
+        collaborationChart.destroy();
+
+    }
+
+    const ctx = canvas.getContext("2d");
+
+    collaborationChart = new Chart(ctx, {
+
+        type: "bar",
+
+        data: {
+
+            labels,
+
+            datasets: [
+
+                {
+
+                    label: "Collaborations",
+
+                    data: values,
+
+                    backgroundColor: "#4A90E2",
+
+                    borderColor: "#2E73D8",
+
+                    borderWidth: 1,
+
+                    borderRadius: 8,
+
+                    barPercentage: 0.35,
+
+                    categoryPercentage: 0.45,
+
+                    maxBarThickness: 30
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+
+                    display: false
+
+                }
+
+            },
+
+            scales: {
+
+                x: {
+
+                    grid: {
+
+                        display: false
+
+                    }
+
+                },
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+
+                        precision: 0,
+
+                        stepSize: 1
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
 
 }
 
@@ -136,6 +310,65 @@ async function refreshDashboard() {
     await loadRecentCollaborations();
 
 }
+let researcherChart = null;
+
+function loadResearcherChart(data) {
+
+    const researcherCount = {};
+
+    data.forEach(item => {
+
+        const key = item.researcher || "Unknown";
+
+        researcherCount[key] =
+            (researcherCount[key] || 0) + 1;
+
+    });
+
+    const sorted = Object.entries(researcherCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+    const labels = sorted.map(([name]) => name);
+    const values = sorted.map(([, count]) => count);
+
+    const canvas = document.getElementById("researcherChart");
+
+    if (!canvas) return;
+
+    if (researcherChart) {
+        researcherChart.destroy();
+    }
+
+    researcherChart = new Chart(canvas.getContext("2d"), {
+
+        type: "bar",
+
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: "Collaborations",
+                    data: values,
+                    backgroundColor: "#0f766e",
+                    borderRadius: 8,
+                    maxBarThickness: 22
+                }
+            ]
+        },
+
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+
+    });
+
+}
+
 // ===========================================
 // Add Collaboration
 // ===========================================
@@ -147,6 +380,11 @@ if (authorForm) {
     authorForm.addEventListener("submit", async function (e) {
 
         e.preventDefault();
+
+        const submitBtn = authorForm.querySelector("button[type='submit']");
+        const originalLabel = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Saving...`;
 
         const formData = new FormData(authorForm);
 
@@ -166,6 +404,8 @@ if (authorForm) {
 
         try {
 
+            const token = localStorage.getItem("access_token");
+
             const response = await fetch(
                 "/collaborations/publication-authors",
                 {
@@ -174,33 +414,33 @@ if (authorForm) {
 
                     headers: {
 
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+
+                        Authorization: `Bearer ${token}`
 
                     },
 
                     body: JSON.stringify(payload)
 
                 }
+
             );
 
             if (!response.ok) {
 
-                throw new Error("Failed to save collaboration");
+                throw new Error(await response.text());
 
             }
 
             authorForm.reset();
 
-            const modal =
-                bootstrap.Modal.getInstance(
-                    document.getElementById("addCollaborationModal")
-                );
-
-            modal.hide();
+            bootstrap.Modal.getInstance(
+                document.getElementById("addCollaborationModal")
+            ).hide();
 
             await refreshDashboard();
 
-            alert("Collaboration added successfully!");
+            window.showToast("Success", "Collaboration added successfully.", "success");
 
         }
 
@@ -208,273 +448,18 @@ if (authorForm) {
 
             console.error(error);
 
-            alert("Unable to save collaboration.");
+            window.showToast("Error", error.message, "error");
+
+        }
+
+        finally {
+
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel;
 
         }
 
     });
-
-}
-
-
-
-// ===========================================
-// Project Form
-// ===========================================
-
-const projectForm = document.getElementById("projectForm");
-
-if (projectForm) {
-
-    projectForm.addEventListener("submit", async function (e) {
-
-        e.preventDefault();
-
-        const formData = new FormData(projectForm);
-
-        const payload = {
-
-            title: formData.get("title"),
-
-            description: formData.get("description"),
-
-            funding_agency: formData.get("funding_agency"),
-
-            budget: formData.get("budget"),
-
-            institution_name: formData.get("institution_name"),
-
-            start_date: formData.get("start_date"),
-
-            end_date: formData.get("end_date"),
-
-            status: formData.get("status")
-
-        };
-
-        try {
-
-const token = localStorage.getItem("access_token");
-
-const response = await fetch("/projects/", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(payload)
-});
-
-            if (!response.ok) {
-
-                throw new Error("Project creation failed");
-
-            }
-
-            projectForm.reset();
-
-            alert("Project added successfully!");
-
-        }
-
-        catch (error) {
-
-            console.error(error);
-
-            alert("Unable to add project.");
-
-        }
-
-    });
-
-}
-
-
-
-// ===========================================
-// Conference Form
-// ===========================================
-
-const conferenceForm = document.getElementById("conferenceForm");
-
-if (conferenceForm) {
-
-    conferenceForm.addEventListener("submit", async function (e) {
-
-        e.preventDefault();
-
-        const formData = new FormData(conferenceForm);
-
-        const payload = {
-
-            name: formData.get("name"),
-
-            organizer: formData.get("organizer"),
-
-            location: formData.get("location"),
-
-            start_date: formData.get("start_date"),
-
-            end_date: formData.get("end_date"),
-
-            website: formData.get("website")
-
-        };
-
-        try {
-
-            const response = await fetch("/conferences/", {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type": "application/json"
-
-                },
-
-                body: JSON.stringify(payload)
-
-            });
-
-            if (!response.ok) {
-
-                throw new Error("Conference creation failed");
-
-            }
-
-            conferenceForm.reset();
-
-            alert("Conference added successfully!");
-
-        }
-
-        catch (error) {
-
-            console.error(error);
-
-            alert("Unable to add conference.");
-
-        }
-
-    });
-
-}
-// ===========================================
-// Cytoscape Collaboration Network
-// ===========================================
-
-let cy = null;
-
-async function loadNetwork() {
-
-    try {
-
-        const response = await fetch("/collaborations/network");
-
-        const graph = await response.json();
-
-        if (cy) {
-
-            cy.destroy();
-
-        }
-
-        cy = cytoscape({
-
-            container: document.getElementById("networkGraph"),
-
-            elements: [
-
-                ...graph.nodes,
-
-                ...graph.edges
-
-            ],
-
-            style: [
-
-                {
-
-                    selector: "node",
-
-                    style: {
-
-                        "background-color": "#198754",
-
-                        "label": "data(label)",
-
-                        "color": "#fff",
-
-                        "text-valign": "center",
-
-                        "text-halign": "center",
-
-                        "font-size": "11px",
-
-                        "width": 38,
-
-                        "height": 38
-
-                    }
-
-                },
-
-                {
-
-                    selector: "edge",
-
-                    style: {
-
-                        "width": 2,
-
-                        "line-color": "#9CA3AF",
-
-                        "curve-style": "bezier",
-
-                        "target-arrow-shape": "none"
-
-                    }
-
-                }
-
-            ],
-
-            layout: {
-
-                name: "cose",
-
-                animate: true,
-
-                padding: 20
-
-            }
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error("Network Error:", error);
-
-    }
-
-}
-
-
-
-// ===========================================
-// Refresh Everything
-// ===========================================
-
-async function refreshAll() {
-
-    await loadDashboard();
-
-    await loadRecentCollaborations();
-
-    await loadNetwork();
 
 }
 
@@ -486,6 +471,9 @@ async function refreshAll() {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    refreshAll();
+    refreshDashboard();
+
+    document.getElementById("collabSearch")?.addEventListener("input", () => applyCollaborationSearchSort());
+    document.getElementById("collabSortBy")?.addEventListener("change", () => applyCollaborationSearchSort());
 
 });

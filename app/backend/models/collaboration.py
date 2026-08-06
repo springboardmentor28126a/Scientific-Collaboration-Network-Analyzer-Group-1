@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-
 from app.backend.database.database import Base
 
+
+# ===========================================
+# Publication Authors Model
+# ===========================================
 
 class PublicationAuthor(Base):
     __tablename__ = "publication_authors"
@@ -11,13 +13,13 @@ class PublicationAuthor(Base):
 
     publication_id = Column(
         Integer,
-        ForeignKey("publications.id", ondelete="CASCADE"),
+        ForeignKey("publications.id"),
         nullable=False
     )
 
     researcher_id = Column(
         Integer,
-        ForeignKey("researchers.id", ondelete="CASCADE"),
+        ForeignKey("researchers.id"),
         nullable=False
     )
 
@@ -25,23 +27,20 @@ class PublicationAuthor(Base):
 
     contribution = Column(String)
 
-    publication = relationship(
-        "Publication",
-        back_populates="authorships"
-    )
 
-    researcher = relationship(
-        "Researcher",
-        back_populates="publication_authors"
-    )
-
+# ===========================================
+# Collaboration Model
+# ===========================================
 
 class Collaboration(Base):
     __tablename__ = "collaborations"
 
     id = Column(Integer, primary_key=True, index=True)
 
-    title = Column(String, nullable=False)
+    title = Column(
+        String,
+        nullable=False
+    )
 
     collaboration_type = Column(
         String,
@@ -63,14 +62,4 @@ class Collaboration(Base):
     status = Column(
         String,
         default="Active"
-    )
-
-    primary_researcher = relationship(
-        "Researcher",
-        foreign_keys=[primary_researcher_id]
-    )
-
-    partner_researcher = relationship(
-        "Researcher",
-        foreign_keys=[partner_researcher_id]
     )
