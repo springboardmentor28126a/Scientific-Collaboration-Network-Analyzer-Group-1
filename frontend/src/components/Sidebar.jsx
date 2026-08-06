@@ -8,6 +8,7 @@ import {
   FaProjectDiagram,
   FaUsersCog,
   FaHandshake,
+  FaLink
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
@@ -68,14 +69,16 @@ function Sidebar() {
       <Link to="/institution-collaborations">
         <FaHandshake /> Institutional Collaborations
       </Link>
+     <Link to="/citations">
+    <FaBook /> Citations
+</Link>
 
-      <Link className="logout" to="/">
+<Link to="/references">
+    <FaLink /> References
+</Link>
+<Link className="logout" to="/">
         🚪 Logout
       </Link>
-<Link to="/institution-collaborations">
-    <FaProjectDiagram /> Institution Collaboration
-</Link>
-<Link to="/citations">Citations</Link>
     </div>
   );
 }

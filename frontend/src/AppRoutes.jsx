@@ -13,6 +13,7 @@ import Teams from "./pages/Teams";
 import ProjectAssignments from "./pages/ProjectAssignments";
 import InstitutionCollaborations from "./pages/InstitutionCollaborations";
 import Citations from "./pages/Citations";
+import References from "./pages/References";
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -39,6 +40,7 @@ function AppRoutes() {
     path="/project-assignments"
     element={<ProjectAssignments />}
 />
+<Route path="/references" element={<References />} />
       </Routes>
     </BrowserRouter>
   );
