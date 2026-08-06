@@ -21,6 +21,7 @@ import ConferencesPage from "../pages/ConferencesPage";
 import CollaborationsPage from "../pages/CollaborationsPage";
 import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
 import ReportsPage from "../pages/ReportsPage";
+import NotificationsPage from "../pages/NotificationsPage";
 
 
 function AppRoutes() {

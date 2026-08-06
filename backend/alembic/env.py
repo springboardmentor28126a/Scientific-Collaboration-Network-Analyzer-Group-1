@@ -18,6 +18,7 @@ from app.models.conference import Conference
 from app.models.conference_registration import ConferenceRegistration
 from app.models.collaboration import Collaboration
 from app.models.citation import Citation
+from app.models.notification import Notification
 config = context.config
 
 if config.config_file_name is not None:

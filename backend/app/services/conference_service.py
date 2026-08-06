@@ -8,7 +8,6 @@ from app.schemas.notification import NotificationCreate
 from app.services.notification_service import create_notification
 from app.utils.constants import UserRole
 
-
 def create_conference(
     db: Session,
     conference: ConferenceCreate,
@@ -33,7 +32,6 @@ def create_conference(
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
-
     # Notify Institution Admins
     admins = (
         db.query(User)
@@ -103,7 +101,6 @@ def update_conference(
 
     db.commit()
     db.refresh(conference)
-
     # Notify Institution Admins
     admins = (
         db.query(User)

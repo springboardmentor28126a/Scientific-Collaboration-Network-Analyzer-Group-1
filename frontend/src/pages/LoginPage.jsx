@@ -48,8 +48,7 @@ function LoginPage() {
           <input value={username} onChange={(e) => setUsername(e.target.value)} required />
 
           <label>Password</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-
+          <input type="password" name="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           <button type="submit" className="btn-primary btn-block" disabled={loading}>
             {loading ? "Logging in..." : "Log in"}
           </button>

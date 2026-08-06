@@ -118,7 +118,7 @@ function RegisterPage() {
           <div className="auth-grid-2">
             <div>
               <label>Password</label>
-              <input type="password" name="password" value={form.password} onChange={handleChange} required />
+              <input type="password" name="password" value={form.password} autoComplete="new-password" onChange={handleChange} required />
             </div>
             <div>
               <label>Confirm password</label>

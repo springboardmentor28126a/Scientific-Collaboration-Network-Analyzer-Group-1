@@ -33,10 +33,9 @@ def create_publication(db: Session, user_id: int, payload: PublicationCreate) ->
 
     publication = Publication(
         owner_researcher_id=researcher.id,
-        conference_id=payload.conference_id,
         title=payload.title,
         publication_type=payload.publication_type.value,
-        
+        conference_id=payload.conference_id,
         abstract=payload.abstract,
         authors_text=payload.authors_text,
         publish_date=payload.publish_date,
@@ -195,11 +194,7 @@ def archive_publication(db: Session, user_id: int, publication_id: int) -> Publi
 def list_review_queue(db: Session):
     return (
         db.query(Publication)
-        .filter(
-            Publication.status.in_(
-                [PublicationStatus.SUBMITTED, PublicationStatus.UNDER_REVIEW]
-            )
-        )
+        .filter(Publication.status.in_([PublicationStatus.SUBMITTED, PublicationStatus.UNDER_REVIEW]))
         .order_by(Publication.created_at.asc())
         .all()
     )
@@ -209,10 +204,7 @@ def claim_for_review(db: Session, reviewer_user_id: int, publication_id: int) ->
     publication = get_publication(db, publication_id)
 
     if publication.status != PublicationStatus.SUBMITTED:
-        raise HTTPException(
-            status_code=400,
-            detail="Only submitted publications can be claimed for review.",
-        )
+        raise HTTPException(status_code=400, detail="Only submitted publications can be claimed for review.")
 
     publication.status = PublicationStatus.UNDER_REVIEW
     publication.reviewer_id = reviewer_user_id
@@ -222,40 +214,22 @@ def claim_for_review(db: Session, reviewer_user_id: int, publication_id: int) ->
     return publication
 
 
-def decide_review(
-    db: Session,
-    reviewer_user_id: int,
-    publication_id: int,
-    decision: ReviewDecision,
-) -> Publication:
+def decide_review(db: Session, reviewer_user_id: int, publication_id: int, decision: ReviewDecision) -> Publication:
     publication = get_publication(db, publication_id)
 
     if publication.reviewer_id != reviewer_user_id:
-        raise HTTPException(
-            status_code=403,
-            detail="Only the assigned reviewer can decide on this publication.",
-        )
+        raise HTTPException(status_code=403, detail="Only the assigned reviewer can decide on this publication.")
 
     if publication.status != PublicationStatus.UNDER_REVIEW:
-        raise HTTPException(
-            status_code=400,
-            detail="Publication is not currently under review.",
-        )
+        raise HTTPException(status_code=400, detail="Publication is not currently under review.")
 
-    publication.status = (
-        PublicationStatus.PUBLISHED
-        if decision.approve
-        else PublicationStatus.REJECTED
-    )
-
+    publication.status = PublicationStatus.PUBLISHED if decision.approve else PublicationStatus.REJECTED
     publication.review_comments = decision.comments
-
     from sqlalchemy.sql import func as sa_func
     publication.reviewed_at = sa_func.now()
 
     db.commit()
     db.refresh(publication)
-
     # Get publication owner
     owner = (
         db.query(Researcher)
@@ -281,7 +255,6 @@ def decide_review(
         )
 
     return publication
-
     from sqlalchemy.sql import func as sa_func
 
     publication.reviewed_at = sa_func.now()

@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import NotificationBell from "./NotificationBell";
 
 const NAV_BY_ROLE = {
   SYSTEM_ADMIN: [
@@ -66,6 +67,9 @@ function Sidebar() {
       </nav>
 
       <div className="dash-sidebar-footer">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
+          <NotificationBell />
+        </div>
         <div className="dash-user-chip">
           <span className="dash-avatar">{initials(auth?.username)}</span>
           <div>

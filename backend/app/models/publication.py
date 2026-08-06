@@ -39,7 +39,7 @@ class Publication(Base):
 
     coauthors = relationship("Researcher", secondary=publication_coauthors)
     conference = relationship("Conference", back_populates="publications")
-    
+
     citations = relationship(
     "Citation",
     back_populates="publication",
