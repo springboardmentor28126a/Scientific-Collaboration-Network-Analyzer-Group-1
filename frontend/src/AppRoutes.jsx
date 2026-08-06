@@ -12,7 +12,7 @@ import Projects from "./pages/Projects";
 import Teams from "./pages/Teams";
 import ProjectAssignments from "./pages/ProjectAssignments";
 import InstitutionCollaborations from "./pages/InstitutionCollaborations";
-
+import Citations from "./pages/Citations";
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -26,6 +26,7 @@ function AppRoutes() {
         <Route path="/institutions" element={<Institutions />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/teams" element={<Teams />} />
+        <Route path="/citations" element={<Citations />} />
         <Route
     path="/institution-collaborations"
     element={<InstitutionCollaborations />}

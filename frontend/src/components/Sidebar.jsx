@@ -75,6 +75,7 @@ function Sidebar() {
 <Link to="/institution-collaborations">
     <FaProjectDiagram /> Institution Collaboration
 </Link>
+<Link to="/citations">Citations</Link>
     </div>
   );
 }
