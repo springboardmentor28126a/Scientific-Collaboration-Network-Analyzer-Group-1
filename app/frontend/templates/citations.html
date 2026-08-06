@@ -1,343 +1,107 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-<section class="workspace">
-
-    <!-- ========================================= -->
-    <!-- Page Header -->
-    <!-- ========================================= -->
-
+  <section class="workspace">
     <section class="page-header">
+      <div>
+        <p class="eyebrow">Citation Management</p>
+        <h1>Citation Repository & Reference Analytics</h1>
+        <p class="subtle">Track reference records, cross-publication linking, citation metrics, and citation trends.</p>
+      </div>
+      <button type="button" class="btn btn-dark" data-requires="citations:create" data-bs-toggle="modal" data-bs-target="#addCitationModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Citation
+      </button>
+    </section>
 
+    <!-- Citation Statistics Summary -->
+    <section class="metric-grid mb-4">
+      <div class="metric"><span>Total Citation Records</span><strong id="citeTotalRecords">0</strong></div>
+      <div class="metric"><span>Total Publication Citations</span><strong id="citeTotalPubCitations">0</strong></div>
+      <div class="metric"><span>Average Citations / Paper</span><strong id="citeAvgCitations">0</strong></div>
+      <div class="metric"><span>Most Cited Publication</span><strong id="citeMostCited" style="font-size:0.9rem; font-weight:600;">-</strong></div>
+    </section>
+
+    <!-- Search & Citations List -->
+    <section class="panel wide">
+      <div class="panel-heading">
         <div>
-
-            <p class="eyebrow">
-                Collaboration Management
-            </p>
-
-            <h1>
-                Research Collaboration Dashboard
-            </h1>
-
-            <p class="subtle">
-                Manage publication collaborations, researcher contributions and collaboration records from a single dashboard.
-            </p>
-
+          <h2>Citation Directory</h2>
+          <p>Reference entries, DOI links, and publication linking.</p>
         </div>
+      </div>
 
-        <button
-            type="button"
-            class="btn btn-dark"
-            data-requires="collaborations:create"
-            data-bs-toggle="modal"
-            data-bs-target="#addCollaborationModal">
+      <div class="module-toolbar">
+        <div class="input-group module-search">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="search" id="citationSearchText" class="form-control" placeholder="Search citations..." autocomplete="off">
+        </div>
+        <div class="module-filters">
+          <select class="form-select" id="citationSortBy">
+            <option value="id">Sort: ID</option>
+            <option value="reference_order">Sort: Reference Order</option>
+            <option value="publication_id">Sort: Publication ID</option>
+          </select>
+          <select class="form-select" id="citationSortOrder">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+          <button type="button" class="btn btn-outline-secondary" id="citationClearBtn">Reset</button>
+        </div>
+      </div>
 
-            <i class="bi bi-plus-lg me-1"></i>Add Collaboration
+      <div id="citationList" class="row g-3 my-2">
+        <div class="text-center py-4 text-muted">Loading citations...</div>
+      </div>
 
-        </button>
-
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="citePrevPage" disabled>Previous</button>
+        <span class="text-muted small" id="citePageNum">Page 1</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="citeNextPage">Next</button>
+      </div>
     </section>
 
-
-
-    <!-- ========================================= -->
-    <!-- Dashboard Summary -->
-    <!-- ========================================= -->
-
-    <section class="metric-grid">
-
-        <div class="metric">
-
-            <span>Total Collaborations</span>
-
-            <strong id="totalCollaborations">
-
-                0
-
-            </strong>
-
-        </div>
-
-        <div class="metric">
-
-            <span>Active Researchers</span>
-
-            <strong id="activeResearchers">
-
-                0
-
-            </strong>
-
-        </div>
-
-        <div class="metric">
-
-            <span>Collaborative Publications</span>
-
-            <strong id="collaborativePublications">
-
-                0
-
-            </strong>
-
-        </div>
-
-    </section>
-<!-- ========================================= -->
-<!-- Main Panels -->
-<!-- ========================================= -->
-
-<section class="panel-grid">
-
-    <!-- Recent Collaborations -->
-
-    <div class="panel wide">
-
-        <div class="panel-heading">
-
-            <div>
-
-                <h2>
-                    Recent Collaborations
-                </h2>
-
-                <p>
-                    View recently added publication collaboration records.
-                </p>
-
-            </div>
-
-        </div>
-
-        <div class="module-toolbar">
-            <div class="input-group module-search">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="search" id="collabSearch" class="form-control" placeholder="Search collaborations..." autocomplete="off">
-            </div>
-            <div class="module-filters">
-                <select class="form-select" id="collabSortBy">
-                    <option value="publication">Sort: Publication</option>
-                    <option value="researcher">Sort: Researcher</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="recentCollaborationList" class="row g-3 my-2">
-            <div class="text-center py-4 text-muted">Loading collaboration records...</div>
-        </div>
-
-    </div>
-
-
-
-    <!-- Collaboration Statistics -->
-
-    <div class="panel wide">
-
-        <div class="panel-heading">
-
-            <div>
-
-                <h2>
-                    Collaboration Statistics
-                </h2>
-
-                <p>
-                    Overview of research collaboration activity.
-                </p>
-
-            </div>
-
-        </div>
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <p class="text-muted small text-center mb-1">Contribution Distribution</p>
-                <div class="chart-container" style="height:280px;">
-                    <canvas id="collaborationChart"></canvas>
-                </div>
-            </div>
-            
-        </div>
-
-    </div>
-
-</section>
-<!-- ========================================= -->
-<!-- Add Collaboration Modal -->
-<!-- ========================================= -->
-
-<div
-    class="modal fade"
-    id="addCollaborationModal"
-    tabindex="-1"
-    aria-hidden="true">
-
-    <div class="modal-dialog modal-lg">
-
+    <!-- Add Citation Modal -->
+    <div class="modal fade" id="addCitationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
         <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h5 class="modal-title">
-
-                    Add New Collaboration
-
-                </h5>
-
-                <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal">
-                </button>
-
+          <div class="modal-header">
+            <h5 class="modal-title" id="citationModalTitle">Add Citation Record</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="modalCitationForm">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Publication ID *</label>
+                <input class="form-control" type="number" name="publication_id" placeholder="ID of citing publication" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Cited Publication ID (Optional)</label>
+                <input class="form-control" type="number" name="cited_publication_id" placeholder="ID of cited publication if in database">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Citation Text *</label>
+                <input class="form-control" name="citation_text" placeholder="Complete reference text / citation line" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">DOI</label>
+                <input class="form-control" name="doi" placeholder="e.g. 10.1000/xyz123">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Reference Order</label>
+                <input class="form-control" type="number" name="reference_order" placeholder="e.g. 1, 2, 3">
+              </div>
             </div>
-
-            <form id="authorForm">
-
-                <div class="modal-body">
-
-                    <div class="row g-3">
-
-                        <!-- Publication -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label">
-
-                                Publication ID
-
-                            </label>
-
-                            <input
-                                type="number"
-                                class="form-control"
-                                name="publication_id"
-                                placeholder="Enter Publication ID"
-                                required>
-
-                        </div>
-
-                        <!-- Researcher -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label">
-
-                                Researcher ID
-
-                            </label>
-
-                            <input
-                                type="number"
-                                class="form-control"
-                                name="researcher_id"
-                                placeholder="Enter Researcher ID"
-                                required>
-
-                        </div>
-
-                        <!-- Author Order -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label">
-
-                                Author Order
-
-                            </label>
-
-                            <input
-                                type="number"
-                                class="form-control"
-                                name="author_order"
-                                placeholder="Example: 1">
-
-                        </div>
-
-                        <!-- Contribution -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label">
-
-                                Contribution
-
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control"
-                                name="contribution"
-                                placeholder="Lead Author, Co-Author, Reviewer">
-
-                        </div>
-
-                        <!-- Notes -->
-
-                        <div class="col-12">
-
-                            <label class="form-label">
-
-                                Collaboration Notes (Optional)
-
-                            </label>
-
-                            <textarea
-                                class="form-control"
-                                rows="4"
-                                placeholder="Enter any additional collaboration details..."
-                                disabled></textarea>
-
-                            <small class="text-muted">
-
-                                Notes are currently for display only.
-
-                            </small>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="modal-footer">
-
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-
-                        Cancel
-
-                    </button>
-
-                    <button
-                        type="submit"
-                        class="btn btn-dark">
-
-                        Add Collaboration
-
-                    </button>
-
-                </div>
-
-            </form>
-
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-dark">Save Citation</button>
+            </div>
+          </form>
         </div>
-
+      </div>
     </div>
-
-</div>
-
-</section>
-
+  </section>
 {% endblock content %}
+
 {% block scripts %}
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script src="{{ url_for('static', path='js/collaboration.js') }}"></script>
-
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
 {% endblock scripts %}
