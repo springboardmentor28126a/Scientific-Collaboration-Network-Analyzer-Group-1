@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 import os
@@ -6,14 +6,14 @@ import shutil
 from uuid import uuid4
 
 from ..database import get_db
-from ..models import User, Publication, Review, UserRole
+from ..models import User, Publication, Review, UserRole, ReviewStatus, PublicationStatus
 from ..schemas import ReviewCreate, ReviewResponse
 from ..auth import get_current_user
 from ..notification_service import create_notification
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "uploads/reviews"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/pending", response_model=List[ReviewResponse])
@@ -22,25 +22,27 @@ def pending_reviews(db: Session = Depends(get_db), current_user: User = Depends(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view review queue")
 
     # Publications that are submitted and not yet reviewed by this reviewer
-    submitted_pubs = db.query(Publication).filter(Publication.status == 'submitted').all()
+    submitted_pubs = db.query(Publication).filter(Publication.status == PublicationStatus.SUBMITTED).all()
     reviews = []
     for pub in submitted_pubs:
         existing = db.query(Review).filter(Review.publication_id == pub.id, Review.reviewer_id == current_user.id).first()
         if not existing:
-            # A transient item is sufficient for the review queue; it is not
-            # persisted until the reviewer submits a completed review.
-            r = Review(
-                publication_id=pub.id,
-                reviewer_id=current_user.id,
-                status='pending',
-                created_at=pub.created_at,
-            )
-            reviews.append(r)
+            reviews.append({
+                "id": -pub.id,
+                "publication_id": pub.id,
+                "reviewer_id": current_user.id,
+                "rating": None,
+                "comments": None,
+                "recommendation": None,
+                "file_path": None,
+                "status": ReviewStatus.PENDING,
+                "created_at": pub.created_at,
+            })
 
     return reviews
 
 @router.post("/{publication_id}", response_model=ReviewResponse)
-def submit_review(publication_id: int, review: ReviewCreate = Depends(), file: UploadFile | None = File(None), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def submit_review(publication_id: int, background_tasks: BackgroundTasks, review: ReviewCreate = Depends(), file: UploadFile | None = File(None), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.REVIEWER and current_user.role != UserRole.SYSTEM_ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to submit reviews")
 
@@ -68,9 +70,10 @@ def submit_review(publication_id: int, review: ReviewCreate = Depends(), file: U
     db.add(db_review)
     recommendation = (review.recommendation or "").lower()
     if recommendation in {"accept", "approve", "approved"}:
-        create_notification(db, pub.created_by_id, "Publication approved", f"Your publication '{pub.title}' received an approving review.", "publication_approved")
+        pub.status = PublicationStatus.PUBLISHED
+        create_notification(db, pub.created_by_id, "Publication approved", f"Your publication '{pub.title}' received an approving review.", "publication_approved", background_tasks)
     elif recommendation in {"reject", "rejected"}:
-        create_notification(db, pub.created_by_id, "Publication rejected", f"Your publication '{pub.title}' received a rejecting review.", "publication_rejected")
+        create_notification(db, pub.created_by_id, "Publication rejected", f"Your publication '{pub.title}' received a rejecting review.", "publication_rejected", background_tasks)
     db.commit()
     db.refresh(db_review)
     return db_review

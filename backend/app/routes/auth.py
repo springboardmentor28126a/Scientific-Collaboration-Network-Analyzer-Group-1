@@ -8,11 +8,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from ..schemas import UserCreate, Token, UserResponse
 from ..auth import hash_password, verify_password, create_access_token
 from ..config import settings
+from fastapi import BackgroundTasks
+from ..notification_service import create_notification
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     normalized_email = str(user.email).strip().lower()
     normalized_username = user.username.strip()
     if not normalized_username:
@@ -32,7 +34,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     normalized_requested_role = None
     role_request_status = "approved"
 
-    if requested_role_value in {UserRole.REVIEWER.value, UserRole.INSTITUTION_ADMIN.value}:
+    if requested_role_value in {UserRole.REVIEWER.value, UserRole.INSTITUTION_ADMIN.value, UserRole.SYSTEM_ADMIN.value}:
         normalized_requested_role = requested_role_value
         role_request_status = "pending"
 
@@ -73,6 +75,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             return retry_user
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
     db.refresh(db_user)
+    
+    # Notify system admins about the new user
+    system_admins = db.query(User).filter(User.role == UserRole.SYSTEM_ADMIN).all()
+    for admin in system_admins:
+        create_notification(db, admin.id, "New researcher registered", f"A new user '{db_user.username}' has registered.", "user_registered", background_tasks)
     
     return db_user
 

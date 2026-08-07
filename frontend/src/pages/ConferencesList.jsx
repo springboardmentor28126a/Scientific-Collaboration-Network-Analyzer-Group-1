@@ -2,22 +2,190 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../config/api';
 import { AuthContext } from '../context/AuthContext';
+import Pagination from '../components/Pagination';
+
+const ITEMS_PER_PAGE = 6;
 
 const ConferencesList = () => {
-  const [conferences, setConferences] = useState([]), [registrations, setRegistrations] = useState([]), [participants, setParticipants] = useState(null), [search, setSearch] = useState(''), [loading, setLoading] = useState(true), [editing, setEditing] = useState(null);
-  const { user } = useContext(AuthContext); const canRegister = ['researcher', 'system_admin'].includes(user?.role); const canCreate = ['institution_admin', 'system_admin'].includes(user?.role);
-  const load = async () => { setLoading(true); try { const calls = [api.get('/conferences/', { params: { search } })]; if (canRegister) calls.push(api.get('/conferences/registrations/me')); const results = await Promise.all(calls); setConferences(results[0].data); setRegistrations(results[1]?.data || []); } catch (e) { alert(e.response?.data?.detail || 'Unable to load conferences'); } finally { setLoading(false); } };
+  const [conferences, setConferences] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
+  const [participants, setParticipants] = useState(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { user } = useContext(AuthContext);
+  const canRegister = ['researcher', 'system_admin'].includes(user?.role);
+  const canCreate = ['institution_admin', 'system_admin'].includes(user?.role);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const calls = [api.get('/conferences/', { params: { search } })];
+      if (canRegister) calls.push(api.get('/conferences/registrations/me'));
+      const results = await Promise.all(calls);
+      setConferences(results[0].data);
+      setRegistrations(results[1]?.data || []);
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Unable to load conferences');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => { load(); }, []);
-  const registered = id => registrations.some(item => item.conference_id === id); const manage = conf => user?.role === 'system_admin' || conf.created_by_id === user?.id;
-  const register = async id => { try { await api.post(`/conferences/${id}/register`, {}); load(); } catch (e) { alert(e.response?.data?.detail || 'Registration failed'); } };
-  const unregister = async id => { if (window.confirm('Cancel this registration?')) try { await api.delete(`/conferences/${id}/register`); load(); } catch (e) { alert(e.response?.data?.detail || 'Unable to cancel registration'); } };
-  const showParticipants = async id => { try { setParticipants((await api.get(`/conferences/${id}/participants`)).data); } catch (e) { alert(e.response?.data?.detail || 'Unable to load participants'); } };
-  const save = async e => { e.preventDefault(); try { await api.put(`/conferences/${editing.id}`, editing); setEditing(null); load(); } catch (e) { alert(e.response?.data?.detail || 'Unable to update conference'); } };
-  const remove = async id => { if (window.confirm('Delete this conference?')) try { await api.delete(`/conferences/${id}`); load(); } catch (e) { alert(e.response?.data?.detail || 'Unable to delete conference'); } };
-  return <div className="container py-4"><div className="d-flex justify-content-between align-items-center mb-3"><div><h2>Conferences</h2><p className="text-muted mb-0">Browse events and manage your registrations.</p></div>{canCreate && <Link to="/conferences/create" className="btn btn-primary">New Conference</Link>}</div><form className="input-group mb-4" onSubmit={e=>{e.preventDefault();load()}}><input className="form-control" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search conference name"/><button className="btn btn-outline-primary">Search</button></form>
-    {loading ? <div className="text-center py-5"><div className="spinner-border"/></div> : <div className="row">{conferences.map(conf=><div className="col-md-6 mb-4" key={conf.id}><div className="card h-100 shadow-sm"><div className="card-body"><div className="d-flex justify-content-between"><h5 className="text-primary">{conf.name}</h5><span className="badge bg-secondary">{conf.status}</span></div><p className="text-muted">{conf.location} · {conf.date}</p><p>{conf.description || 'No description provided.'}</p></div><div className="card-footer bg-white">{manage(conf) && <><button onClick={()=>showParticipants(conf.id)} className="btn btn-sm btn-outline-secondary me-2">Participants</button><button onClick={()=>setEditing(conf)} className="btn btn-sm btn-outline-primary me-2">Edit</button><button onClick={()=>remove(conf.id)} className="btn btn-sm btn-outline-danger me-2">Delete</button></>}{canRegister && (!registered(conf.id) ? <button onClick={()=>register(conf.id)} className="btn btn-sm btn-primary">Register</button> : <button onClick={()=>unregister(conf.id)} className="btn btn-sm btn-outline-danger">Unregister</button>)}</div></div></div>)}{!conferences.length&&<div className="alert alert-light border">No conferences match your search.</div>}</div>}
-    {participants && <div className="modal d-block" style={{background:'rgba(0,0,0,.4)'}}><div className="modal-dialog modal-lg"><div className="modal-content"><div className="modal-header"><h5>Registered participants</h5><button className="btn-close" onClick={()=>setParticipants(null)}/></div><div className="modal-body">{participants.length ? participants.map(p=><div key={p.id}>{p.full_name} <span className="text-muted">{p.institution_name || ''}</span></div>) : 'No participants yet.'}</div></div></div></div>}
-    {editing && <div className="modal d-block" style={{background:'rgba(0,0,0,.4)'}}><div className="modal-dialog"><form className="modal-content" onSubmit={save}><div className="modal-header"><h5>Edit conference</h5><button type="button" className="btn-close" onClick={()=>setEditing(null)}/></div><div className="modal-body"><input className="form-control mb-2" value={editing.name} onChange={e=>setEditing({...editing,name:e.target.value})} required/><textarea className="form-control mb-2" value={editing.description || ''} onChange={e=>setEditing({...editing,description:e.target.value})}/><input type="date" className="form-control mb-2" value={editing.date} onChange={e=>setEditing({...editing,date:e.target.value})} required/><input className="form-control mb-2" value={editing.location} onChange={e=>setEditing({...editing,location:e.target.value})} required/><select className="form-select" value={editing.status} onChange={e=>setEditing({...editing,status:e.target.value})}><option value="upcoming">Upcoming</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option></select></div><div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={()=>setEditing(null)}>Cancel</button><button className="btn btn-primary">Save changes</button></div></form></div></div>}
-  </div>;
+
+  const registered = (id) => registrations.some((item) => item.conference_id === id);
+  const manage = (conf) => user?.role === 'system_admin' || conf.created_by_id === user?.id;
+
+  const register = async (id) => {
+    try { await api.post(`/conferences/${id}/register`, {}); load(); }
+    catch (e) { alert(e.response?.data?.detail || 'Registration failed'); }
+  };
+
+  const unregister = async (id) => {
+    if (window.confirm('Cancel this registration?'))
+      try { await api.delete(`/conferences/${id}/register`); load(); }
+      catch (e) { alert(e.response?.data?.detail || 'Unable to cancel registration'); }
+  };
+
+  const showParticipants = async (id) => {
+    try { setParticipants((await api.get(`/conferences/${id}/participants`)).data); }
+    catch (e) { alert(e.response?.data?.detail || 'Unable to load participants'); }
+  };
+
+  const save = async (e) => {
+    e.preventDefault();
+    try { await api.put(`/conferences/${editing.id}`, editing); setEditing(null); load(); }
+    catch (e) { alert(e.response?.data?.detail || 'Unable to update conference'); }
+  };
+
+  const remove = async (id) => {
+    if (window.confirm('Delete this conference?'))
+      try { await api.delete(`/conferences/${id}`); load(); }
+      catch (e) { alert(e.response?.data?.detail || 'Unable to delete conference'); }
+  };
+
+  // Client-side search filter
+  const filtered = conferences.filter((c) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return c.name?.toLowerCase().includes(s) || c.location?.toLowerCase().includes(s);
+  });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  return (
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Conferences</h2>
+          <p className="text-muted mb-0">Browse events and manage your registrations.</p>
+        </div>
+        {canCreate && <Link to="/conferences/create" className="btn btn-primary">New Conference</Link>}
+      </div>
+
+      <div className="input-group mb-4">
+        <input
+          className="form-control"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+          placeholder="Search conference name or location..."
+        />
+        <button className="btn btn-outline-primary" onClick={load}>Search</button>
+      </div>
+
+      <p className="text-muted small">{filtered.length} conference{filtered.length !== 1 ? 's' : ''} found</p>
+
+      {loading ? (
+        <div className="text-center py-5"><div className="spinner-border" /></div>
+      ) : (
+        <>
+          <div className="row">
+            {paginated.map((conf) => (
+              <div className="col-md-6 mb-4" key={conf.id}>
+                <div className="card h-100 shadow-sm">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                      <h5 className="text-primary">{conf.name}</h5>
+                      <span className="badge bg-secondary">{conf.status}</span>
+                    </div>
+                    <p className="text-muted">{conf.location} · {conf.date}</p>
+                    <p>{conf.description || 'No description provided.'}</p>
+                  </div>
+                  <div className="card-footer bg-white">
+                    {manage(conf) && (
+                      <>
+                        <button onClick={() => showParticipants(conf.id)} className="btn btn-sm btn-outline-secondary me-2">Participants</button>
+                        <button onClick={() => setEditing(conf)} className="btn btn-sm btn-outline-primary me-2">Edit</button>
+                        <button onClick={() => remove(conf.id)} className="btn btn-sm btn-outline-danger me-2">Delete</button>
+                      </>
+                    )}
+                    {canRegister && (!registered(conf.id)
+                      ? <button onClick={() => register(conf.id)} className="btn btn-sm btn-primary">Register</button>
+                      : <button onClick={() => unregister(conf.id)} className="btn btn-sm btn-outline-danger">Unregister</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!filtered.length && <div className="alert alert-light border">No conferences match your search.</div>}
+          </div>
+
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+        </>
+      )}
+
+      {/* Participants Modal */}
+      {participants && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,.4)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>Registered participants</h5>
+                <button className="btn-close" onClick={() => setParticipants(null)} />
+              </div>
+              <div className="modal-body">
+                {participants.length ? participants.map((p) => (
+                  <div key={p.id}>{p.full_name} <span className="text-muted">{p.institution_name || ''}</span></div>
+                )) : 'No participants yet.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editing && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,.4)' }}>
+          <div className="modal-dialog">
+            <form className="modal-content" onSubmit={save}>
+              <div className="modal-header">
+                <h5>Edit conference</h5>
+                <button type="button" className="btn-close" onClick={() => setEditing(null)} />
+              </div>
+              <div className="modal-body">
+                <input className="form-control mb-2" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} required />
+                <textarea className="form-control mb-2" value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+                <input type="date" className="form-control mb-2" value={editing.date} onChange={(e) => setEditing({ ...editing, date: e.target.value })} required />
+                <input className="form-control mb-2" value={editing.location} onChange={(e) => setEditing({ ...editing, location: e.target.value })} required />
+                <select className="form-select" value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value })}>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+                <button className="btn btn-primary">Save changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default ConferencesList;

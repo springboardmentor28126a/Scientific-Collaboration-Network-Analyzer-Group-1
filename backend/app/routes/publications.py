@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,6 +12,7 @@ from ..models import User, Publication, ResearcherProfile, Review, UserRole, pub
 from ..schemas import PublicationCreate, PublicationResponse
 from ..auth import get_current_user
 from ..models import PublicationStatus
+from ..notification_service import create_notification
 
 router = APIRouter(prefix="/publications", tags=["publications"])
 
@@ -106,6 +107,19 @@ def get_publications(
         query = query.filter(Publication.published_date >= f"{year}-01-01", Publication.published_date < f"{year + 1}-01-01")
     return [serialize_publication(publication) for publication in query.distinct().all()]
 
+@router.get("/{pub_id}", response_model=PublicationResponse)
+def get_publication(pub_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    publication = db.query(Publication).filter(Publication.id == pub_id).first()
+    if not publication:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    if current_user.role == UserRole.REVIEWER and publication.status == PublicationStatus.DRAFT:
+        raise HTTPException(status_code=403, detail="Not authorized to view draft publications")
+    if current_user.role not in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN] and publication.status == PublicationStatus.DRAFT:
+        profile = current_user.researcher_profile
+        if publication.created_by_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to view draft publications")
+    return serialize_publication(publication)
+
 
 def can_manage_publication(db_pub: Publication, current_user: User) -> bool:
     # The publisher is the sole editor/deleter. System administration is not a
@@ -181,7 +195,7 @@ def delete_publication(pub_id: int, db: Session = Depends(get_db), current_user:
 
 
 @router.put("/{pub_id}", response_model=PublicationResponse)
-def update_publication(pub_id: int, pub: PublicationCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_publication(pub_id: int, pub: PublicationCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_pub = db.query(Publication).filter(Publication.id == pub_id).first()
     if not db_pub:
         raise HTTPException(status_code=404, detail="Publication not found")
@@ -189,8 +203,14 @@ def update_publication(pub_id: int, pub: PublicationCreate, db: Session = Depend
     if not can_manage_publication(db_pub, current_user):
         raise HTTPException(status_code=403, detail="Not authorized to edit this publication")
 
+    old_status = db_pub.status
     for key, value in normalize_publication_payload(pub).items():
         setattr(db_pub, key, value)
+
+    if old_status != PublicationStatus.SUBMITTED and db_pub.status == PublicationStatus.SUBMITTED:
+        reviewers = db.query(User).filter(User.role == UserRole.REVIEWER).all()
+        for reviewer in reviewers:
+            create_notification(db, reviewer.id, "New publication submitted", f"A new publication '{db_pub.title}' is pending review.", "publication_submitted", background_tasks)
 
     db.commit()
     db.refresh(db_pub)

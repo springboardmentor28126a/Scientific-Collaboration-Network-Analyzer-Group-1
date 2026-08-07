@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 
@@ -44,16 +44,17 @@ def get_conferences(search: str | None = None, location: str | None = None, stat
     return [serialize_conference(item) for item in query.order_by(Conference.date.desc()).all()]
 
 @router.post("/{conf_id}/register", response_model=ConferenceRegistrationResponse)
-def register_for_conference(conf_id: int, reg: ConferenceRegistrationCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def register_for_conference(conf_id: int, reg: ConferenceRegistrationCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN]:
         raise HTTPException(status_code=403, detail="Only researchers can register for conferences")
-    if not db.get(Conference, conf_id): raise HTTPException(status_code=404, detail="Conference not found")
+    conference = db.get(Conference, conf_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
     if db.query(ConferenceRegistration).filter_by(conference_id=conf_id, user_id=current_user.id).first():
         raise HTTPException(status_code=400, detail="Already registered for this conference")
-    conference = db.get(Conference, conf_id)
     registration = ConferenceRegistration(conference_id=conf_id, user_id=current_user.id)
     db.add(registration)
-    create_notification(db, current_user.id, "Conference registration completed", f"Your registration for '{conference.name}' is confirmed.", "conference_registration")
+    create_notification(db, current_user.id, "Conference registration completed", f"Your registration for '{conference.name}' is confirmed.", "conference_registration", background_tasks)
     db.commit(); db.refresh(registration)
     return serialize_registration(registration)
 

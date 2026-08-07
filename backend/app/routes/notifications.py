@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..auth import get_current_user
+from ..auth import get_current_user, get_current_user_ws
 from ..database import get_db
 from ..models import Notification, User, UserRole
 from ..schemas import NotificationResponse
+from ..websockets import manager
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -48,3 +49,20 @@ def delete_notification(notification_id: int, db: Session = Depends(get_db), cur
         raise HTTPException(status_code=403, detail="Not authorized")
     db.delete(notification); db.commit()
     return {"detail": "Notification deleted"}
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    user_id: int,
+    current_user: User = Depends(get_current_user_ws),
+):
+    if current_user.id != user_id:
+        await websocket.close(code=1008)
+        return
+
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)

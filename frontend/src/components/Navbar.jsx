@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { WebSocketContext } from '../context/WebSocketContext';
 import './Navbar.css';
 
 const normalizeRole = (role) => {
@@ -21,6 +22,7 @@ const canAccess = (userRole, allowedRoles = []) => {
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
+  const { unreadCount } = useContext(WebSocketContext) || { unreadCount: 0 };
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
@@ -60,7 +62,10 @@ const Navbar = () => {
                 )}
 
                 {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
-                  <li className="nav-item mx-1"><Link className="nav-link" to="/notifications" onClick={closeMenu}><i className="bi bi-bell"></i> Notifications</Link></li>
+                  <li className="nav-item mx-1"><Link className="nav-link" to="/notifications" onClick={closeMenu}>
+                    <i className="bi bi-bell"></i> Notifications
+                    {unreadCount > 0 && <span className="badge bg-danger rounded-pill ms-1">{unreadCount}</span>}
+                  </Link></li>
                 )}
 
                 {canAccess(role, ['researcher', 'reviewer', 'system_admin']) && (

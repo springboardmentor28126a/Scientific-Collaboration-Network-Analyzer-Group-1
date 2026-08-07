@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 from ..auth import get_current_user
 from ..database import get_db
-from ..models import User, UserRole, Publication, Conference, ConferenceRegistration, Review, ResearcherProfile, Institution, publication_author, ResearchProject, ProjectMember, Collaboration, Citation, ProjectStatus
+from ..models import User, UserRole, Publication, Conference, ConferenceRegistration, Review, ResearcherProfile, Institution, publication_author, ResearchProject, ProjectMember, CollaborationRequest, Citation, ProjectStatus
 from ..schemas import DashboardStats
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -21,8 +21,8 @@ def dashboard_stats(current_user: User = Depends(get_current_user), db: Session 
             institution_admins_count=db.query(User).filter(User.role == UserRole.INSTITUTION_ADMIN).count(),
             reviewers_count=db.query(User).filter(User.role == UserRole.REVIEWER).count(), institutions_count=db.query(Institution).count(),
             publications_count=db.query(Publication).count(), conferences_count=db.query(Conference).count(),
-            active_projects=db.query(ResearchProject).filter(ResearchProject.status == ProjectStatus.ACTIVE).count(),
-            collaboration_count=db.query(Collaboration).filter(Collaboration.status == "active").count(),
+            active_projects=db.query(ResearchProject).count(),
+            collaboration_count=db.query(CollaborationRequest).filter(CollaborationRequest.status == "accepted").count(),
             publications_by_institution=[{"name": name, "count": count} for name, count in by_institution],
             recent_users=[{"id": user.id, "name": user.full_name, "role": user.role.value, "created_at": user.created_at} for user in db.query(User).order_by(User.created_at.desc()).limit(5)])
     if current_user.role == UserRole.REVIEWER:
@@ -40,9 +40,10 @@ def dashboard_stats(current_user: User = Depends(get_current_user), db: Session 
         conferences = (db.query(Conference).join(User, Conference.created_by_id == User.id)
             .filter(User.assigned_institution_id == institution_id).count())
         reviewers = db.query(User).join(ResearcherProfile).filter(ResearcherProfile.institution_id == institution_id, User.role == UserRole.REVIEWER).count()
-        return DashboardStats(publications_count=publications, conferences_count=conferences, researchers_count=researchers, reviewers_count=reviewers, active_projects=db.query(ResearchProject).filter(ResearchProject.institution_id == institution_id, ResearchProject.status == ProjectStatus.ACTIVE).count(), collaboration_count=db.query(Collaboration).filter(Collaboration.institution_id == institution_id, Collaboration.status == "active").count())
+        project_count = db.query(ResearchProject).filter(ResearchProject.institution_id == institution_id).count()
+        return DashboardStats(publications_count=publications, conferences_count=conferences, researchers_count=researchers, reviewers_count=reviewers, active_projects=project_count, collaboration_count=db.query(CollaborationRequest).filter(CollaborationRequest.institution_id == institution_id, CollaborationRequest.status == "accepted").count())
     publications = db.query(Publication).filter(Publication.created_by_id == current_user.id).count()
     conferences = db.query(ConferenceRegistration).filter(ConferenceRegistration.user_id == current_user.id).count()
-    active_projects = db.query(ResearchProject).outerjoin(ProjectMember).filter((ResearchProject.created_by == current_user.id) | (ProjectMember.researcher_id == current_user.id), ResearchProject.status == ProjectStatus.ACTIVE).distinct().count()
-    collaborators = db.query(Collaboration).filter(((Collaboration.researcher1_id == current_user.id) | (Collaboration.researcher2_id == current_user.id)), Collaboration.status == "active").count()
+    active_projects = db.query(ResearchProject).outerjoin(ProjectMember).filter((ResearchProject.created_by == current_user.id) | (ProjectMember.researcher_id == current_user.id)).distinct().count()
+    collaborators = db.query(CollaborationRequest).filter(((CollaborationRequest.sender_id == current_user.id) | (CollaborationRequest.receiver_id == current_user.id)), CollaborationRequest.status == "accepted").count()
     return DashboardStats(publications_count=publications, conferences_count=conferences, h_index=profile.h_index if profile else 0, active_projects=active_projects, collaboration_count=collaborators)

@@ -62,6 +62,29 @@ def ensure_user_access_columns():
         for name, definition in additions.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
+
+    citation_columns = {column["name"] for column in inspect(engine).get_columns("citations")} if "citations" in inspect(engine).get_table_names() else set()
+    citation_additions = {
+        "is_verified": "BOOLEAN DEFAULT FALSE",
+        "is_flagged": "BOOLEAN DEFAULT FALSE",
+    }
+    if citation_columns:
+        with engine.begin() as connection:
+            for name, definition in citation_additions.items():
+                if name not in citation_columns:
+                    connection.execute(text(f"ALTER TABLE citations ADD COLUMN {name} {definition}"))
+
+    reference_columns = {column["name"] for column in inspect(engine).get_columns("references")} if "references" in inspect(engine).get_table_names() else set()
+    reference_additions = {
+        "is_verified": "BOOLEAN DEFAULT FALSE",
+        "is_flagged": "BOOLEAN DEFAULT FALSE",
+    }
+    if reference_columns:
+        with engine.begin() as connection:
+            for name, definition in reference_additions.items():
+                if name not in reference_columns:
+                    connection.execute(text(f'ALTER TABLE "references" ADD COLUMN {name} {definition}'))
+
     conference_columns = {column["name"] for column in inspect(engine).get_columns("conferences")} if "conferences" in inspect(engine).get_table_names() else set()
     if conference_columns and "updated_at" not in conference_columns:
         # SQLite accepts DATETIME, whereas PostgreSQL requires TIMESTAMP.

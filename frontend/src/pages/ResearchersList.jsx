@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../config/api';
+import Pagination from '../components/Pagination';
 import '../styles/cards.css';
+
+const ITEMS_PER_PAGE = 8;
 
 const ResearchersList = () => {
   const [researchers, setResearchers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchResearchers();
@@ -24,13 +29,36 @@ const ResearchersList = () => {
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
 
+  const filtered = researchers.filter((r) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    const fullName = r?.full_name || r?.user?.full_name || r?.user_full_name || '';
+    return fullName.toLowerCase().includes(s) ||
+      (r.department || '').toLowerCase().includes(s) ||
+      (r.skills || '').toLowerCase().includes(s) ||
+      (r.designation || '').toLowerCase().includes(s);
+  });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className="container py-5">
       <h2 className="mb-4"><i className="bi bi-people"></i> Researchers Directory</h2>
 
+      <div className="mb-4">
+        <input
+          className="form-control"
+          placeholder="Search by name, department, skills, or designation..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+        />
+        <p className="text-muted small mt-1">{filtered.length} researcher{filtered.length !== 1 ? 's' : ''} found</p>
+      </div>
+
       <div className="row">
-        {researchers.length > 0 ? (
-          researchers.map((researcher) => {
+        {paginated.length > 0 ? (
+          paginated.map((researcher) => {
             const fullName = researcher?.full_name || researcher?.user?.full_name || researcher?.user_full_name || 'Unknown researcher';
             const skills = typeof researcher?.skills === 'string' && researcher.skills
               ? researcher.skills.split(',').filter(Boolean)
@@ -67,9 +95,11 @@ const ResearchersList = () => {
             );
           })
         ) : (
-          <div className="alert alert-info">No researchers found yet.</div>
+          <div className="alert alert-info">No researchers found.</div>
         )}
       </div>
+
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
@@ -35,14 +35,14 @@ def list_citations(publication_id: int | None = None, skip: int = 0, limit: int 
     return [citation_data(x) for x in query.order_by(Citation.citation_date.desc()).offset(skip).limit(limit).all()]
 
 @router.post("", response_model=CitationResponse, status_code=status.HTTP_201_CREATED)
-def create_citation(payload: CitationCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def create_citation(payload: CitationCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if payload.citing_publication_id == payload.cited_publication_id: raise HTTPException(status_code=400, detail="A publication cannot cite itself")
     citing, cited = db.get(Publication, payload.citing_publication_id), db.get(Publication, payload.cited_publication_id)
     if not citing or not cited: raise HTTPException(status_code=404, detail="Publication not found")
     if not can_edit_publication(citing, current_user): raise HTTPException(status_code=403, detail="You can add citations only to your own publications")
-    item = Citation(**payload.model_dump()); db.add(item)
+    item = Citation(**payload.model_dump(), created_by_id=current_user.id); db.add(item)
     if cited.created_by_id != current_user.id:
-        create_notification(db, cited.created_by_id, "New citation added", f"Your publication '{cited.title}' was cited by '{citing.title}'.", "citation_added")
+        create_notification(db, cited.created_by_id, "New citation added", f"Your publication '{cited.title}' was cited by '{citing.title}'.", "citation_added", background_tasks)
     try: db.commit()
     except Exception: db.rollback(); raise HTTPException(status_code=409, detail="This citation already exists")
     db.refresh(item); return citation_data(item)
@@ -59,6 +59,22 @@ def citation_count(publication_id: int, db: Session = Depends(get_db), current_u
     if not db.get(Publication, publication_id): raise HTTPException(status_code=404, detail="Publication not found")
     return {"publication_id": publication_id, "citation_count": db.query(func.count(Citation.id)).filter(Citation.cited_publication_id == publication_id).scalar()}
 
+@router.put("/{citation_id}/verify", response_model=CitationResponse)
+def verify_citation(citation_id: int, is_verified: bool = True, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
+    item = db.get(Citation, citation_id)
+    if not item: raise HTTPException(status_code=404, detail="Citation not found")
+    item.is_verified = is_verified
+    db.commit(); db.refresh(item); return citation_data(item)
+
+@router.put("/{citation_id}/flag", response_model=CitationResponse)
+def flag_citation(citation_id: int, is_flagged: bool = True, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
+    item = db.get(Citation, citation_id)
+    if not item: raise HTTPException(status_code=404, detail="Citation not found")
+    item.is_flagged = is_flagged
+    db.commit(); db.refresh(item); return citation_data(item)
+
 @router.get("/publications/{publication_id}/references", response_model=List[ReferenceResponse])
 def list_references(publication_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not db.get(Publication, publication_id): raise HTTPException(status_code=404, detail="Publication not found")
@@ -71,9 +87,33 @@ def create_reference(publication_id: int, payload: ReferenceCreate, db: Session 
     if not can_edit_publication(publication, current_user): raise HTTPException(status_code=403, detail="You can manage references only for your own publications")
     item = Reference(publication_id=publication_id, **payload.model_dump()); db.add(item); db.commit(); db.refresh(item); return item
 
+@router.put("/references/{reference_id}", response_model=ReferenceResponse)
+def update_reference(reference_id: int, payload: ReferenceCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    item = db.get(Reference, reference_id)
+    if not item: raise HTTPException(status_code=404, detail="Reference not found")
+    if not can_edit_publication(item.publication, current_user): raise HTTPException(status_code=403, detail="Not authorized")
+    for key, value in payload.model_dump(exclude_unset=True).items(): setattr(item, key, value)
+    db.commit(); db.refresh(item); return item
+
 @router.delete("/references/{reference_id}")
 def delete_reference(reference_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     item = db.get(Reference, reference_id)
     if not item: raise HTTPException(status_code=404, detail="Reference not found")
     if not can_edit_publication(item.publication, current_user): raise HTTPException(status_code=403, detail="Not authorized")
     db.delete(item); db.commit(); return {"detail": "Reference deleted"}
+
+@router.put("/references/{reference_id}/verify", response_model=ReferenceResponse)
+def verify_reference(reference_id: int, is_verified: bool = True, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
+    item = db.get(Reference, reference_id)
+    if not item: raise HTTPException(status_code=404, detail="Reference not found")
+    item.is_verified = is_verified
+    db.commit(); db.refresh(item); return item
+
+@router.put("/references/{reference_id}/flag", response_model=ReferenceResponse)
+def flag_reference(reference_id: int, is_flagged: bool = True, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
+    item = db.get(Reference, reference_id)
+    if not item: raise HTTPException(status_code=404, detail="Reference not found")
+    item.is_flagged = is_flagged
+    db.commit(); db.refresh(item); return item

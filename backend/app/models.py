@@ -31,6 +31,24 @@ class ProjectStatus(str, enum.Enum):
     ON_HOLD = "on_hold"
     COMPLETED = "completed"
 
+class ProjectMemberStatus(str, enum.Enum):
+    ACTIVE = "active"
+    LEFT = "left"
+    REMOVED = "removed"
+
+class CollaborationRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+class ReferenceType(str, enum.Enum):
+    JOURNAL = "journal"
+    CONFERENCE = "conference"
+    BOOK = "book"
+    PATENT = "patent"
+    WEBSITE = "website"
+
 publication_author = Table(
     "publication_author",
     Base.metadata,
@@ -62,8 +80,8 @@ class User(Base):
     assigned_institution = relationship("Institution", foreign_keys=[assigned_institution_id])
     created_projects = relationship("ResearchProject", foreign_keys="ResearchProject.created_by", back_populates="creator")
     project_memberships = relationship("ProjectMember", back_populates="researcher", cascade="all, delete-orphan")
-    collaborations_as_first = relationship("Collaboration", foreign_keys="Collaboration.researcher1_id", back_populates="researcher1")
-    collaborations_as_second = relationship("Collaboration", foreign_keys="Collaboration.researcher2_id", back_populates="researcher2")
+    collaboration_requests_sent = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.sender_id", back_populates="sender")
+    collaboration_requests_received = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.receiver_id", back_populates="receiver")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
@@ -82,7 +100,7 @@ class Institution(Base):
     
     researcher_profiles = relationship("ResearcherProfile", back_populates="institution", cascade="all, delete-orphan")
     projects = relationship("ResearchProject", back_populates="institution")
-    collaborations = relationship("Collaboration", back_populates="institution")
+    collaboration_requests = relationship("CollaborationRequest", back_populates="institution")
     
     def __repr__(self):
         return f"<Institution {self.name}>"
@@ -206,7 +224,7 @@ class ResearchProject(Base):
     institution = relationship("Institution", back_populates="projects")
     creator = relationship("User", foreign_keys=[created_by], back_populates="created_projects")
     members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
-    collaborations = relationship("Collaboration", back_populates="project", cascade="all, delete-orphan")
+    collaboration_requests = relationship("CollaborationRequest", back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectMember(Base):
@@ -216,6 +234,7 @@ class ProjectMember(Base):
     project_id = Column(Integer, ForeignKey("research_projects.id"), nullable=False)
     researcher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(String(50), nullable=False, default="Contributor")
+    status = Column(Enum(ProjectMemberStatus), default=ProjectMemberStatus.ACTIVE, nullable=False)
     joined_at = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (UniqueConstraint("project_id", "researcher_id", name="uq_project_member"),)
 
@@ -223,23 +242,25 @@ class ProjectMember(Base):
     researcher = relationship("User", back_populates="project_memberships")
 
 
-class Collaboration(Base):
-    __tablename__ = "collaborations"
+class CollaborationRequest(Base):
+    __tablename__ = "collaboration_requests"
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("research_projects.id"), nullable=True)
-    researcher1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    researcher2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)
     collaboration_type = Column(String(100), nullable=False, default="Research")
-    status = Column(String(30), nullable=False, default="pending")
+    message = Column(Text, nullable=True)
+    status = Column(Enum(CollaborationRequestStatus), nullable=False, default=CollaborationRequestStatus.PENDING)
     created_at = Column(DateTime, default=datetime.utcnow)
-    __table_args__ = (UniqueConstraint("project_id", "researcher1_id", "researcher2_id", name="uq_project_collaboration"),)
+    responded_at = Column(DateTime, nullable=True)
+    __table_args__ = (UniqueConstraint("project_id", "sender_id", "receiver_id", name="uq_project_collaboration_request"),)
 
-    project = relationship("ResearchProject", back_populates="collaborations")
-    researcher1 = relationship("User", foreign_keys=[researcher1_id], back_populates="collaborations_as_first")
-    researcher2 = relationship("User", foreign_keys=[researcher2_id], back_populates="collaborations_as_second")
-    institution = relationship("Institution", back_populates="collaborations")
+    project = relationship("ResearchProject", back_populates="collaboration_requests")
+    sender = relationship("User", foreign_keys=[sender_id], back_populates="collaboration_requests_sent")
+    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="collaboration_requests_received")
+    institution = relationship("Institution", back_populates="collaboration_requests")
 
 
 class CoAuthor(Base):
@@ -262,11 +283,16 @@ class Citation(Base):
     id = Column(Integer, primary_key=True, index=True)
     citing_publication_id = Column(Integer, ForeignKey("publications.id"), nullable=False)
     cited_publication_id = Column(Integer, ForeignKey("publications.id"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     citation_date = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_verified = Column(Boolean, default=False)
+    is_flagged = Column(Boolean, default=False)
     __table_args__ = (UniqueConstraint("citing_publication_id", "cited_publication_id", name="uq_citation"),)
 
     citing_publication = relationship("Publication", foreign_keys=[citing_publication_id], back_populates="citations_made")
     cited_publication = relationship("Publication", foreign_keys=[cited_publication_id], back_populates="citations_received")
+    creator = relationship("User", foreign_keys=[created_by_id])
 
 
 class Reference(Base):
@@ -274,12 +300,20 @@ class Reference(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     publication_id = Column(Integer, ForeignKey("publications.id"), nullable=False)
+    reference_type = Column(Enum(ReferenceType), default=ReferenceType.JOURNAL)
     title = Column(String(500), nullable=False)
     authors = Column(String(1000), nullable=True)
     journal = Column(String(255), nullable=True)
+    conference = Column(String(255), nullable=True)
+    publisher = Column(String(255), nullable=True)
     year = Column(Integer, nullable=True)
+    volume = Column(String(50), nullable=True)
+    issue = Column(String(50), nullable=True)
+    pages = Column(String(50), nullable=True)
     doi = Column(String(255), nullable=True, index=True)
     url = Column(String(1000), nullable=True)
+    is_verified = Column(Boolean, default=False)
+    is_flagged = Column(Boolean, default=False)
 
     publication = relationship("Publication", back_populates="references")
 

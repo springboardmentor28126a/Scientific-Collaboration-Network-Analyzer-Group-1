@@ -1,37 +1,30 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List, Any
 from datetime import datetime, date
-from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus, ProjectStatus
+from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus, ProjectMemberStatus, CollaborationRequestStatus, ReferenceType
 
 class UserBase(BaseModel):
     email: EmailStr
     username: str
     full_name: str
     role: UserRole = UserRole.RESEARCHER
-    requested_role: Optional[UserRole] = None
+   
 
 class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=72)
-
-    @field_validator("password")
-    @classmethod
-    def password_not_blank(cls, value: str):
-        if not value.strip():
-            raise ValueError("Password cannot be blank")
-        return value
+    password: str
+    requested_role: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-class RoleRequest(BaseModel):
-    requested_role: UserRole
-
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    requested_role: Optional[str] = None
     role_request_status: Optional[str] = None
     assigned_institution_id: Optional[int] = None
+    
     created_at: datetime
     
     class Config:
@@ -87,19 +80,15 @@ class ResearcherProfileResponse(ResearcherProfileBase):
     class Config:
         from_attributes = True
 
+class RoleRequest(BaseModel):
+    requested_role: UserRole
+
 class PublicationBase(BaseModel):
-    title: str = Field(min_length=3, max_length=500)
-    abstract: str = Field(min_length=10)
+    title: str
+    abstract: Optional[str] = None
     publication_type: PublicationType = PublicationType.JOURNAL
     status: PublicationStatus = PublicationStatus.DRAFT
     published_date: Optional[datetime] = None
-
-    @field_validator("title", "abstract")
-    @classmethod
-    def non_blank(cls, value: str):
-        if not value.strip():
-            raise ValueError("This field cannot be blank")
-        return value.strip()
 
 class PublicationCreate(PublicationBase):
     pass
@@ -109,9 +98,6 @@ class PublicationResponse(PublicationBase):
     file_path: Optional[str] = None
     created_by_id: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    creator_name: Optional[str] = None
-    citation_count: int = 0
     
     class Config:
         from_attributes = True
@@ -130,52 +116,22 @@ class ConferenceResponse(ConferenceBase):
     id: int
     created_by_id: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    creator_name: Optional[str] = None
     
     class Config:
         from_attributes = True
 
 class ConferenceRegistrationCreate(BaseModel):
-    pass
+    presentation_title: Optional[str] = None
+    presentation_abstract: Optional[str] = None
 
-class ConferenceRegistrationResponse(BaseModel):
+class ConferenceRegistrationResponse(ConferenceRegistrationCreate):
     id: int
     conference_id: int
     user_id: int
     registered_at: datetime
-    full_name: Optional[str] = None
-    institution_name: Optional[str] = None
-    department: Optional[str] = None
-    designation: Optional[str] = None
     
     class Config:
         from_attributes = True
-
-class InstitutionOverview(InstitutionResponse):
-    researchers_count: int = 0
-    reviewers_count: int = 0
-    administrators_count: int = 0
-    publications_count: int = 0
-    researchers: List[dict] = []
-    reviewers: List[dict] = []
-    administrators: List[dict] = []
-
-class DashboardStats(BaseModel):
-    publications_count: int = 0
-    conferences_count: int = 0
-    h_index: int = 0
-    active_projects: int = 0
-    pending_reviews: int = 0
-    completed_reviews: int = 0
-    researchers_count: int = 0
-    collaboration_count: int = 0
-    users_count: int = 0
-    institution_admins_count: int = 0
-    reviewers_count: int = 0
-    institutions_count: int = 0
-    publications_by_institution: List[dict] = []
-    recent_users: List[dict] = []
 
 class Token(BaseModel):
     access_token: str
@@ -183,134 +139,122 @@ class Token(BaseModel):
     user: UserResponse
 
 
-class ReviewBase(BaseModel):
-    rating: Optional[int] = None
-    comments: Optional[str] = None
-    recommendation: Optional[str] = None
-
-class ReviewCreate(ReviewBase):
-    pass
-
-class ReviewResponse(ReviewBase):
-    # Pending queue entries are intentionally not stored until a reviewer
-    # submits feedback, so they do not have a database id yet.
-    id: Optional[int] = None
-    publication_id: int
-    reviewer_id: int
-    file_path: Optional[str] = None
-    status: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ProjectBase(BaseModel):
-    title: str = Field(min_length=3, max_length=500)
-    description: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    status: ProjectStatus = ProjectStatus.PLANNING
-    institution_id: Optional[int] = None
-
-    @field_validator("end_date")
-    @classmethod
-    def valid_dates(cls, end_date, info):
-        start_date = info.data.get("start_date")
-        if start_date and end_date and end_date < start_date:
-            raise ValueError("end_date cannot be earlier than start_date")
-        return end_date
-
-class ProjectCreate(ProjectBase):
-    pass
-
-class ProjectUpdate(ProjectBase):
-    title: Optional[str] = Field(default=None, min_length=3, max_length=500)
-
-class ProjectResponse(ProjectBase):
-    id: int
-    created_by: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    creator_name: Optional[str] = None
-    member_count: int = 0
-    class Config:
-        from_attributes = True
-
-class ProjectMemberCreate(BaseModel):
-    researcher_id: int
-    role: str = Field(default="Contributor", pattern="^(Principal Investigator|Co-author|Contributor)$")
-
-class ProjectMemberResponse(ProjectMemberCreate):
-    id: int
-    project_id: int
-    joined_at: datetime
-    researcher_name: Optional[str] = None
-    class Config:
-        from_attributes = True
-
-class CollaborationBase(BaseModel):
-    project_id: Optional[int] = None
-    researcher1_id: Optional[int] = None
-    researcher2_id: int
-    institution_id: Optional[int] = None
-    collaboration_type: str = Field(default="Research", min_length=2, max_length=100)
-    status: str = Field(default="pending", pattern="^(pending|active|rejected|completed)$")
-
-class CollaborationCreate(CollaborationBase):
-    pass
-
-class CollaborationUpdate(BaseModel):
-    collaboration_type: Optional[str] = Field(default=None, min_length=2, max_length=100)
-    status: Optional[str] = Field(default=None, pattern="^(pending|active|rejected|completed)$")
-
-class CollaborationResponse(CollaborationBase):
-    id: int
-    researcher1_id: int
-    created_at: datetime
-    researcher1_name: Optional[str] = None
-    researcher2_name: Optional[str] = None
-    class Config:
-        from_attributes = True
-
-class CoAuthorCreate(BaseModel):
-    researcher_id: int
-    author_order: int = Field(ge=1)
-    contribution: Optional[str] = Field(default=None, max_length=255)
-
-class CoAuthorResponse(CoAuthorCreate):
-    id: int
-    publication_id: int
-    researcher_name: Optional[str] = None
-    class Config:
-        from_attributes = True
-
 class CitationCreate(BaseModel):
     citing_publication_id: int
     cited_publication_id: int
 
-class CitationResponse(CitationCreate):
+
+class CitationResponse(BaseModel):
     id: int
+    citing_publication_id: int
+    cited_publication_id: int
+    created_by_id: int
     citation_date: datetime
+    created_at: datetime
     citing_title: Optional[str] = None
     cited_title: Optional[str] = None
+    is_verified: bool
+    is_flagged: bool
+
     class Config:
         from_attributes = True
 
-class ReferenceBase(BaseModel):
-    title: str = Field(min_length=2, max_length=500)
-    authors: Optional[str] = Field(default=None, max_length=1000)
-    journal: Optional[str] = Field(default=None, max_length=255)
-    year: Optional[int] = Field(default=None, ge=1000, le=2100)
-    doi: Optional[str] = Field(default=None, max_length=255)
-    url: Optional[str] = Field(default=None, max_length=1000)
 
-class ReferenceCreate(ReferenceBase):
-    pass
+class ReferenceCreate(BaseModel):
+    title: str
+    reference_type: Optional[ReferenceType] = ReferenceType.JOURNAL
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    conference: Optional[str] = None
+    publisher: Optional[str] = None
+    year: Optional[int] = None
+    volume: Optional[str] = None
+    issue: Optional[str] = None
+    pages: Optional[str] = None
+    doi: Optional[str] = None
+    url: Optional[str] = None
 
-class ReferenceResponse(ReferenceBase):
+
+class ReferenceResponse(ReferenceCreate):
     id: int
     publication_id: int
+    is_verified: bool
+    is_flagged: bool
+
+    class Config:
+        from_attributes = True
+
+
+class ProjectMemberCreate(BaseModel):
+    researcher_id: int
+    role: Optional[str] = "Contributor"
+
+
+class ProjectMemberResponse(BaseModel):
+    id: int
+    project_id: int
+    researcher_id: int
+    role: str
+    status: ProjectMemberStatus
+    joined_at: datetime
+    researcher_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ProjectCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    institution_id: Optional[int] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    status: Optional[str] = "planning"
+
+
+class ProjectUpdate(ProjectCreate):
+    pass
+
+
+class ProjectResponse(ProjectCreate):
+    id: int
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+    member_count: int
+    creator_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CollaborationRequestCreate(BaseModel):
+    receiver_id: int
+    project_id: Optional[int] = None
+    institution_id: Optional[int] = None
+    collaboration_type: Optional[str] = "Research"
+    message: Optional[str] = None
+
+
+class CollaborationRequestUpdate(BaseModel):
+    status: CollaborationRequestStatus
+
+
+class CollaborationRequestResponse(BaseModel):
+    id: int
+    project_id: Optional[int] = None
+    sender_id: int
+    receiver_id: int
+    institution_id: Optional[int] = None
+    collaboration_type: str
+    message: Optional[str] = None
+    status: CollaborationRequestStatus
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    sender_name: Optional[str] = None
+    receiver_name: Optional[str] = None
+    project_title: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -322,6 +266,82 @@ class NotificationResponse(BaseModel):
     message: str
     type: str
     is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CoAuthorBase(BaseModel):
+    researcher_id: int
+    author_order: int
+    contribution: Optional[str] = None
+
+class CoAuthorCreate(CoAuthorBase):
+    pass
+
+class CoAuthorResponse(CoAuthorBase):
+    id: int
+    publication_id: int
+    researcher_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class InstitutionMember(BaseModel):
+    id: Optional[int] = None
+    name: str
+    email: str
+    designation: Optional[str] = None
+
+class InstitutionOverview(InstitutionResponse):
+    researchers_count: int
+    reviewers_count: int
+    administrators_count: int
+    publications_count: int
+    researchers: List[InstitutionMember]
+    reviewers: List[InstitutionMember]
+    administrators: List[InstitutionMember]
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardStats(BaseModel):
+    users_count: Optional[int] = None
+    researchers_count: Optional[int] = None
+    institution_admins_count: Optional[int] = None
+    reviewers_count: Optional[int] = None
+    institutions_count: Optional[int] = None
+    publications_count: Optional[int] = None
+    conferences_count: Optional[int] = None
+    active_projects: Optional[int] = None
+    collaboration_count: Optional[int] = None
+    publications_by_institution: Optional[List[dict[str, Any]]] = None
+    recent_users: Optional[List[dict[str, Any]]] = None
+    pending_reviews: Optional[int] = None
+    completed_reviews: Optional[int] = None
+    h_index: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewBase(BaseModel):
+    rating: Optional[int] = None
+    comments: Optional[str] = None
+    recommendation: Optional[str] = None
+
+class ReviewCreate(ReviewBase):
+    pass
+
+class ReviewResponse(ReviewBase):
+    id: int
+    publication_id: int
+    reviewer_id: int
+    file_path: Optional[str] = None
+    status: str
     created_at: datetime
 
     class Config:

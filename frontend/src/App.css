@@ -105,6 +105,20 @@ body {
   backdrop-filter: blur(15px);
 }
 
+.nav-tabs .nav-link {
+  color: #494D5F !important;
+}
+
+.nav-tabs .nav-link.active {
+  background: #8458B3 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #8458B3 !important;
+}
+
 /* Sidebar */
 .sidebar {
   background: rgba(73,77,95,.92);
