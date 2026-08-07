@@ -32,6 +32,7 @@ function Publications() {
   const [conferences, setConferences] = useState([]);
   const [reviewers, setReviewers] = useState([]);
   const [reviewerLoading, setReviewerLoading] = useState(false);
+  const [allPublications, setAllPublications] = useState([]);
   const [form, setForm] = useState({
     id: null,
     title: "",
@@ -65,6 +66,7 @@ function Publications() {
     const loadPublications = async () => {
         try {
             const response = await API.get("/publications/");
+            setAllPublications(response.data);
             const visiblePublications = response.data.filter((publication) => (
                 currentUser?.role === "System Admin" ||
                 (currentUser?.role === "Reviewer"
@@ -1137,11 +1139,14 @@ function Publications() {
                                 overflowY: "auto"
                             }}
                         >
+
                             <div className="citation-selection-notice" role="status">
                                 <span className="citation-selection-notice-icon">i</span>
                                 <span><strong>{selectedCitations.length ? `${selectedCitations.length} citation${selectedCitations.length === 1 ? "" : "s"} selected` : "Select references for this publication"}</strong><small>{selectedCitations.length ? "Selected references will be saved when you submit this publication." : "Choose one or more publications below to add them as references."}</small></span>
                             </div>
-                            {publications.map((pub) => (
+                           
+                            {allPublications.map((pub) => (
+
                                 <label
                                     key={pub.id}
                                     style={{
