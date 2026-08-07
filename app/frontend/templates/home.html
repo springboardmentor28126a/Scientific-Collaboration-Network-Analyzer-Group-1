@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Scientific Collaboration Network Analyzer</p>
+        <h1>Research collaboration management dashboard</h1>
+        <p class="subtle">Track the high-level state of users, researchers, publications, projects, conferences, citations, and partnerships.</p>
+      </div>
+      <a class="btn btn-dark" href="/docs" target="_blank">API Docs</a>
+    </section>
+
+    <!-- Dashboard Statistics Metrics -->
+    <section class="metric-grid" id="metrics">
+      <div class="metric"><span>Users</span><strong id="metricUsers">0</strong></div>
+      <div class="metric"><span>Researchers</span><strong id="metricResearchers">0</strong></div>
+      <div class="metric"><span>Institutions</span><strong id="metricInstitutions">0</strong></div>
+      <div class="metric"><span>Publications</span><strong id="metricPublications">0</strong></div>
+      <div class="metric"><span>Projects</span><strong id="metricProjects">0</strong></div>
+      <div class="metric"><span>Collaborations</span><strong id="metricCollaborations">0</strong></div>
+      <div class="metric"><span>Conferences</span><strong id="metricConferences">0</strong></div>
+      <div class="metric"><span>Citations</span><strong id="metricCitations">0</strong></div>
+    </section>
+
+    <!-- Quick Access Module Cards -->
+    <!-- Each card carries an id that nav-auth.js's applyNavForRole() maps to
+         the matching nav link's permission tier (see DASHBOARD_CARD_TO_NAV_ID),
+         so a role that can't see a module in the navbar won't see or be able
+         to open its Dashboard card either. Cards default to visible and are
+         only hidden once the user's role is known, avoiding a flash of
+         restricted content. -->
+    <section class="panel-grid">
+      <div class="panel" id="panelResearchers">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-people me-2"></i>Researchers</h2>
+            <p>Academic profiles, departments, skills, interests, and completion metrics.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('researchers_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel" id="panelInstitutions">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-building me-2"></i>Institutions</h2>
+            <p>University & lab profiles, departments, contact info, and activity stats.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('institutions_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel" id="panelPublications">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-journal-text me-2"></i>Publications</h2>
+            <p>Journal papers, conference papers, books, patents, abstracts, & PDF downloads.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('publications_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel" id="panelCitations">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-bookmark-check me-2"></i>Citations</h2>
+            <p>Citation records, reference links, average citations, and trend analytics.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('citations_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel" id="panelConferences">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-calendar-event me-2"></i>Conferences</h2>
+            <p>Upcoming & past academic conferences, registrations, and presentation records.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('conferences_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel" id="panelCollaborations">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-diagram-3 me-2"></i>Collaborations</h2>
+            <p>Co-author records, team assignments, institutional partnerships, and network map.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('collaborations_page') }}">Open</a>
+        </div>
+      </div>
+
+      <div class="panel wide" id="panelReports">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-bar-chart me-2"></i>Reports & Analytics</h2>
+            <p>Publication analytics, research summaries, Excel spreadsheet export, and PDF generation.</p>
+          </div>
+          <a class="btn btn-outline-dark" href="{{ url_for('reports_page') }}">Open Reports</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Quick Insights -->
+    <!-- ================================================= -->
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2><i class="bi bi-lightning-charge me-2"></i>Quick Insights</h2>
+          <p>At-a-glance signals pulled from the current data set.</p>
+        </div>
+      </div>
+      <div class="insight-grid" id="quickInsights">
+        <div class="text-center py-3 text-muted w-100">Loading insights...</div>
+      </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Recent Activity -->
+    <!-- ================================================= -->
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2><i class="bi bi-clock-history me-2"></i>Recent Activity</h2>
+          <p>The latest publications, collaborations, and conferences added across the network.</p>
+        </div>
+      </div>
+      <ul class="activity-feed" id="recentActivityList">
+        <li class="text-center py-3 text-muted">Loading recent activity...</li>
+      </ul>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Latest Publications / Collaborations / Conferences -->
+    <!-- ================================================= -->
+    <section class="panel-grid">
+
+      <div class="panel" id="sectionLatestPublications">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-journal-text me-2"></i>Latest Publications</h2>
+            <p>Most recently added publications.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="latestPublicationsList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="panel" id="sectionLatestCollaborations">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-diagram-3 me-2"></i>Latest Collaborations</h2>
+            <p>Most recently added co-author records.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="latestCollaborationsList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="panel" id="sectionRecentConferences">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-calendar-event me-2"></i>Recent Conference Additions</h2>
+            <p>Newest conferences added to the directory.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="recentConferencesList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
+    </section>
+  </section>
+{% endblock content %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+{% endblock scripts %}

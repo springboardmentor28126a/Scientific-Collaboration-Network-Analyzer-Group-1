@@ -1,0 +1,289 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<section class="workspace">
+
+    <!-- ========================= -->
+    <!-- Page Header -->
+    <!-- ========================= -->
+
+    <section class="page-header">
+
+        <div>
+
+            <p class="eyebrow">
+                Reports
+            </p>
+
+            <h1>
+                Reports Dashboard
+            </h1>
+
+            <p class="subtle">
+                Research analytics, publication statistics and institutional insights.
+            </p>
+
+        </div>
+
+        <div class="report-actions d-flex gap-2">
+
+            <button id="refreshDashboard" type="button" class="btn btn-outline-dark">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh Dashboard
+            </button>
+
+            <button id="exportPDF" type="button" class="btn btn-dark">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Summary Cards -->
+    <!-- ========================= -->
+
+    <section class="metric-grid">
+
+        <div class="metric">
+            <span>Researchers</span>
+            <strong id="researchersCount">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Publications</span>
+            <strong id="publicationsCount">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Projects</span>
+            <strong id="projectsCount">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Collaborations</span>
+            <strong id="collaborationsCount">0</strong>
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Downloads -->
+    <!-- ========================= -->
+
+    <section class="panel wide">
+
+        <div class="panel-heading">
+            <div>
+                <h2>Downloadable Reports</h2>
+                <p>Export the full data set for a module as CSV.</p>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-dark" href="#" id="dlResearchers">
+                <i class="bi bi-download me-1"></i>Researchers CSV
+            </a>
+            <a class="btn btn-outline-dark" href="#" id="dlPublications">
+                <i class="bi bi-download me-1"></i>Publications CSV
+            </a>
+            <a class="btn btn-outline-dark" href="#" id="dlCollaborations">
+                <i class="bi bi-download me-1"></i>Collaborations CSV
+            </a>
+            <a class="btn btn-outline-dark" href="#" id="dlInstitutions">
+                <i class="bi bi-download me-1"></i>Institutions CSV
+            </a>
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Charts -->
+    <!-- ========================= -->
+
+    <section class="panel-grid">
+
+        <!-- Publications -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>Publications by Year</h2>
+
+                    <p>Publication distribution across years.</p>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="publicationYearChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Institution -->
+
+        <div class="panel">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>Researchers by Institution</h2>
+
+                    <p>Institution-wise researcher distribution.</p>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container">
+
+                <canvas id="institutionChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Status -->
+
+        <div class="panel wide">
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <h2>Publications by Status</h2>
+
+                    <p>Current publication status distribution.</p>
+
+                </div>
+
+            </div>
+
+            <div class="chart-container status-chart">
+
+                <canvas id="statusChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Additional Analytics -->
+    <!-- ========================= -->
+
+    <section class="panel-grid">
+
+        <div class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Researchers by Department</h2>
+                    <p>Department-wise researcher distribution.</p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="departmentChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Collaborations by Year</h2>
+                    <p>Yearly trend of new collaboration activity.</p>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="collabYearChart"></canvas>
+            </div>
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- Top Institutions -->
+    <!-- ========================= -->
+
+    <section class="panel wide">
+
+        <div class="panel-heading">
+
+            <div>
+
+                <h2>Top Institutions</h2>
+
+                <p>Institution-wise researcher distribution.</p>
+
+            </div>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Institution</th>
+
+                        <th>Researchers</th>
+
+                        <th>Publications</th>
+
+                        <th>Collaborations</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="institutionTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</section>
+
+{% endblock content %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script src="{{ url_for('static', path='js/report.js') }}"></script>
+
+{% endblock scripts %}
