@@ -187,6 +187,10 @@ function EditPublicationModal({
                 <label style={{ marginTop: "15px", display: "block" }}>
                     References (Citations)
                 </label>
+                <div className="citation-selection-notice" role="status">
+                    <span className="citation-selection-notice-icon">i</span>
+                    <span><strong>{selectedCitations.length ? `${selectedCitations.length} citation${selectedCitations.length === 1 ? "" : "s"} selected` : "Select references for this publication"}</strong><small>{selectedCitations.length ? "Selected references will be saved when you save changes." : "Choose publications below to add them as references."}</small></span>
+                </div>
 
                 <select
                     multiple

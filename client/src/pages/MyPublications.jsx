@@ -1137,6 +1137,10 @@ function Publications() {
                                 overflowY: "auto"
                             }}
                         >
+                            <div className="citation-selection-notice" role="status">
+                                <span className="citation-selection-notice-icon">i</span>
+                                <span><strong>{selectedCitations.length ? `${selectedCitations.length} citation${selectedCitations.length === 1 ? "" : "s"} selected` : "Select references for this publication"}</strong><small>{selectedCitations.length ? "Selected references will be saved when you submit this publication." : "Choose one or more publications below to add them as references."}</small></span>
+                            </div>
                             {publications.map((pub) => (
                                 <label
                                     key={pub.id}

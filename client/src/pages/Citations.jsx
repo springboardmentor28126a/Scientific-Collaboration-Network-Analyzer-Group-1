@@ -7,6 +7,7 @@ import {
   formatCitation,
 } from "../services/citationService";
 import api from "../services/api";
+import CitationModal from "../components/CitationModal";
 
 function Citations() {
   const [publicationId, setPublicationId] = useState("");
@@ -15,6 +16,7 @@ function Citations() {
   const [style, setStyle] = useState("APA");
   const [formattedCitation, setFormattedCitation] = useState("");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [citationLoading, setCitationLoading] = useState(false);
   const loadPublications = async () => {
     try {
       const { data } = await api.get("/publications/");
@@ -67,28 +69,15 @@ function Citations() {
 
   const loadFormattedCitation = async () => {
     if (!publicationId) return;
+    setCitationLoading(true);
     try {
       const data = await formatCitation(publicationId, style);
       setFormattedCitation(data.citation);
-      setShowGenerateModal(false);
     } catch {
       setFormattedCitation("");
+    } finally {
+      setCitationLoading(false);
     }
-  };
-
-  const copyCitation = async () => {
-    if (formattedCitation) await navigator.clipboard.writeText(formattedCitation);
-  };
-
-  const downloadCitation = () => {
-    if (!formattedCitation) return;
-    const blob = new Blob([formattedCitation], { type: style === "BibTeX" ? "application/x-bibtex" : "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `citation-${publicationId}.${style === "BibTeX" ? "bib" : "txt"}`;
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -138,12 +127,7 @@ function Citations() {
               {['APA', 'IEEE', 'MLA', 'Chicago', 'BibTeX'].map((option) => <option key={option}>{option}</option>)}
             </select>
             <button className="btn btn-secondary mt-3" onClick={() => setShowGenerateModal(true)} disabled={!publicationId}>Generate</button>
-            {formattedCitation && <>
-              <pre className="mt-3" style={{ whiteSpace: "pre-wrap" }}>{formattedCitation}</pre>
-              <button className="btn btn-primary mt-3" onClick={copyCitation}>Copy Citation</button>
-              <button className="btn btn-secondary mt-3" onClick={downloadCitation} style={{ marginLeft: "8px" }}>Download Citation</button>
-              <button className="btn btn-secondary mt-3" onClick={() => setFormattedCitation("")} style={{ marginLeft: "8px" }}>Clear</button>
-            </>}
+            {formattedCitation && <p className="citation-ready-note mt-3">Citation ready in the Generate Citation dialog.</p>}
           </div>
 
           <button
@@ -156,18 +140,7 @@ function Citations() {
         </div>
       </div>
 
-      {showGenerateModal && (
-        <div className="dialog-backdrop" role="presentation" onClick={() => setShowGenerateModal(false)}>
-          <div className="dialog-card" role="dialog" aria-modal="true" aria-labelledby="generate-citation-title" onClick={(event) => event.stopPropagation()}>
-            <h3 id="generate-citation-title">Generate Citation</h3>
-            <p>Do you want to generate a citation for this publication?</p>
-            <div className="dialog-actions">
-              <button type="button" onClick={() => setShowGenerateModal(false)}>Cancel</button>
-              <button type="button" className="primary-action" onClick={loadFormattedCitation}>Generate</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CitationModal open={showGenerateModal} onClose={() => setShowGenerateModal(false)} publicationId={publicationId} citation={formattedCitation} style={style} onStyleChange={setStyle} onGenerate={loadFormattedCitation} loading={citationLoading} />
 
     </div>
   );

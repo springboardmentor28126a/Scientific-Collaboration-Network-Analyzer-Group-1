@@ -357,6 +357,7 @@ textarea::placeholder {
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
   color: var(--muted);
+  box-shadow: 0 12px 28px rgba(2, 8, 23, .12);
 }
 
 .sidebar-search input {
@@ -373,6 +374,9 @@ textarea::placeholder {
   background: transparent;
 }
 
+.search-spinner { margin-left: auto; color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .sidebar-search-results {
   position: absolute;
   z-index: 20;
@@ -384,14 +388,20 @@ textarea::placeholder {
   border-radius: 14px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  max-height: min(620px, calc(100vh - 150px));
+  overflow-y: auto;
+  animation: fadeIn .18s var(--ease);
 }
+
+.search-result-group + .search-result-group { border-top: 1px solid var(--border); }
+.search-result-group-title { padding: 12px 14px 7px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 
 .sidebar-search-results button {
   display: flex;
   width: 100%;
   align-items: center;
   gap: 10px;
-  padding: 11px 12px;
+  padding: 12px 14px;
   border-radius: 0;
   background: transparent;
   text-align: left;
@@ -401,6 +411,16 @@ textarea::placeholder {
 .sidebar-search-results button.is-active {
   background: var(--button-bg-hover);
 }
+
+.search-result-copy { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.search-result-copy em { overflow: hidden; color: var(--muted); font-size: 11px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-copy small { display: flex; align-items: center; gap: 4px; }
+.search-result-arrow { flex: 0 0 auto; color: var(--muted); font-size: 11px; opacity: .6; }
+.search-status { display: inline-flex; align-items: center; gap: 4px; width: fit-content; border-radius: 999px; padding: 2px 7px; background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); font-size: 10px; font-weight: 700; }
+.search-empty-state { display: grid; gap: 8px; padding: 24px 18px; text-align: center; }
+.search-empty-state strong { color: var(--text); font-size: 14px; }
+.search-empty-state p { font-size: 12px; line-height: 1.5; }
+.search-empty-icon { display: grid; width: 38px; height: 38px; margin: 0 auto 2px; place-items: center; border-radius: 50%; background: var(--button-bg); color: var(--accent); }
 
 .sidebar-search-results button span:last-child {
   display: grid;
@@ -518,6 +538,44 @@ textarea::placeholder {
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.citation-open-button { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #04111f; }
+.citation-card-hint, .citation-ready-note { margin-top: 14px; font-size: 14px; }
+.citation-selection-notice { display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 12px; padding: 11px 12px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text); }
+.citation-selection-notice-icon { display: grid; width: 20px; height: 20px; flex: 0 0 20px; place-items: center; border: 1px solid var(--accent); border-radius: 50%; color: var(--accent); font-size: 12px; font-weight: 800; }
+.citation-selection-notice span:last-child { display: grid; gap: 3px; min-width: 0; }
+.citation-selection-notice strong { font-size: 13px; }
+.citation-selection-notice small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.citation-modal-backdrop { position: fixed; z-index: 1100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(2, 8, 23, .72); backdrop-filter: blur(9px); animation: fadeIn .2s ease; }
+.citation-modal { width: min(100%, 720px); max-height: min(760px, calc(100vh - 40px)); overflow: auto; padding: 30px; border: 1px solid var(--card-border); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 90px rgba(2, 8, 23, .4); color: var(--text); }
+.citation-modal-header { display: flex; justify-content: space-between; gap: 20px; }
+.citation-modal-kicker { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.citation-modal-header h2 { margin-top: 6px; font-size: clamp(24px, 4vw, 32px); }
+.citation-modal-header p { margin-top: 9px; font-size: 15px; line-height: 1.6; }
+.citation-modal-intro { margin-top: 24px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface-alt)), var(--surface-alt)); text-align: center; }
+.citation-intro-icon { display: grid; width: 44px; height: 44px; margin: 0 auto 12px; place-items: center; border-radius: 14px; background: var(--button-bg); color: var(--accent); font-size: 22px; }
+.citation-modal-intro h3 { font-size: 18px; }
+.citation-modal-intro p { max-width: 480px; margin: 8px auto 0; font-size: 14px; line-height: 1.6; }
+.citation-close { display: grid; width: 38px; height: 38px; flex: 0 0 auto; padding: 0; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: transparent; color: var(--muted); }
+.citation-modal-tabs { display: flex; gap: 5px; margin: 28px 0 18px; padding: 5px; overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-alt); }
+.citation-modal-tabs button { flex: 1; min-width: 76px; padding: 10px 12px; background: transparent; border-radius: 10px; box-shadow: none; color: var(--muted); }
+.citation-modal-tabs button.is-selected { background: var(--button-bg-hover); color: var(--accent); }
+.citation-preview { min-height: 170px; padding: 22px; border: 1px solid var(--border); border-radius: 16px; background: var(--bg); }
+.citation-preview-label { margin-bottom: 16px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.citation-preview p { color: var(--text); font-size: 16px; line-height: 1.85; white-space: pre-wrap; user-select: text; }
+.citation-preview.is-bibtex p { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 14px; line-height: 1.7; }
+.citation-preview-empty, .citation-preview-loading { display: grid; min-height: 150px; place-items: center; color: var(--muted); text-align: center; }
+.citation-loading-dot { width: 12px; height: 12px; margin-right: 8px; display: inline-block; border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+.citation-success { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--success); font-size: 14px; font-weight: 700; }
+.citation-modal-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+.citation-modal-actions button { display: inline-flex; align-items: center; gap: 8px; }
+.citation-secondary { border: 1px solid var(--border); background: transparent; }
+.citation-primary { background: var(--accent); color: #04111f; }
+
+@media (max-width: 640px) {
+  .citation-modal { padding: 22px; }
+  .citation-modal-actions button { flex: 1 1 auto; justify-content: center; }
 }
 
 .dialog-card p {

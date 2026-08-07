@@ -14,7 +14,11 @@ import {
     FaUser,
     FaFileAlt,
     FaUniversity,
-    FaUsers
+    FaUsers,
+    FaSpinner,
+    FaChevronRight,
+    FaMapMarkerAlt,
+    FaCheckCircle
 } from "react-icons/fa";
 import API from "../services/api";
 
@@ -24,17 +28,21 @@ function Sidebar() {
     const location = useLocation();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
     const searchRef = useRef(null);
 
     useEffect(() => {
         const term = query.trim();
-        if (term.length < 2) {
+        setIsSearching(term.length > 0);
+        if (term.length === 0) {
             setResults([]);
+            setIsSearching(false);
             setActiveIndex(0);
             return undefined;
         }
         const timer = setTimeout(async () => {
+            setIsSearching(true);
             try {
                 const [response, groupsResponse] = await Promise.all([
                     API.get("/search/global", { params: { query: term } }),
@@ -42,15 +50,17 @@ function Sidebar() {
                 ]);
                 const data = response.data || {};
                 setResults([
-                    ...(data.researchers || []).slice(0, 3).map((item) => ({ ...item, type: "researcher", label: "Researcher", icon: <FaUser /> })),
-                    ...(data.publications || []).slice(0, 3).map((item) => ({ ...item, type: "publication", label: "Publication", icon: <FaFileAlt /> })),
-                    ...(data.institutions || []).slice(0, 3).map((item) => ({ ...item, type: "institution", label: "Institution", icon: <FaUniversity /> })),
-                    ...(data.conferences || []).slice(0, 3).map((item) => ({ ...item, type: "conference", label: "Conference", icon: <FaCalendarAlt /> })),
-                    ...(groupsResponse.data || []).slice(0, 3).map((item) => ({ ...item, type: "group", label: "Research Group", icon: <FaUsers /> })),
+                    ...(data.researchers || []).map((item) => ({ ...item, type: "researcher", label: "Researchers", icon: <FaUser /> })),
+                    ...(data.publications || []).map((item) => ({ ...item, type: "publication", label: "Publications", icon: <FaFileAlt /> })),
+                    ...(data.institutions || []).map((item) => ({ ...item, type: "institution", label: "Institutions", icon: <FaUniversity /> })),
+                    ...(groupsResponse.data || []).map((item) => ({ ...item, type: "group", label: "Groups", icon: <FaUsers /> })),
+                    ...(data.conferences || []).map((item) => ({ ...item, type: "conference", label: "Conferences", icon: <FaCalendarAlt /> })),
                 ]);
                 setActiveIndex(0);
             } catch {
                 setResults([]);
+            } finally {
+                setIsSearching(false);
             }
         }, 250);
         return () => clearTimeout(timer);
@@ -70,6 +80,11 @@ function Sidebar() {
     };
 
     const handleSearchKeyDown = (event) => {
+        if (event.key === "Escape") {
+            setQuery("");
+            setResults([]);
+            return;
+        }
         if (!results.length) return;
         if (event.key === "ArrowDown") {
             event.preventDefault();
@@ -80,11 +95,13 @@ function Sidebar() {
         } else if (event.key === "Enter") {
             event.preventDefault();
             openResult(results[activeIndex]);
-        } else if (event.key === "Escape") {
-            setQuery("");
-            setResults([]);
         }
     };
+
+    const groupedResults = results.reduce((groups, result) => {
+        (groups[result.label] ||= []).push(result);
+        return groups;
+    }, {});
     return (
 
         <div
@@ -150,12 +167,12 @@ function Sidebar() {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     onKeyDown={handleSearchKeyDown}
-                    placeholder="Search Researchers, Publications, Institutions..."
+                    placeholder="Search Researchers, Publications, Institutions, Conferences..."
                     aria-label="Global search"
                     aria-autocomplete="list"
                     aria-controls="sidebar-search-results"
                 />
-                {results.length > 0 && (
+                {query.trim().length < 0 && results.length > 0 && (
                     <div className="sidebar-search-results" id="sidebar-search-results" role="listbox">
                         {results.map((result, index) => (
                             <button
@@ -171,6 +188,37 @@ function Sidebar() {
                                 <span><strong>{result.name || result.title}</strong><small>{result.label}{result.institution_name ? ` · ${result.institution_name}` : ""}</small></span>
                             </button>
                         ))}
+                    </div>
+                )}
+                {isSearching && <FaSpinner className="search-spinner" aria-label="Searching" />}
+                {!isSearching && query.trim().length > 0 && (
+                    <div className="sidebar-search-results" id="sidebar-search-results" role="listbox">
+                        {results.length === 0 ? <div className="search-empty-state">
+                            <span className="search-empty-icon"><FaSearch /></span>
+                            <strong>No matching results found</strong>
+                            <p>Try searching using another name, publication title, institution or conference.</p>
+                        </div> : Object.entries(groupedResults).map(([group, groupResults]) => <div className="search-result-group" key={group}>
+                            <div className="search-result-group-title">{group}</div>
+                            {groupResults.map((result) => {
+                                const index = results.indexOf(result);
+                                const title = result.name || result.title;
+                                const subtitle = result.type === "researcher"
+                                    ? [result.designation, result.department].filter(Boolean).join(" · ") || "Research profile"
+                                    : result.type === "publication"
+                                        ? [result.authors, result.publication_year].filter(Boolean).join(" · ") || "Publication record"
+                                        : result.type === "group"
+                                            ? `${result.member_count || 0} members · ${result.visibility || "Research community"}`
+                                            : result.type === "conference"
+                                                ? [result.organizer, result.location].filter(Boolean).join(" · ") || "Conference event"
+                                                : [result.city, result.country].filter(Boolean).join(" · ") || "Institution profile";
+                                const description = result.description || result.abstract || result.research_interests || result.journal || "Explore this record in the research hub.";
+                                return <button type="button" role="option" aria-selected={index === activeIndex} className={index === activeIndex ? "is-active" : ""} key={`${result.type}-${result.id}`} onMouseEnter={() => setActiveIndex(index)} onClick={() => openResult(result)}>
+                                    <span className="search-result-icon">{result.icon}</span>
+                                    <span className="search-result-copy"><strong>{title}</strong><small>{subtitle}</small><em>{description}</em>{result.institution_name && <small><FaMapMarkerAlt /> {result.institution_name}</small>}{result.status && <span className="search-status"><FaCheckCircle /> {result.status}</span>}</span>
+                                    <FaChevronRight className="search-result-arrow" aria-hidden="true" />
+                                </button>;
+                            })}
+                        </div>)}
                     </div>
                 )}
             </div>

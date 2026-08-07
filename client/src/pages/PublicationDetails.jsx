@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../services/api";
 import { formatCitation, getCitationStats } from "../services/citationService";
+import CitationModal from "../components/CitationModal";
 
 function PublicationDetails() {
     const { id } = useParams();
@@ -11,6 +12,8 @@ function PublicationDetails() {
     const [citationStyle, setCitationStyle] = useState("APA");
     const [citation, setCitation] = useState("");
     const [citationStats, setCitationStats] = useState(null);
+    const [showCitationModal, setShowCitationModal] = useState(false);
+    const [citationLoading, setCitationLoading] = useState(false);
 
     useEffect(() => {
         loadPublicationDetails();
@@ -36,24 +39,15 @@ function PublicationDetails() {
 
     const updateCitation = async (style) => {
         setCitationStyle(style);
-        const response = await formatCitation(id, style);
-        setCitation(response.citation);
+        setCitationLoading(true);
+        try {
+            const response = await formatCitation(id, style);
+            setCitation(response.citation);
+        } finally {
+            setCitationLoading(false);
+        }
     };
 
-    const copyCitation = async () => {
-        await navigator.clipboard.writeText(citation);
-    };
-
-    const downloadBibtex = async () => {
-        const response = await formatCitation(id, "BibTeX");
-        const blob = new Blob([response.citation], { type: "application/x-bibtex" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `publication-${id}.bib`;
-        link.click();
-        URL.revokeObjectURL(url);
-    };
 
     if (loading) return <h2>Loading publication...</h2>;
     if (!publicationDetails) return <h2>Publication not found.</h2>;
@@ -89,15 +83,9 @@ function PublicationDetails() {
                             <h2>Citation</h2>
                             <p>{citationStats?.times_cited || 0} citations · {citationStats?.reference_count || 0} references</p>
                         </div>
-                        <select value={citationStyle} onChange={(event) => updateCitation(event.target.value)}>
-                            {['APA', 'IEEE', 'MLA', 'Chicago', 'BibTeX'].map((style) => <option key={style}>{style}</option>)}
-                        </select>
+                        <button type="button" className="citation-open-button" onClick={() => setShowCitationModal(true)}>Citation <span>↗</span></button>
                     </div>
-                    <pre style={citationStyleBox}>{citation || "Citation unavailable."}</pre>
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                        <button type="button" onClick={copyCitation}>Copy Citation</button>
-                        <button type="button" onClick={downloadBibtex}>Download BibTeX</button>
-                    </div>
+                    <p className="citation-card-hint">Generate and export this publication in APA, IEEE, MLA, Chicago or BibTeX format.</p>
                 </section>
                 <p><b>PDF:</b> {publication.pdf_file ? <a href={publication.pdf_file} target="_blank" rel="noreferrer">Download PDF</a> : "Not available"}</p>
                 {institution && (
@@ -131,6 +119,7 @@ function PublicationDetails() {
                     )}
                 </Section>
             </div>
+            <CitationModal open={showCitationModal} onClose={() => setShowCitationModal(false)} publicationId={id} citation={citation} style={citationStyle} onStyleChange={updateCitation} onGenerate={() => updateCitation(citationStyle)} loading={citationLoading} />
         </div>
     );
 }
@@ -161,6 +150,5 @@ const cardStyle = {
 };
 
 const sectionStyle = { marginTop: "24px", padding: "20px", borderRadius: "14px", border: "1px solid var(--border)", background: "var(--surface-alt)" };
-const citationStyleBox = { whiteSpace: "pre-wrap", wordBreak: "break-word", padding: "16px", borderRadius: "10px", background: "var(--bg)", color: "var(--text)", lineHeight: 1.6 };
 
 export default PublicationDetails;
