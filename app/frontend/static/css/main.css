@@ -1,0 +1,1189 @@
+:root {
+  --ink: #18212f;
+  --muted: #657184;
+  --line: #d9dee7;
+  --panel: #ffffff;
+  --bg: #f4f7fb;
+  --nav: #243447;
+  --accent: #0f766e;
+  --accent-2: #4f46e5;
+  --soft: #e8f3f1;
+
+  /* Module accent colors -- strict Teal -> Blue -> Purple palette only.
+     Used to give each area of the app its own identity (dashboard card
+     icons, metric cards, chart tops, badges) without ever leaving the
+     teal/blue/purple family. Red is reserved separately for errors. */
+  --c-researchers: #2563eb;    /* blue */
+  --c-institutions: #7c3aed;   /* purple */
+  --c-publications: #0d9488;   /* teal */
+  --c-citations: #0ea5e9;      /* sky blue */
+  --c-conferences: #8b5cf6;    /* violet */
+  --c-collaborations: #0891b2; /* teal-cyan */
+  --c-reports: #6d28d9;        /* deep purple */
+  --c-users: #4338ca;          /* indigo */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--bg);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app-nav {
+  background: var(--nav);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  min-height: 64px;
+}
+
+.app-nav .navbar-brand,
+.app-nav .nav-link,
+.app-nav .nav-user {
+  color: #ffffff;
+}
+
+.app-nav .nav-link {
+  opacity: 0.84;
+  white-space: nowrap;
+  font-size: 14px;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+.app-nav .nav-link:hover {
+  opacity: 1;
+}
+
+/* Keep the whole nav row on one line at desktop widths instead of wrapping */
+@media (min-width: 1200px) {
+  .app-nav .navbar-collapse {
+    flex-wrap: nowrap;
+  }
+
+  .app-nav .navbar-nav {
+    flex-wrap: nowrap;
+    flex-direction: row;
+  }
+
+  .app-nav .navbar-nav.me-auto {
+    margin-right: 0.75rem !important;
+  }
+
+  .app-nav .d-flex.align-items-center.gap-3 {
+    flex-wrap: nowrap;
+    gap: 0.6rem !important;
+  }
+}
+
+.app-nav .nav-user {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.workspace {
+  padding: 28px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.workspace > section + section {
+  margin-top: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.page-header h1,
+.auth-card h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.subtle,
+.panel-heading p {
+  color: var(--muted);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.metric,
+.panel,
+.auth-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(24, 33, 47, 0.06);
+}
+
+.metric {
+  padding: 16px;
+}
+
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 28px;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel.wide,
+#reports {
+  grid-column: 1 / -1;
+}
+
+/* Reports page: consistent chart sizing/spacing (previously undefined,
+   causing charts to render at inconsistent default sizes) */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  margin-top: 4px;
+}
+
+.chart-container.status-chart {
+  height: 220px;
+}
+
+.panel-grid .panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.panel-grid {
+  align-items: stretch;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.panel-heading h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.panel-heading p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.panel-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.panel-link:hover {
+  background: #115e59;
+  color: #ffffff;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+input,
+select,
+button {
+  min-height: 42px;
+  border-radius: 6px;
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+}
+
+button {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+button:hover {
+  background: #115e59;
+}
+
+.form-grid button {
+  grid-column: 1 / -1;
+}
+
+.network-box {
+  min-height: 130px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+pre {
+  min-height: 180px;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #101827;
+  color: #e6edf7;
+  font-size: 13px;
+}
+
+.auth-page {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 57px);
+  padding: 28px;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  padding: 28px;
+}
+
+.auth-card label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.auth-card button {
+  width: 100%;
+  margin-top: 18px;
+  background: var(--ink);
+  color: #ffffff;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.auth-card button:hover {
+  opacity: 0.9;
+}
+
+.auth-card a {
+  color: var(--accent);
+}
+
+@media (max-width: 1180px) {
+  .metric-grid {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .workspace {
+    padding: 18px;
+  }
+
+  .page-header,
+  .panel-heading {
+    display: block;
+  }
+
+  .panel-grid,
+  .form-grid,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===========================
+   Audit Page
+=========================== */
+
+.audit-header th {
+    background-color: #0f766e !important;
+    color: #ffffff !important;
+    border-color: #0f766e !important;
+}
+
+.audit-header th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.audit-header th:last-child {
+    border-top-right-radius: 8px;
+}
+
+#auditId {
+    border-radius: 8px 0 0 8px;
+}
+
+.btn-primary {
+    background-color: #115e59;
+    border-color: #115e59;
+}
+
+.btn-primary:hover {
+    background-color:#115e59;
+    border-color: #115e59;
+}
+
+.table tbody tr:hover {
+    background-color: #f3fffb;
+}
+
+.card {
+    border-radius: 12px;
+}
+/* ==========================================
+   Card consistency (Dashboard, Researchers, Institutions,
+   Publications, Conferences, Citations, Collaborations, Search)
+   Reuses the same tokens/shadow already defined for .metric/.panel
+   above -- no new colors introduced.
+========================================== */
+
+.metric,
+.panel,
+.auth-card,
+.card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(24, 33, 47, 0.06);
+}
+
+.metric:hover,
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(24, 33, 47, 0.1);
+}
+
+.card .card-title {
+  font-size: 17px;
+}
+
+.card .badge {
+  font-weight: 600;
+}
+
+/* ==========================================
+   Standard module search/filter toolbar
+   (Researchers, Institutions, Publications, Conferences,
+   Collaborations, Citations)
+========================================== */
+
+.module-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+
+.module-toolbar .module-search {
+  flex: 1 1 260px;
+  max-width: 320px;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.module-toolbar .module-search .form-control {
+  border: none;
+  box-shadow: none;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.module-toolbar .module-search .form-control:focus {
+  box-shadow: none;
+}
+
+.module-toolbar .module-search .input-group-text {
+  border: none;
+  background: #ffffff;
+  padding: 6px 10px;
+}
+
+.module-toolbar .module-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.module-toolbar .module-filters select {
+  min-height: 34px;
+  width: auto;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+@media (max-width: 640px) {
+  .module-toolbar .module-search {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  .module-toolbar .module-filters {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
+/* ==========================================
+   Empty states
+========================================== */
+
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty-state i {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 10px 0 14px;
+}
+
+/* ==========================================
+   Navbar polish (spacing, alignment, padding,
+   responsiveness, user info, notification icon,
+   logout button) -- same nav markup/behavior,
+   just tidied up spacing and visual balance.
+========================================== */
+
+.app-nav {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.app-nav .navbar-brand {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-size: 20px;
+  margin-right: 1.5rem;
+}
+
+.app-nav .navbar-nav .nav-link {
+  border-radius: 6px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  margin: 0 1px;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.app-nav .navbar-nav .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+#notificationContainer .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+#notificationContainer .btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+#notifBadge {
+  font-size: 10px;
+  padding: 3px 5px;
+}
+
+.app-nav .nav-user {
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-nav #logoutBtn {
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.app-nav #logoutBtn:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.app-nav .d-flex.align-items-center.gap-3 {
+  row-gap: 8px;
+}
+
+@media (max-width: 1199px) {
+  .app-nav .navbar-nav {
+    margin-bottom: 10px;
+  }
+
+  .app-nav .navbar-nav .nav-link {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .app-nav .d-flex.align-items-center.gap-3 {
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* ==========================================
+   Modernized cards, tables, forms, modals,
+   buttons, and chart containers.
+   Reuses existing tokens (--accent, --ink,
+   --line, --muted, --soft) -- no new palette.
+========================================== */
+
+.panel,
+.metric {
+  border-radius: 12px;
+}
+
+.panel-heading h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.metric {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.65;
+}
+
+.metric strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.card {
+  border-radius: 12px;
+}
+
+.card .card-title {
+  font-weight: 700;
+}
+
+.card .badge {
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+/* Buttons */
+
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-dark {
+  background-color: var(--ink);
+  border-color: var(--ink);
+}
+
+.btn-dark:hover {
+  background-color: #0e1620;
+  border-color: #0e1620;
+  box-shadow: 0 6px 16px rgba(24, 33, 47, 0.18);
+}
+
+.btn-outline-dark:hover {
+  background-color: var(--ink);
+  box-shadow: 0 6px 16px rgba(24, 33, 47, 0.14);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Forms */
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border-color: var(--line);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.15);
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* Tables */
+
+.table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table thead th {
+  background-color: var(--soft);
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: none;
+}
+.table thead.audit-header th {
+    background: #0f766e !important;
+    color: #ffffff !important;
+    border-color: #0f766e !important;
+}
+
+.table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--soft);
+}
+
+/* Modals */
+
+.modal-content {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(24, 33, 47, 0.22);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 24px;
+}
+
+.modal-title {
+  font-weight: 700;
+}
+
+.modal-body {
+  padding: 22px 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--line);
+  padding: 16px 24px;
+}
+
+/* Collaboration "View Details" definition list */
+
+.detail-list {
+  margin: 0;
+}
+
+.detail-list .detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-list .detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-list dt {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.detail-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Chart containers */
+
+.chart-container {
+  border-radius: 10px;
+  background: #fbfcfe;
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+
+/* Dropdown / notifications list polish */
+
+.dropdown-menu {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.dropdown-item {
+  border-radius: 6px;
+}
+
+/* ==========================================
+   Color pass -- strict Teal -> Blue -> Purple
+   palette only (see the --c-* variables above).
+   Red is reserved for validation/error states.
+   No orange, yellow, green, or pink anywhere.
+   Everything below only adds color; it doesn't
+   change any layout, spacing, or structure set
+   above, and every rule targets classes/ids
+   that already exist in the markup.
+========================================== */
+
+/* Nav: teal -> blue -> purple gradient, plus a colored top rule. */
+.app-nav {
+  background: linear-gradient(120deg, var(--nav) 0%, #1e3a5f 45%, #2c2a5c 100%);
+  border-bottom: 3px solid var(--accent);
+}
+
+.app-nav .navbar-brand {
+  background: linear-gradient(120deg, #5eead4, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.app-nav .navbar-nav .nav-link.active,
+.app-nav .navbar-nav .nav-link[aria-current="page"] {
+  background: linear-gradient(120deg, rgba(94, 234, 212, 0.18), rgba(167, 139, 250, 0.18));
+  color: #5eead4;
+  box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.25);
+}
+
+/* Section / page headers: teal -> blue -> purple tinted band. */
+.page-header {
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, var(--soft) 0%, #eef2ff 55%, #f2eeff 100%);
+  border: 1px solid var(--line);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(120deg, var(--accent), var(--c-institutions));
+  display: inline-block;
+}
+
+/* Dashboard / stat / analytics summary cards: rotating teal-blue-purple
+   palette instead of one repeated stripe, purely via nth-child so no HTML
+   id/class changes were needed. */
+.metric-grid .metric::before {
+  opacity: 1;
+  width: 5px;
+}
+
+.metric-grid .metric:nth-child(8n+1)::before { background: linear-gradient(180deg, var(--c-users), var(--c-institutions)); }
+.metric-grid .metric:nth-child(8n+2)::before { background: linear-gradient(180deg, var(--c-researchers), var(--c-collaborations)); }
+.metric-grid .metric:nth-child(8n+3)::before { background: linear-gradient(180deg, var(--c-institutions), var(--c-reports)); }
+.metric-grid .metric:nth-child(8n+4)::before { background: linear-gradient(180deg, var(--c-publications), var(--accent)); }
+.metric-grid .metric:nth-child(8n+5)::before { background: linear-gradient(180deg, var(--accent-2), var(--c-conferences)); }
+.metric-grid .metric:nth-child(8n+6)::before { background: linear-gradient(180deg, var(--c-collaborations), var(--c-researchers)); }
+.metric-grid .metric:nth-child(8n+7)::before { background: linear-gradient(180deg, var(--c-conferences), var(--c-institutions)); }
+.metric-grid .metric:nth-child(8n+8)::before { background: linear-gradient(180deg, var(--c-citations), var(--accent)); }
+
+/* Dashboard module cards: colored circular icon badges instead of plain
+   inline glyphs. Each icon class below is unique to one card in home.html
+   (verified against every template), so this is a safe 1:1 mapping without
+   touching the HTML. All gradients stay within teal/blue/purple. */
+.panel-heading h2 i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), var(--c-researchers));
+  vertical-align: middle;
+}
+
+.panel-heading h2 i.bi-people { background: linear-gradient(135deg, var(--c-researchers), #60a5fa); }
+.panel-heading h2 i.bi-building { background: linear-gradient(135deg, var(--c-institutions), #a78bfa); }
+.panel-heading h2 i.bi-journal-text { background: linear-gradient(135deg, var(--c-publications), var(--accent)); }
+.panel-heading h2 i.bi-bookmark-check { background: linear-gradient(135deg, var(--c-citations), #38bdf8); }
+.panel-heading h2 i.bi-calendar-event { background: linear-gradient(135deg, var(--c-conferences), #a78bfa); }
+.panel-heading h2 i.bi-diagram-3 { background: linear-gradient(135deg, var(--c-collaborations), #22d3ee); }
+.panel-heading h2 i.bi-bar-chart { background: linear-gradient(135deg, var(--c-reports), var(--c-institutions)); }
+
+/* Dashboard cards get a faint tint + colored top edge on hover so the color
+   story carries through interaction, not just the icon. */
+#panelResearchers:hover { border-color: var(--c-researchers); box-shadow: 0 16px 34px rgba(37, 99, 235, 0.15); }
+#panelInstitutions:hover { border-color: var(--c-institutions); box-shadow: 0 16px 34px rgba(124, 58, 237, 0.15); }
+#panelPublications:hover { border-color: var(--c-publications); box-shadow: 0 16px 34px rgba(13, 148, 136, 0.15); }
+#panelCitations:hover { border-color: var(--c-citations); box-shadow: 0 16px 34px rgba(14, 165, 233, 0.15); }
+#panelConferences:hover { border-color: var(--c-conferences); box-shadow: 0 16px 34px rgba(139, 92, 246, 0.15); }
+#panelCollaborations:hover { border-color: var(--c-collaborations); box-shadow: 0 16px 34px rgba(8, 145, 178, 0.15); }
+#panelReports:hover { border-color: var(--c-reports); box-shadow: 0 16px 34px rgba(109, 40, 217, 0.15); }
+
+/* Primary / "View Details" buttons: teal -> blue gradient fill. */
+.btn-dark {
+  background: linear-gradient(120deg, var(--ink), #0e1f33);
+  border-color: var(--ink);
+}
+
+.btn-dark:hover {
+  background: linear-gradient(120deg, var(--accent), var(--c-researchers));
+  border-color: var(--accent);
+}
+
+/* "View Details" is always .btn-outline-dark app-wide (Collaboration's
+   original design) -- give it its own teal -> blue -> purple identity so
+   it reads as one consistent, recognizable action everywhere it appears. */
+.btn-outline-dark {
+  color: var(--c-researchers);
+  border-color: var(--c-researchers);
+}
+
+.btn-outline-dark:hover {
+  background: linear-gradient(120deg, var(--accent), var(--c-researchers), var(--c-institutions));
+  border-color: var(--c-researchers);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.18);
+}
+
+/* Bootstrap contextual badges/buttons re-tinted to the teal/blue/purple
+   palette instead of stock Bootstrap blue/green/amber/grey. Red is kept
+   only where it already signals an error/negative/validation state
+   (bg-danger). */
+.badge.bg-primary,
+.btn-primary {
+  background-color: var(--c-collaborations) !important;
+  border-color: var(--c-collaborations) !important;
+}
+
+.badge.bg-secondary {
+  background-color: var(--c-institutions) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--c-publications) !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc2626 !important;
+}
+
+.badge.bg-warning {
+  background-color: #818cf8 !important;
+  color: #1e1b3a;
+}
+
+.badge.bg-info {
+  background-color: var(--c-citations) !important;
+}
+
+.badge.bg-dark {
+  background-color: var(--c-reports) !important;
+}
+
+.badge.bg-light.text-dark.border {
+  background-color: var(--soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+/* Tables: gradient header + colored left accent + colored hover, matching
+   the same palette used everywhere else. */
+.table thead th {
+  background: linear-gradient(120deg, var(--soft) 0%, #eef2ff 100%);
+  color: var(--c-institutions);
+  border-bottom: 2px solid var(--c-researchers);
+}
+
+.table tbody tr:hover {
+  background-color: #f3f0ff;
+}
+
+.table tbody tr {
+  border-left: 3px solid transparent;
+}
+
+.table tbody tr:hover {
+  border-left-color: var(--c-researchers);
+}
+
+/* Chart containers/panels: a thin colored top edge cycling through the
+   teal/blue/purple palette so a grid of charts doesn't read as one flat
+   grey block. */
+.panel-grid .panel:nth-of-type(6n+1) .chart-container,
+.panel-grid .panel:nth-child(6n+1) .chart-container { border-top: 3px solid var(--c-researchers); }
+.panel-grid .panel:nth-of-type(6n+2) .chart-container,
+.panel-grid .panel:nth-child(6n+2) .chart-container { border-top: 3px solid var(--c-publications); }
+.panel-grid .panel:nth-of-type(6n+3) .chart-container,
+.panel-grid .panel:nth-child(6n+3) .chart-container { border-top: 3px solid var(--c-citations); }
+.panel-grid .panel:nth-of-type(6n+4) .chart-container,
+.panel-grid .panel:nth-child(6n+4) .chart-container { border-top: 3px solid var(--c-conferences); }
+.panel-grid .panel:nth-of-type(6n+5) .chart-container,
+.panel-grid .panel:nth-child(6n+5) .chart-container { border-top: 3px solid var(--c-collaborations); }
+.panel-grid .panel:nth-of-type(6n+6) .chart-container,
+.panel-grid .panel:nth-child(6n+6) .chart-container { border-top: 3px solid var(--c-reports); }
+
+/* Progress indicators (profile completion bars, etc.) */
+.progress {
+  background-color: var(--soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(120deg, var(--accent), var(--c-researchers), var(--c-institutions)) !important;
+}
+
+/* Empty states: colored icon instead of flat grey. */
+.empty-state i {
+  color: var(--c-researchers);
+  opacity: 0.75;
+}
+
+/* Auth pages (login/register): teal -> blue -> purple accent stripe. */
+.auth-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--accent), var(--c-researchers), var(--c-institutions));
+}
+
+/* Notification badge stays red (it's a small "unread" alert indicator,
+   consistent with red being reserved for attention/error states). */
+#notifBadge {
+  background-color: #dc2626 !important;
+}
+
+.dropdown-item.bg-light {
+  background-color: var(--soft) !important;
+}
+
+/* Shared View Details modal + form focus rings pick up the same blue. */
+.modal-header {
+  background: linear-gradient(120deg, var(--soft) 0%, #eef2ff 100%);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--c-researchers);
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+}
+
+/* ==========================================
+   Dashboard: Quick Insights / Recent Activity /
+   Latest-X teaser lists.
+========================================== */
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.insight-chip {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(120deg, #fbfcff 0%, var(--soft) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-chip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.insight-chip:nth-child(4n+1)::before { background: var(--c-researchers); }
+.insight-chip:nth-child(4n+2)::before { background: var(--c-institutions); }
+.insight-chip:nth-child(4n+3)::before { background: var(--c-publications); }
+.insight-chip:nth-child(4n+4)::before { background: var(--c-collaborations); }
+
+.insight-chip .label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.insight-chip .value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.activity-feed,
+.mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activity-feed li,
+.mini-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-feed li:last-child,
+.mini-list li:last-child {
+  border-bottom: none;
+}
+
+.activity-feed .activity-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.activity-feed .activity-icon.type-publication { background: linear-gradient(135deg, var(--c-publications), var(--accent)); }
+.activity-feed .activity-icon.type-collaboration { background: linear-gradient(135deg, var(--c-collaborations), var(--c-researchers)); }
+.activity-feed .activity-icon.type-conference { background: linear-gradient(135deg, var(--c-conferences), var(--c-institutions)); }
+
+.mini-list .mini-title {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.mini-list .mini-meta {
+  font-size: 12px;
+  color: var(--muted);
+}

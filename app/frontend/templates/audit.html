@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <section class="workspace">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">System Administration</p>
+        <h1>Audit Logs</h1>
+        <p class="subtle">Track user actions, module changes, and system events across the platform.</p>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2>Audit Trail</h2>
+          <p>Chronological record of create, update, and delete actions.</p>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 my-3">
+        <input type="number" id="auditId" class="form-control" placeholder="Search by Audit ID...">
+        <button type="button" class="btn btn-outline-secondary" onclick="searchAudit()">Search</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="clearAuditSearch()">Clear</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="audit-header">
+            <tr>
+              <th>ID</th>
+              <th>User ID</th>
+              <th>Action</th>
+              <th>Module</th>
+              <th>Details</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody">
+            <tr><td colspan="6" class="text-center py-3 text-muted">Loading audit logs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="auditPrevPage" disabled>Previous</button>
+        <span class="text-muted small" id="auditPageNum">Page 1</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="auditNextPage">Next</button>
+      </div>
+    </section>
+  </section>
+{% endblock content %}
+
+
+{% block scripts %}
+
+<script src="{{ url_for('static', path='js/audit.js') }}"></script>
+
+{% endblock scripts %}
