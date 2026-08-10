@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from datetime import datetime
+from collections import OrderedDict
 
 from app.backend.utils.permissions import require_role, get_current_user
 from app.backend.database.database import get_db
 from app.backend.models.collaboration import Collaboration, PublicationAuthor
 from app.backend.models.publication import Publication
 from app.backend.models.researcher import Researcher
+from app.backend.models.audit import AuditLog
 from app.backend.schemas.collaboration import (
     CollaborationCreate,
     CollaborationResponse,
@@ -187,16 +190,75 @@ def collaboration_dashboard(
 
 
 # ======================================================
-# Recent Collaborations
+# Monthly Collaboration Trend
 # ======================================================
 
-@router.get("/recent")
-def recent_collaborations(
+@router.get("/monthly-trend")
+def collaboration_monthly_trend(
+    months: int = Query(6, ge=1, le=24),
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
     )
 ):
+    # Collaboration/PublicationAuthor rows have no created_at column, so a
+    # real month-by-month trend isn't derivable from those tables directly.
+    # Every collaboration create (and co-author add) already writes a real,
+    # timestamped AuditLog row with module="Collaboration" -- reusing that
+    # existing data instead of adding a new column gives an actual trend
+    # instead of synthetic numbers.
+    today = datetime.utcnow().replace(day=1)
+
+    # Build the last `months` YYYY-MM buckets in chronological order.
+    buckets = OrderedDict()
+    cursor = today
+    keys = []
+    for _ in range(months):
+        keys.append(cursor.strftime("%Y-%m"))
+        prev_month = cursor.month - 1 or 12
+        prev_year = cursor.year - 1 if cursor.month == 1 else cursor.year
+        cursor = cursor.replace(year=prev_year, month=prev_month)
+    keys.reverse()
+    for key in keys:
+        buckets[key] = 0
+
+    logs = (
+        db.query(AuditLog)
+        .filter(AuditLog.module == "Collaboration")
+        .all()
+    )
+
+    for log in logs:
+        if not log.created_at:
+            continue
+        month_key = log.created_at[:7]  # ISO timestamp -> "YYYY-MM"
+        if month_key in buckets:
+            buckets[month_key] += 1
+
+    return {
+        "labels": list(buckets.keys()),
+        "counts": list(buckets.values()),
+    }
+
+
+# ======================================================
+# Recent Collaborations
+# ======================================================
+
+@router.get("/recent")
+def recent_collaborations(
+    page: int = Query(1, ge=1),
+    limit: int = Query(6, ge=1),
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
+):
+    # Pagination added on top of the existing "recent" endpoint (same
+    # page/limit shape used by the other modules, e.g. /institutions/search)
+    # instead of introducing a new one, so the Collaboration module's
+    # pagination matches the rest of the app.
+    skip = (page - 1) * limit
 
     authors = (
 
@@ -204,7 +266,9 @@ def recent_collaborations(
 
         .order_by(PublicationAuthor.id.desc())
 
-        .limit(10)
+        .offset(skip)
+
+        .limit(limit)
 
         .all()
 
@@ -242,6 +306,8 @@ def recent_collaborations(
 
         data.append({
 
+            "id": author.id,
+
             "publication":
 
                 publication.title
@@ -260,7 +326,22 @@ def recent_collaborations(
 
             "contribution":
 
-                author.contribution
+                author.contribution,
+
+            # Extra fields for the "View Details" modal -- additive only,
+            # existing consumers of this endpoint that only read the four
+            # fields above are unaffected.
+            "institution":
+
+                researcher.institution if researcher else None,
+
+            "publication_year":
+
+                publication.publication_year if publication else None,
+
+            "status":
+
+                publication.status if publication else None,
 
         })
 
