@@ -127,6 +127,14 @@
             <div class="text-center py-4 text-muted">Loading collaboration records...</div>
         </div>
 
+        <!-- Pagination: same prev/next + page-label pattern used by the
+             other modules (Institutions, Researchers, Publications, etc.) -->
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="collabPrevPage" disabled>Previous</button>
+            <span class="text-muted small" id="collabPageNum">Page 1</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="collabNextPage">Next</button>
+        </div>
+
     </div>
 
 
@@ -140,7 +148,7 @@
             <div>
 
                 <h2>
-                    Collaboration Statistics
+                    Contribution Distribution
                 </h2>
 
                 <p>
@@ -158,12 +166,61 @@
                     <canvas id="collaborationChart"></canvas>
                 </div>
             </div>
-            
+            <div class="col-md-6">
+                <p class="text-muted small text-center mb-1">Monthly Collaboration Trend</p>
+                <div class="chart-container" style="height:280px;">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
         </div>
 
     </div>
 
 </section>
+
+<!-- ========================================= -->
+<!-- Collaboration Details Modal -->
+<!-- ========================================= -->
+
+<div
+    class="modal fade"
+    id="collaborationDetailsModal"
+    tabindex="-1"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title" id="collabDetailsTitle">
+                    Collaboration Details
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+                <dl class="detail-list" id="collabDetailsBody">
+                    <!-- Populated by collaboration.js -->
+                </dl>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 <!-- ========================================= -->
 <!-- Add Collaboration Modal -->
 <!-- ========================================= -->
