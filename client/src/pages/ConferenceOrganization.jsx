@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import API from "../services/api";
 import ConferenceDetailsModal from "../components/conference/ConferenceDetailsModal";
 import Pagination from "../components/Pagination";
+import { getAuthUser } from "../utils/authStorage";
 
 function ConferenceOrganization() {
 
     const [conferences, setConferences] = useState([]);
     const [, setEditingConference] = useState(null);
     const [selectedConference, setSelectedConference] = useState(null);
-    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+    const currentUser = getAuthUser();
 
     const [searchConference, setSearchConference] = useState("");
     const [typeFilter, setTypeFilter] = useState("All");

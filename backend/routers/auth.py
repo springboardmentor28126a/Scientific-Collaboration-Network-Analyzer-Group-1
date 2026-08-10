@@ -15,8 +15,6 @@ router = APIRouter(
 VALID_ROLES = {
     "Researcher",
     "Reviewer",
-    "Student",
-    "Faculty",
     "Institution Admin",
     "System Admin",
 }
@@ -40,10 +38,12 @@ def register(
     if user.role not in VALID_ROLES:
         raise HTTPException(status_code=400, detail="Invalid role.")
 
-    if user.role == "System Admin":
+    if user.role == "System Admin" and db.query(User).filter(
+        User.role == "System Admin"
+    ).first():
         raise HTTPException(
-            status_code=403,
-            detail="There is already an active System Administrator. Contact the current administrator if administrative ownership needs to be transferred.",
+            status_code=409,
+            detail="System Administrator already exists. Only the current System Administrator can transfer ownership.",
         )
 
     hashed_password = hash_password(user.password)

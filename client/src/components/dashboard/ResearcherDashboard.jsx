@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function ResearcherDashboard() {
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
     const [verification, setVerification] = useState(null);
 
     const [stats, setStats] = useState({});

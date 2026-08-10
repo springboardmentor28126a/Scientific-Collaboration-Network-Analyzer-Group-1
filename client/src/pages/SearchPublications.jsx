@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import Pagination from "../components/Pagination";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
 
 function SearchPublications() {
 
@@ -9,6 +10,7 @@ function SearchPublications() {
     const [search, setSearch] = useState("");
 
     const [showFilters, setShowFilters] = useState(false);
+    const filterLayerRef = useDismissibleLayer(() => setShowFilters(false), showFilters);
 
     const [filterType, setFilterType] = useState("Title");
 
@@ -140,7 +142,7 @@ function SearchPublications() {
 
     return (
 
-        <div style={{ padding: "30px" }}>
+        <div ref={filterLayerRef} style={{ padding: "30px" }}>
 
             <h1>
 

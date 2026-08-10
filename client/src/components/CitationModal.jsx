@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
 import { FaCheck, FaClipboard, FaDownload, FaTimes } from "react-icons/fa";
 
 const STYLES = ["APA", "IEEE", "MLA", "Chicago", "BibTeX"];
@@ -6,6 +7,7 @@ const STYLES = ["APA", "IEEE", "MLA", "Chicago", "BibTeX"];
 function CitationModal({ open, onClose, publicationId, citation, style, onStyleChange, onGenerate, loading }) {
     const [copied, setCopied] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
+    const modalRef = useDismissibleLayer(onClose, open);
 
     useEffect(() => {
         if (!open) {
@@ -40,7 +42,7 @@ function CitationModal({ open, onClose, publicationId, citation, style, onStyleC
     };
 
     return <div className="citation-modal-backdrop" role="presentation" onClick={onClose}>
-        <section className="citation-modal" role="dialog" aria-modal="true" aria-labelledby="citation-modal-title" onClick={(event) => event.stopPropagation()}>
+        <section ref={modalRef} className="citation-modal" role="dialog" aria-modal="true" aria-labelledby="citation-modal-title" onClick={(event) => event.stopPropagation()}>
             <div className="citation-modal-header">
                 <div><span className="citation-modal-kicker">ACADEMIC TOOLKIT</span><h2 id="citation-modal-title">Generate Citation</h2><p>Generate a citation for this publication in your preferred academic format.</p></div>
                 <button className="citation-close" type="button" onClick={onClose} aria-label="Close citation dialog"><FaTimes /></button>

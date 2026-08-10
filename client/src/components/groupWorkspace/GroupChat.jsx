@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import api from "../../services/api";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function GroupChat({ groupId }) {
     const [sending, setSending] = useState(false);
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
     const senderId = user?.id;
     const bottomRef = useRef(null);
 

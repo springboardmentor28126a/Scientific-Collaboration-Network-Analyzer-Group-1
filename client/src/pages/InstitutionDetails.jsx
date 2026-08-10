@@ -2,11 +2,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../services/api";
 import InstitutionSearch from "../components/InstitutionSearch";
+import { getAuthUser } from "../utils/authStorage";
 
 function InstitutionDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const user = getAuthUser();
     const [data, setData] = useState(null);
 
     const normalizeInstitutionName = (value) => {

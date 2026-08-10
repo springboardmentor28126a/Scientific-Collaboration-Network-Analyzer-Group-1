@@ -1,11 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useState } from "react";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
+import { getAuthUser } from "../utils/authStorage";
 function ResearcherCard({ researcher }) {
     const [showInviteModal, setShowInviteModal] = useState(false);
 const [groupStatus, setGroupStatus] = useState([]);
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user"));
+    const inviteLayerRef = useDismissibleLayer(
+        () => setShowInviteModal(false),
+        showInviteModal,
+    );
+    const user = getAuthUser();
 const loadAvailableGroups = async () => {
 
     try {
@@ -146,6 +152,7 @@ const sendFriendRequest = async (receiverId) => {
         >
 
             <div
+                ref={inviteLayerRef}
                 style={{
                     background: "white",
                     padding: "30px",

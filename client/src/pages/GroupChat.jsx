@@ -1,14 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { getAuthUser } from "../utils/authStorage";
 
 function GroupChat() {
 
     const { groupId } = useParams();
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const user = getAuthUser();
 
     const [messages, setMessages] = useState([]);
 

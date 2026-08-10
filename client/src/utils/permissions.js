@@ -1,3 +1,5 @@
+import { getAuthUser } from "./authStorage";
+
 const permissions = {
 
     Researcher: [
@@ -16,10 +18,15 @@ const permissions = {
 
         // Research Groups
         "group:create",
+        "group:update",
+        "group:delete",
+        "group:invite",
         "group:view",
 
         // Meetings
         "meeting:create",
+        "meeting:update",
+        "meeting:delete",
         "meeting:view",
 
         // Chat
@@ -119,9 +126,7 @@ const permissions = {
 
 export function hasPermission(permission) {
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const user = getAuthUser();
 
     if (!user) return false;
 

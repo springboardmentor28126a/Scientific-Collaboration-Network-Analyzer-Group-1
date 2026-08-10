@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { FaBookOpen, FaUsers, FaUniversity, FaCalendarAlt, FaUserFriends, FaBell, FaTrophy, FaFire, FaUserCheck } from "react-icons/fa";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function Dashboard() {
-    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const user = getAuthUser();
     const navigate = useNavigate();
     const [verification, setVerification] = useState(null);
     const [overview, setOverview] = useState({ stats: {}, activity: [], sections: {} });

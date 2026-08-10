@@ -181,7 +181,7 @@ export default function Register() {
 
         catch (err) {
 
-            if (err.response?.status === 400) {
+            if ([400, 409].includes(err.response?.status)) {
 
                 setServerError(err.response.data.detail);
 
@@ -435,8 +435,6 @@ export default function Register() {
                             >
                                 <option value="Researcher">Researcher</option>
                                 <option value="Reviewer">Reviewer</option>
-                                <option value="Student">Student</option>
-                                <option value="Faculty">Faculty</option>
                                 <option value="Institution Admin">Institution Admin</option>
                                 <option value="System Admin">System Admin</option>
                             </select>

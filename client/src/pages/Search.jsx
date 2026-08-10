@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState,useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import ResearcherCard from "../components/ResearcherCard";
 import { useNavigate } from "react-router-dom";
 import SearchSuggestions from "../components/SearchSuggestions";
 import { FaUser, FaFileAlt, FaUsers, FaUniversity, FaLandmark } from "react-icons/fa";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
 const SECTION_OPTIONS = [
     "All",
     "Researchers",
@@ -23,11 +24,14 @@ function Search() {
   const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchRef = useRef(null);
   // UI: section selector near the search bar
   // Default is "All" (search across all sections)
   const [activeSection, setActiveSection] = useState("All");
   const [showSectionDropdown, setShowSectionDropdown] = useState(false);
+  const searchLayerRef = useDismissibleLayer(() => {
+    setShowSuggestions(false);
+    setShowSectionDropdown(false);
+  }, showSuggestions || showSectionDropdown);
 
 
   useEffect(() => {
@@ -161,29 +165,6 @@ function Search() {
 
 }, [search, activeSection]);
 
-  useEffect(() => {
-
-    function handleClickOutside(event) {
-
-        if (
-            searchRef.current &&
-            !searchRef.current.contains(event.target)
-        ) {
-            setShowSuggestions(false);
-        }
-
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-        document.removeEventListener(
-            "mousedown",
-            handleClickOutside
-        );
-    };
-
-}, []);
 const filteredPublications = useMemo(() => (
   activeSection === "All" || activeSection === "Publications" ? publications : []
 ), [activeSection, publications]);
@@ -281,7 +262,7 @@ const filteredConferences = useMemo(() => (
 
 }, [search, filteredConferences, filteredGroups, filteredInstitutions, filteredPublications, filteredResearchers]);
   return (
-    <div style={{ padding: "30px" }}>
+    <div ref={searchLayerRef} style={{ padding: "30px" }}>
       <h1>Research Search</h1>
 
       <div
@@ -295,7 +276,6 @@ const filteredConferences = useMemo(() => (
         }}
       >
         <div
-    ref={searchRef}
     style={{
         flex: "1 1 420px",
         position: "relative"
@@ -340,7 +320,7 @@ const filteredConferences = useMemo(() => (
             break;
 
         case "publication":
-            navigate(`/publications/${item.id}`);
+            navigate(`/publication/${item.id}`);
             break;
 
         case "institution":

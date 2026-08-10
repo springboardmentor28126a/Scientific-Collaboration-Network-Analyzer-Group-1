@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import ResearcherInviteButton from "../components/ResearcherInviteButton";
 
 function PublicProfile() {
 
@@ -39,6 +40,7 @@ function PublicProfile() {
         <div>
 
             <h1>{researcher.name}</h1>
+            <ResearcherInviteButton researcher={researcher} />
 
             <p>🏫 <b>Institution:</b> {researcher.institution || "Not Added"}</p>
 

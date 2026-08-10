@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import InstitutionSearch from "../components/InstitutionSearch";
+import { getAuthUser } from "../utils/authStorage";
 function Profile() {
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
     const [verification, setVerification] = useState(null);
     const normalizeInstitutionName = (value) => {
         if (!value) return "";

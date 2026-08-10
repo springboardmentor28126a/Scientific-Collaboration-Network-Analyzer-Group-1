@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
 
 function InstitutionSearch({ value, onSelect, disabled }) {
     const [query, setQuery] = useState(value || "");
     const [institutions, setInstitutions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const searchLayerRef = useDismissibleLayer(() => {
+        setIsFocused(false);
+        setInstitutions([]);
+    }, isFocused);
     useEffect(() => {
     setQuery(value || "");
     setInstitutions([]); // Don't show suggestions when profile loads
@@ -40,7 +45,7 @@ function InstitutionSearch({ value, onSelect, disabled }) {
 
 }, [query]);
     return (
-        <div style={{ position: "relative" }}>
+        <div ref={searchLayerRef} style={{ position: "relative" }}>
 
         <input
     value={query}

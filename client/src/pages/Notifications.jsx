@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import Pagination from "../components/Pagination";
+import { getAuthUser } from "../utils/authStorage";
 
 function Notifications() {
 
     const navigate = useNavigate();
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const user = getAuthUser();
 
     const [requests, setRequests] = useState([]);
     const [notifications, setNotifications] = useState([]);

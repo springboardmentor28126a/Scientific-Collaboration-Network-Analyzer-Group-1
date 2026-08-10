@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { FaEllipsisV, FaUserCircle } from "react-icons/fa";
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
 
 const PAGE_SIZE = 8;
 const roles = ["Researcher", "Reviewer", "Student", "Faculty", "Institution Admin"];
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
     const [history, setHistory] = useState([]);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
+    const adminLayerRef = useDismissibleLayer(() => setOpenMenuId(null), openMenuId !== null);
 
     useEffect(() => {
         API.get("/admin/dashboard").then(({ data }) => setStats(data)).catch(console.error);
@@ -114,7 +116,7 @@ export default function AdminDashboard() {
     const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return (
-        <div className="page-container">
+        <div ref={adminLayerRef} className="page-container">
             <h1>System Admin Dashboard</h1>
             <div className="dashboard-grid">
                 <button className="card" type="button" onClick={() => setUsersOpen((open) => !open)}>

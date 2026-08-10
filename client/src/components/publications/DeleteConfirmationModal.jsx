@@ -1,3 +1,5 @@
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+
 function DeleteConfirmationModal({
 
     publication,
@@ -7,6 +9,8 @@ function DeleteConfirmationModal({
     onDelete
 
 }) {
+
+    const modalRef = useDismissibleLayer(onClose, Boolean(publication));
 
     if (!publication) return null;
 
@@ -29,6 +33,7 @@ function DeleteConfirmationModal({
         >
 
             <div
+                ref={modalRef}
                 className="delete-modal"
                 style={{
                     width: "min(500px, calc(100vw - 32px))",

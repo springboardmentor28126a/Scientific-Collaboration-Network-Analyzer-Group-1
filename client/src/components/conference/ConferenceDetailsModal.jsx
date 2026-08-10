@@ -1,3 +1,5 @@
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+
 function ConferenceDetailsModal({
 
     conference,
@@ -5,6 +7,8 @@ function ConferenceDetailsModal({
     onClose
 
 }) {
+
+    const modalRef = useDismissibleLayer(onClose, Boolean(conference));
 
     if (!conference) return null;
 
@@ -22,6 +26,7 @@ function ConferenceDetailsModal({
         >
 
             <div
+                ref={modalRef}
                 style={{
                     width: "700px",
                     background: "var(--surface-alt)",

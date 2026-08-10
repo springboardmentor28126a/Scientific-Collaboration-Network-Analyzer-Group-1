@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
 
 function EditPublicationModal({
 
@@ -14,6 +15,7 @@ function EditPublicationModal({
     const [form, setForm] = useState(publication);
     const [publications, setPublications] = useState([]);
     const [selectedCitations, setSelectedCitations] = useState([]);
+    const modalRef = useDismissibleLayer(onClose, Boolean(publication));
 
     useEffect(() => {
 
@@ -102,6 +104,7 @@ function EditPublicationModal({
         >
 
             <div
+                ref={modalRef}
                 className="edit-modal"
                 style={{
                     width: "min(700px, 100%)",

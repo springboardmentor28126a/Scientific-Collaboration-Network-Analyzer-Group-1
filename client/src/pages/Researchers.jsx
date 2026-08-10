@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import ResearcherCard from "../components/ResearcherCard";
 import Pagination from "../components/Pagination";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
 
 
 function Researchers() {
 
     const [filterField, setFilterField] = useState("All");
     const [showDropdown, setShowDropdown] = useState(false);
+    const filterDropdownRef = useDismissibleLayer(() => setShowDropdown(false), showDropdown);
 
 
     const [researchers, setResearchers] = useState([]);
@@ -115,7 +117,7 @@ function Researchers() {
                     }}
                 />
 
-                <div style={{ position: "relative" }}>
+                <div ref={filterDropdownRef} style={{ position: "relative" }}>
                     <button
                         type="button"
                         onClick={() => setShowDropdown((s) => !s)}

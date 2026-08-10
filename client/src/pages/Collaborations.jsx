@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { getAuthUser } from "../utils/authStorage";
+import ResearcherInviteButton from "../components/ResearcherInviteButton";
 
 function Collaborations() {
     const navigate = useNavigate();
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const user = getAuthUser();
 
     const [sentRequests, setSentRequests] = useState([]);
 
@@ -324,6 +324,15 @@ const rejectRequest = async (requestId) => {
                         >
                             View Profile
                         </button>
+
+                        <ResearcherInviteButton
+                            researcher={{
+                                id: person.user_id,
+                                name: person.name,
+                                institution: person.institution,
+                                department: person.department,
+                            }}
+                        />
 
                     </div>
 
