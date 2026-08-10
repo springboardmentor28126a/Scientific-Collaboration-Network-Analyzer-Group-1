@@ -1,46 +1,24 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 import API from "../services/api";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
+import { clearAuth, getAuthUser } from "../utils/authStorage";
 
 function TopNavbar() {
 
     const navigate = useNavigate();
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
 
     const [showMenu, setShowMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const menuRef = useRef();
-    useEffect(() => {
-
-    const handler = (event) => {
-
-        if (
-            menuRef.current &&
-            !menuRef.current.contains(event.target)
-        ) {
-
-            setShowMenu(false);
-
-        }
-
-    };
-
-    document.addEventListener("mousedown", handler);
-
-    return () => {
-
-        document.removeEventListener(
-            "mousedown",
-            handler
-        );
-
-    };
-
-}, []);
+    const navbarRef = useDismissibleLayer(() => {
+        setShowMenu(false);
+        setShowNotifications(false);
+    }, showMenu || showNotifications);
 
     useEffect(() => {
         let active = true;
@@ -55,8 +33,7 @@ function TopNavbar() {
     }, []);
     const logout = () => {
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearAuth();
 
         navigate("/");
 
@@ -84,6 +61,7 @@ function TopNavbar() {
     return (
 
         <div
+            ref={navbarRef}
             className="top-navbar"
             style={{
                 display: "flex",
@@ -143,7 +121,6 @@ function TopNavbar() {
 
 
                 <div
-                    ref={menuRef}
                     style={{
                         position: "relative"
                     }}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import { getAuthUser, setAuthUser } from "../utils/authStorage";
 
 export default function VerificationPending() {
 
@@ -23,17 +24,12 @@ export default function VerificationPending() {
                 // Approved
                 if (status === "Approved") {
 
-                    const user = JSON.parse(
-                        localStorage.getItem("user")
-                    );
+                    const user = getAuthUser();
 
                     user.is_verified = true;
                     user.verification_status = "Approved";
 
-                    localStorage.setItem(
-                        "user",
-                        JSON.stringify(user)
-                    );
+                    setAuthUser(user);
 
                     alert(
                         "🎉 Your account has been verified."
@@ -46,17 +42,12 @@ export default function VerificationPending() {
                 // Rejected
                 else if (status === "Rejected") {
 
-                    const user = JSON.parse(
-                        localStorage.getItem("user")
-                    );
+                    const user = getAuthUser();
 
                     user.is_verified = false;
                     user.verification_status = "Rejected";
 
-                    localStorage.setItem(
-                        "user",
-                        JSON.stringify(user)
-                    );
+                    setAuthUser(user);
 
                     alert(
                         "❌ Your verification was rejected."
@@ -71,17 +62,12 @@ export default function VerificationPending() {
                 // verification document exists. Send that user to upload.
                 else if (status === "Not Submitted") {
 
-                    const user = JSON.parse(
-                        localStorage.getItem("user") || "null"
-                    );
+                    const user = getAuthUser();
 
                     if (user) {
                         user.is_verified = false;
                         user.verification_status = "Not Submitted";
-                        localStorage.setItem(
-                            "user",
-                            JSON.stringify(user)
-                        );
+                        setAuthUser(user);
                     }
 
                     navigate("/verification");

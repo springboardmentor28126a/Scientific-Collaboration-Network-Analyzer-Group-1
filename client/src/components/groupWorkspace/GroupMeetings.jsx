@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import Pagination from "../../components/Pagination";
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+import { getAuthUser } from "../../utils/authStorage";
 
 export default function GroupMeetings({ groupId }) {
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
 
     const [meetings, setMeetings] = useState([]);
     const [search, setSearch] = useState("");
@@ -13,6 +15,7 @@ export default function GroupMeetings({ groupId }) {
     const pageSize = 5;
 
     const [showModal, setShowModal] = useState(false);
+    const modalRef = useDismissibleLayer(() => setShowModal(false), showModal);
 
     const [form, setForm] = useState({
         title: "",
@@ -196,7 +199,7 @@ export default function GroupMeetings({ groupId }) {
 
                     <div className="modal-overlay">
 
-                        <div className="modal">
+                        <div ref={modalRef} className="modal">
 
                             <h2>Schedule Meeting</h2>
 

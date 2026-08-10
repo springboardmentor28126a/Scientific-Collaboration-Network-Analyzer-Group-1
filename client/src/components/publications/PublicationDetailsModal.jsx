@@ -1,6 +1,9 @@
 import { API_BASE_URL } from "../../services/api";
+import useDismissibleLayer from "../../hooks/useDismissibleLayer";
 
 function PublicationDetailsModal({ publication, onClose }) {
+
+    const modalRef = useDismissibleLayer(onClose, Boolean(publication));
 
     if (!publication) return null;
 
@@ -28,6 +31,7 @@ function PublicationDetailsModal({ publication, onClose }) {
         >
 
             <div
+                ref={modalRef}
                 style={{
                     width: "700px",
                     background: "var(--surface-alt)",

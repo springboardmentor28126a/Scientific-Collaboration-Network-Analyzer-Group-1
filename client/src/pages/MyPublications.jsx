@@ -6,8 +6,10 @@ import PublicationDetailsModal from "../components/publications/PublicationDetai
 import EditPublicationModal from "../components/publications/EditPublicationModal";
 import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
 import { createCitation } from "../services/citationService";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
+import { getAuthUser } from "../utils/authStorage";
 function Publications() {
-  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  const currentUser = getAuthUser();
   const canCreatePublication = ["Researcher", "System Admin"].includes(currentUser?.role);
   const [searchParams] = useSearchParams();
   const [publications, setPublications] = useState([]);
@@ -29,6 +31,10 @@ function Publications() {
   const [institutions,setInstitutions]=useState([]);
   const [institutionQuery, setInstitutionQuery] = useState("");
   const [showInstitutionOptions, setShowInstitutionOptions] = useState(false);
+  const institutionOptionsRef = useDismissibleLayer(
+    () => setShowInstitutionOptions(false),
+    showInstitutionOptions,
+  );
   const [conferences, setConferences] = useState([]);
   const [reviewers, setReviewers] = useState([]);
   const [reviewerLoading, setReviewerLoading] = useState(false);
@@ -974,7 +980,7 @@ function Publications() {
                 <label className="publication-form-label">
                     Institution
                 </label>
-                <div style={{ position: "relative" }}>
+                <div ref={institutionOptionsRef} style={{ position: "relative" }}>
                     <input
                         type="text"
                         value={institutionQuery}

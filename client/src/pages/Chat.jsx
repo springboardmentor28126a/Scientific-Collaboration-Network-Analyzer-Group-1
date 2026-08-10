@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import API from "../services/api";
+import { getAuthUser } from "../utils/authStorage";
 
 export default function Chat() {
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
 
     const [friends, setFriends] = useState([]);
     const [selectedFriend, setSelectedFriend] = useState(null);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { setAuthItem, setAuthUser } from "../utils/authStorage";
 
 import {
     FaMicroscope,
@@ -128,15 +129,8 @@ const handleLogin = async () => {
             loginData
         );
 
-        localStorage.setItem(
-            "token",
-            response.data.access_token
-        );
-
-        localStorage.setItem(
-            "user",
-            JSON.stringify(response.data.user)
-        );
+        setAuthItem("token", response.data.access_token);
+        setAuthUser(response.data.user);
 
         const user = response.data.user;
 
@@ -154,7 +148,7 @@ const handleLogin = async () => {
 
                 user.verification_status = verificationStatus;
                 user.is_verified = isVerified;
-                localStorage.setItem("user", JSON.stringify(user));
+                setAuthUser(user);
             } catch {
                 // Keep the login response as a fallback if status checking
                 // is temporarily unavailable.

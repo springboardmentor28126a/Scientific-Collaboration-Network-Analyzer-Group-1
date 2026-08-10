@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import { getAuthUser } from "../utils/authStorage";
 
 export default function Verification() {
 
     const navigate = useNavigate();
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const user = getAuthUser();
 
     const [file, setFile] = useState(null);
 

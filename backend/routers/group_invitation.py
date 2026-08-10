@@ -45,7 +45,12 @@ def send_invitation(
         ResearchGroupMember.user_id == current_user.id
     ).first()
 
-    if not member or member.role not in ["Owner", "Admin"]:
+    # The canonical owner is stored on the group itself. Older databases can
+    # contain a group without the corresponding owner membership row, so the
+    # ownership check must not rely exclusively on that row.
+    is_group_owner = group.created_by == current_user.id
+    is_group_admin = member is not None and member.role in ["Owner", "Admin"]
+    if not (is_group_owner or is_group_admin):
         raise HTTPException(
             status_code=403,
             detail="Only Owner/Admin can invite members"
@@ -162,11 +167,16 @@ def get_available_groups(
 ):
     if current_user.role != "System Admin" and current_user.id != sender_id:
         raise HTTPException(status_code=403, detail="You can only inspect your own invitations.")
-    groups = (
-        db.query(ResearchGroup)
-        .filter(ResearchGroup.created_by == sender_id)
-        .all()
+    owned_groups = db.query(ResearchGroup).filter(
+        ResearchGroup.created_by == sender_id
     )
+    administered_group_ids = db.query(ResearchGroupMember.group_id).filter(
+        ResearchGroupMember.user_id == sender_id,
+        ResearchGroupMember.role.in_(["Owner", "Admin"]),
+    )
+    groups = owned_groups.union(
+        db.query(ResearchGroup).filter(ResearchGroup.id.in_(administered_group_ids))
+    ).all()
 
     response = []
 

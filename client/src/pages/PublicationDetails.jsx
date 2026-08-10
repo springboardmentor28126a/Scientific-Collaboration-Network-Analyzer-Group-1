@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../services/api";
 import { formatCitation, getCitationStats } from "../services/citationService";
 import CitationModal from "../components/CitationModal";
+import ResearcherInviteButton from "../components/ResearcherInviteButton";
 
 function PublicationDetails() {
     const { id } = useParams();
@@ -59,6 +60,12 @@ function PublicationDetails() {
             <div style={cardStyle}>
                 <h1>📄 {publication.title}</h1>
                 <p><b>Authors:</b> {publication.authors}</p>
+                {publication.researcher_id && (
+                    <div style={{ margin: "12px 0" }}>
+                        <button type="button" onClick={() => navigate(`/researcher/${publication.researcher_id}`)} style={{ marginRight: "10px" }}>View Researcher Profile</button>
+                        <ResearcherInviteButton researcher={{ id: publication.researcher_id, name: publication.authors }} />
+                    </div>
+                )}
                 <p><b>Type:</b> {publication.publication_type}</p>
                 <p><b>Year:</b> {publication.publication_year}</p>
                 <p><b>Journal:</b> {publication.journal || "N/A"}</p>

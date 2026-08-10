@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import API from "../services/api";
+import ResearcherInviteButton from "../components/ResearcherInviteButton";
 
 function ResearcherProfile() {
     const { id } = useParams();
@@ -40,6 +41,7 @@ function ResearcherProfile() {
         <div style={{ padding: "30px" }}>
             <div style={profileCard}>
                 <h1>{researcher.name}</h1>
+                <ResearcherInviteButton researcher={researcher} />
                 <p>🏫 <b>Institution:</b> {researcher.institution || "Not Added"}</p>
                 <p>💻 <b>Department:</b> {researcher.department || "Not Added"}</p>
                 <p>🏷 <b>Designation:</b> {researcher.designation || "Not Added"}</p>

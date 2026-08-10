@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { getAuthUser } from "../utils/authStorage";
 
 function Settings({ toggleTheme }) {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getAuthUser();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import { getAuthUser } from "../utils/authStorage";
 
 export default function Invitations() {
 
     const [invitations, setInvitations] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
 
     useEffect(() => {
         loadInvitations();

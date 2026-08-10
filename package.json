@@ -1,4 +1,13 @@
 {
+  "name": "scientific-collaboration-network-analyzer",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "lint": "npm --prefix client run lint",
+    "install:client": "npm --prefix client install",
+    "postinstall": "npm run install:client"
+  },
   "dependencies": {
     "react-select": "^5.10.2"
   }

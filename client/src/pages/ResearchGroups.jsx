@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { createGroup,updateGroup,deleteGroup,leaveGroup } from "../services/groupService";
 import Pagination from "../components/Pagination";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
+import { getAuthUser } from "../utils/authStorage";
 export default function ResearchGroups() {
 
     const navigate = useNavigate();
@@ -18,6 +20,11 @@ export default function ResearchGroups() {
 
 const [creating, setCreating] = useState(false);
 const [openEditModal, setOpenEditModal] = useState(false);
+const createModalRef = useDismissibleLayer(() => setOpenCreateModal(false), openCreateModal);
+const editModalRef = useDismissibleLayer(() => {
+    setOpenEditModal(false);
+    setSelectedGroup(null);
+}, openEditModal);
 
 const [editing, setEditing] = useState(false);
 
@@ -27,7 +34,7 @@ const pageSize = 6;
 const [search, setSearch] = useState("");
 const [sortBy, setSortBy] = useState("name");
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getAuthUser();
 
     useEffect(() => {
         loadGroups();
@@ -424,6 +431,7 @@ const handleLeaveGroup = async (groupId) => {
 openCreateModal && (
 
 <div
+    ref={createModalRef}
     style={{
         position: "fixed",
         inset: 0,
@@ -550,6 +558,7 @@ Cancel
 openEditModal && selectedGroup && (
 
 <div
+    ref={editModalRef}
     style={{
         position: "fixed",
         inset: 0,

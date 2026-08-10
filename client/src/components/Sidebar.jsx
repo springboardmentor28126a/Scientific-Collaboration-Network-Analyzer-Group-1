@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     FaHome,
@@ -21,6 +21,8 @@ import {
     FaCheckCircle
 } from "react-icons/fa";
 import API from "../services/api";
+import useDismissibleLayer from "../hooks/useDismissibleLayer";
+import { getAuthUser } from "../utils/authStorage";
 
 function Sidebar() {
 
@@ -30,7 +32,10 @@ function Sidebar() {
     const [results, setResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
-    const searchRef = useRef(null);
+    const searchRef = useDismissibleLayer(() => {
+        setQuery("");
+        setResults([]);
+    }, query.trim().length > 0);
 
     useEffect(() => {
         const term = query.trim();
@@ -325,7 +330,7 @@ function Sidebar() {
 }
 
 function MenuItem({ icon, text, active, onClick, roles }) {
-    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const user = getAuthUser();
     if (roles && user?.role !== "System Admin" && !roles.includes(user?.role)) {
         return null;
     }

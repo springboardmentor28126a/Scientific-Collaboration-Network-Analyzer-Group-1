@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import FileUpload from "../FileUpload";
 import FileCard from "../FileCard";
 import Pagination from "../../components/Pagination";
+import { getAuthUser } from "../../utils/authStorage";
 
 import {
     getGroupFiles,
@@ -12,7 +13,7 @@ import {
 
 export default function GroupFiles({ groupId }) {
 
-    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const user = getAuthUser();
 
     const [files, setFiles] = useState([]);
     const [search, setSearch] = useState("");
@@ -22,7 +23,6 @@ export default function GroupFiles({ groupId }) {
 
     // Temporary user ID for now.
     // Later we'll read it from the logged-in user.
-    // const user = JSON.parse(localStorage.getItem("user"));
     // const uploadedBy = user?.id;
 
     const loadFiles = async () => {
