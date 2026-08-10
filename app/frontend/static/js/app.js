@@ -156,36 +156,197 @@ function bindForm(formId, endpoint, successMessage, afterSave = loadAll) {
 // Home dashboard teaser (home.html) — safe no-ops on other pages
 // =========================================================================
 
+// Sets textContent on an element only if it actually exists. Root cause of
+// the "Cannot set properties of null (setting 'textContent')" dashboard
+// error: loadDashboard() used to write to each #metric* element with a
+// bare document.getElementById(id).textContent = ... call. That's safe only
+// as long as every single element is guaranteed present; once Dashboard
+// cards became role-gated (see nav-auth.js) and the page can legitimately
+// render with pieces of the layout hidden/removed for a given user, or the
+// /dashboard/admin payload is ever missing a key on a slower/partial
+// response, the very next unguarded assignment threw and aborted the rest
+// of the dashboard render. Every write now goes through this helper instead
+// of failing the whole page for one missing/renamed element.
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+// -------------------------------------------------------------------------
+// Quick Insights / Recent Activity / Latest-X teaser lists (Dashboard).
+// Every list below reuses data already fetched by other parts of the app
+// (Publications metrics, Collaboration dashboard/recent, Conferences
+// filter) -- no new backend endpoints were needed for this. Each section
+// is independent and wrapped in its own try/catch: if one section's data
+// is unavailable, it degrades to a "No data available" placeholder rather
+// than an error popup, and the rest of the dashboard keeps working.
+// -------------------------------------------------------------------------
+
+async function loadQuickInsights() {
+  const container = document.getElementById("quickInsights");
+  if (!container) return;
+
+  try {
+    const [pubMetrics, collabDashboard] = await Promise.all([
+      api("/publications/metrics/summary"),
+      api("/collaborations/dashboard"),
+    ]);
+
+    const byStatus = pubMetrics.by_status ?? {};
+    const topStatus = Object.entries(byStatus).sort((a, b) => b[1] - a[1])[0];
+    const summary = collabDashboard.summary ?? {};
+
+    const chips = [
+      ["Total Citations", pubMetrics.total_citations ?? 0],
+      ["Avg. Co-Authors / Paper", summary.average_authors ?? 0],
+      ["Connected Researchers", summary.connected_researchers ?? 0],
+      ["Top Publication Status", topStatus ? `${topStatus[0]} (${topStatus[1]})` : "No Data"],
+    ];
+
+    container.innerHTML = chips.map(([label, value]) => `
+      <div class="insight-chip">
+        <span class="label">${escapeHtml(label)}</span>
+        <span class="value">${escapeHtml(value)}</span>
+      </div>
+    `).join("");
+  } catch (error) {
+    container.innerHTML = `<div class="text-center py-3 text-muted w-100">No Data</div>`;
+  }
+}
+
+async function loadDashboardTeasers() {
+  const activityEl = document.getElementById("recentActivityList");
+  const pubsEl = document.getElementById("latestPublicationsList");
+  const collabEl = document.getElementById("latestCollaborationsList");
+  const confEl = document.getElementById("recentConferencesList");
+  if (!activityEl && !pubsEl && !collabEl && !confEl) return;
+
+  const renderEmpty = (el, message) => {
+    if (el) el.innerHTML = `<li class="text-center py-3 text-muted">${escapeHtml(message)}</li>`;
+  };
+
+  // Each source is fetched independently (Promise.allSettled) so one slow
+  // or unavailable module doesn't blank out the others.
+  const [pubsResult, collabResult, confResult] = await Promise.allSettled([
+    api("/publications/metrics/summary"),
+    fetch(`/collaborations/recent?page=1&limit=5`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    }).then((r) => (r.ok ? r.json() : Promise.reject(new Error("failed")))),
+    api("/conferences/search/filter?sort_by=id&order=desc&page=1&limit=5"),
+  ]);
+
+  const recentPubs = pubsResult.status === "fulfilled" ? (pubsResult.value.recent_publications ?? []) : [];
+  const recentCollabs = collabResult.status === "fulfilled" ? collabResult.value ?? [] : [];
+  const recentConfs = confResult.status === "fulfilled" ? confResult.value ?? [] : [];
+
+  // -------- Latest Publications --------
+  if (pubsEl) {
+    pubsEl.innerHTML = recentPubs.length
+      ? recentPubs.slice(0, 5).map((p) => `
+          <li>
+            <div class="activity-icon type-publication"><i class="bi bi-journal-text"></i></div>
+            <div>
+              <div class="mini-title">${escapeHtml(p.title)}</div>
+              <div class="mini-meta">${escapeHtml(p.authors ?? "Not Available")} &middot; ${escapeHtml(p.publication_year ?? "—")} &middot; ${escapeHtml(p.status ?? "—")}</div>
+            </div>
+          </li>
+        `).join("")
+      : "";
+    if (!recentPubs.length) renderEmpty(pubsEl, "No Data");
+  }
+
+  // -------- Latest Collaborations --------
+  if (collabEl) {
+    collabEl.innerHTML = recentCollabs.length
+      ? recentCollabs.slice(0, 5).map((c) => `
+          <li>
+            <div class="activity-icon type-collaboration"><i class="bi bi-diagram-3"></i></div>
+            <div>
+              <div class="mini-title">${escapeHtml(c.publication ?? "Not Available")}</div>
+              <div class="mini-meta">${escapeHtml(c.researcher ?? "Not Available")} &middot; ${escapeHtml(c.contribution ?? "—")}</div>
+            </div>
+          </li>
+        `).join("")
+      : "";
+    if (!recentCollabs.length) renderEmpty(collabEl, "No Data");
+  }
+
+  // -------- Recent Conference Additions --------
+  if (confEl) {
+    confEl.innerHTML = recentConfs.length
+      ? recentConfs.slice(0, 5).map((c) => `
+          <li>
+            <div class="activity-icon type-conference"><i class="bi bi-calendar-event"></i></div>
+            <div>
+              <div class="mini-title">${escapeHtml(c.name)}</div>
+              <div class="mini-meta">${escapeHtml(c.location ?? "Not Available")} &middot; ${escapeHtml(c.start_date ?? "—")}</div>
+            </div>
+          </li>
+        `).join("")
+      : "";
+    if (!recentConfs.length) renderEmpty(confEl, "No Data");
+  }
+
+  // -------- Recent Activity (merged feed) --------
+  if (activityEl) {
+    const items = [
+      ...recentPubs.slice(0, 3).map((p) => ({
+        icon: "bi-journal-text",
+        type: "type-publication",
+        title: `New publication: ${p.title}`,
+        meta: `${p.publication_type ?? "Publication"} &middot; ${p.status ?? "—"}`,
+      })),
+      ...recentCollabs.slice(0, 3).map((c) => ({
+        icon: "bi-diagram-3",
+        type: "type-collaboration",
+        title: `New collaboration on: ${c.publication ?? "Not Available"}`,
+        meta: `${c.researcher ?? "Not Available"} &middot; ${c.contribution ?? "—"}`,
+      })),
+      ...recentConfs.slice(0, 3).map((c) => ({
+        icon: "bi-calendar-event",
+        type: "type-conference",
+        title: `New conference added: ${c.name}`,
+        meta: `${c.location ?? "Not Available"}`,
+      })),
+    ];
+
+    activityEl.innerHTML = items.length
+      ? items.map((item) => `
+          <li>
+            <div class="activity-icon ${item.type}"><i class="bi ${item.icon}"></i></div>
+            <div>
+              <div class="mini-title">${escapeHtml(item.title)}</div>
+              <div class="mini-meta">${item.meta}</div>
+            </div>
+          </li>
+        `).join("")
+      : "";
+    if (!items.length) renderEmpty(activityEl, "No recent activity to show yet.");
+  }
+}
+
 async function loadDashboard() {
   if (!document.getElementById("metricUsers")) return;
 
   const data = await api("/dashboard/admin");
-  document.getElementById("metricUsers").textContent = data.users ?? 0;
-  document.getElementById("metricResearchers").textContent = data.researchers ?? 0;
-  document.getElementById("metricInstitutions").textContent = data.institutions ?? 0;
-  document.getElementById("metricPublications").textContent = data.publications ?? 0;
-  document.getElementById("metricProjects").textContent = data.projects ?? 0;
-  document.getElementById("metricCollaborations").textContent = data.collaborations ?? 0;
-  document.getElementById("metricConferences").textContent = data.conferences ?? 0;
-  document.getElementById("metricCitations").textContent = data.citations ?? 0;
-}
+  setText("metricUsers", data.users ?? 0);
+  setText("metricResearchers", data.researchers ?? 0);
+  setText("metricInstitutions", data.institutions ?? 0);
+  setText("metricPublications", data.publications ?? 0);
+  setText("metricProjects", data.projects ?? 0);
+  setText("metricCollaborations", data.collaborations ?? 0);
+  setText("metricConferences", data.conferences ?? 0);
+  setText("metricCitations", data.citations ?? 0);
 
-async function loadReports() {
-  if (!document.getElementById("publicationReport")) return;
-  const message = "Reports will be available when the reports API is added.";
-  document.getElementById("publicationReport").textContent = message;
-  document.getElementById("researchReport").textContent = message;
-  document.getElementById("collaborationReport").textContent = message;
-}
-
-async function loadNetwork() {
-  if (!document.getElementById("networkBox")) return;
-  document.getElementById("networkBox").textContent =
-    "Collaboration-network data will be available when the collaborations API is added.";
+  // Quick Insights / Recent Activity / Latest-X are additional, optional
+  // dashboard content -- they run alongside the core metrics above but
+  // never block or fail the core dashboard render if they error out.
+  loadQuickInsights().catch(() => {});
+  loadDashboardTeasers().catch(() => {});
 }
 
 async function loadAll() {
-  await Promise.all([loadDashboard(), loadReports(), loadNetwork()]);
+  await loadDashboard();
 }
 
 // =========================================================================
@@ -258,46 +419,31 @@ async function loadInstitutions(page = instCurrentPage) {
 }
 
 window.viewInstitution = async function (institutionId) {
-  const section = document.getElementById("institutionDetailSection");
-  if (!section) return;
-
   try {
     const details = await api(`/institutions/${institutionId}/details`);
 
-    document.getElementById("instDetailTitle").textContent = details.name;
+    const departments = details.departments ?? [];
+    const researchers = details.researchers ?? [];
 
-    document.getElementById("instBasicInfo").innerHTML = `
-      <li><strong>Type:</strong> ${escapeHtml(details.institution_type ?? "-")}</li>
-      <li><strong>City:</strong> ${escapeHtml(details.city ?? "-")}</li>
-      <li><strong>Country:</strong> ${escapeHtml(details.country ?? "-")}</li>
-    `;
-
-    document.getElementById("instContactInfo").innerHTML = `
-      <li><strong>Website:</strong> ${details.website ? `<a href="${escapeHtml(details.website)}" target="_blank">${escapeHtml(details.website)}</a>` : "-"}</li>
-      <li><strong>Contact Email:</strong> ${escapeHtml(details.contact_email ?? "-")}</li>
-    `;
-
-    document.getElementById("instDepartments").innerHTML = details.departments.length
-      ? details.departments.map((d) => `<span class="badge bg-light text-dark border me-1 mb-1">${escapeHtml(d)}</span>`).join("")
-      : `<p class="text-muted small mb-0">No departments on record.</p>`;
-
-    document.getElementById("instResearchers").innerHTML = details.researchers.length
-      ? `<ul class="list-unstyled mb-0">${details.researchers.map((r) => `<li>${escapeHtml(r.full_name)} — <span class="text-muted small">${escapeHtml(r.department ?? "-")}</span></li>`).join("")}</ul>`
-      : `<p class="text-muted small mb-0">No researchers on record.</p>`;
-
-    document.getElementById("instPublications").innerHTML =
-      `<span class="badge bg-primary">${details.total_publications}</span> total publications`;
-
-    document.getElementById("instProjects").innerHTML =
-      `<span class="badge bg-primary">${details.active_projects}</span> active projects`;
-
-    document.getElementById("instCollabStats").innerHTML =
-      `<span class="badge bg-primary">${details.collaboration_count}</span> collaborations, <span class="badge bg-primary">${details.total_researchers}</span> researchers total`;
-
-    section.style.display = "";
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.showDetailsModal(
+      details.name,
+      [
+        ["Type", details.institution_type],
+        ["City", details.city],
+        ["Country", details.country],
+        ["Website", details.website],
+        ["Contact Email", details.contact_email],
+        ["Departments", departments],
+        ["Researchers", researchers.map((r) => r.full_name).join(", ") || null],
+        ["Total Publications", details.total_publications ?? 0],
+        ["Active Projects", details.active_projects ?? 0],
+        ["Collaborations", details.collaboration_count ?? 0],
+        ["Total Researchers", details.total_researchers ?? 0],
+      ],
+      "Institution Profile"
+    );
   } catch (error) {
-    showToast("Error", error.message, "error");
+    showToast("Error", "Unable to load institution details.", "error");
   }
 };
 
@@ -329,7 +475,6 @@ window.deleteInstitution = async function (institutionId) {
   try {
     await api(`/institutions/${institutionId}`, { method: "DELETE" });
     showToast("Success", "Institution deleted successfully.", "success");
-    document.getElementById("institutionDetailSection").style.display = "none";
     await loadInstitutions();
   } catch (error) {
     showToast("Error", error.message, "error");
@@ -452,34 +597,28 @@ async function loadResearchers(page = researcherCurrentPage) {
 }
 
 window.viewResearcher = async function (researcherId) {
-  const section = document.getElementById("researcherDetailSection");
-  if (!section) return;
-
   try {
     const stats = await api(`/researchers/${researcherId}/profile-stats`);
+    const recentPubs = stats.recent_publications ?? [];
 
-    document.getElementById("researcherDetailTitle").textContent = stats.full_name;
-
-    document.getElementById("researcherBasicInfo").innerHTML = `
-      <li><strong>Institution:</strong> ${escapeHtml(stats.institution ?? "-")}</li>
-      <li><strong>Department:</strong> ${escapeHtml(stats.department ?? "-")}</li>
-      <li><strong>Profile Completion:</strong> ${stats.completion_percentage}%</li>
-    `;
-
-    document.getElementById("researcherStatsInfo").innerHTML = `
-      <li><strong>Publications:</strong> ${stats.publication_count}</li>
-      <li><strong>Citations:</strong> ${stats.citation_count}</li>
-      <li><strong>Active Projects:</strong> ${stats.active_project_count}</li>
-    `;
-
-    document.getElementById("researcherRecentPubs").innerHTML = stats.recent_publications.length
-      ? `<ul class="list-unstyled mb-0">${stats.recent_publications.map((p) => `<li>${escapeHtml(p.title)} <span class="text-muted small">(${p.publication_year ?? "-"}, ${escapeHtml(p.status)})</span></li>`).join("")}</ul>`
-      : `<p class="text-muted small mb-0">No publications on record.</p>`;
-
-    section.style.display = "";
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.showDetailsModal(
+      stats.full_name,
+      [
+        ["Institution", stats.institution],
+        ["Department", stats.department],
+        ["Profile Completion", stats.completion_percentage != null ? `${stats.completion_percentage}%` : null],
+        ["Publications", stats.publication_count ?? 0],
+        ["Citations", stats.citation_count ?? 0],
+        ["Active Projects", stats.active_project_count ?? 0],
+        [
+          "Recent Publications",
+          recentPubs.map((p) => `${p.title} (${p.publication_year ?? "—"}, ${p.status})`).join("; ") || null,
+        ],
+      ],
+      "Researcher Profile"
+    );
   } catch (error) {
-    showToast("Error", error.message, "error");
+    showToast("Error", "Unable to load researcher details.", "error");
   }
 };
 
@@ -513,7 +652,6 @@ window.deleteResearcher = async function (researcherId) {
   try {
     await api(`/researchers/${researcherId}`, { method: "DELETE" });
     showToast("Success", "Researcher deleted successfully.", "success");
-    document.getElementById("researcherDetailSection").style.display = "none";
     await loadResearchers();
   } catch (error) {
     showToast("Error", error.message, "error");
@@ -596,8 +734,28 @@ function renderPublicationCard(p) {
           </div>
           <div class="mt-auto d-flex flex-wrap gap-2">
             ${p.upload_path ? `<a class="btn btn-sm btn-outline-dark" href="#" onclick="window.downloadFile('/publications/download/${p.id}', '${escapeHtml(p.title).replace(/'/g, "")}.pdf', this); return false;"><i class="bi bi-download"></i> PDF</a>` : ""}
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-requires="publications:edit" onclick="window.editPublication(${p.id})">Edit</button>
-            <button type="button" class="btn btn-sm btn-outline-danger" data-requires="publications:delete" onclick="window.deletePublication(${p.id})">Delete</button>
+
+<button
+    type="button"
+    class="btn btn-sm btn-outline-dark"
+    onclick="window.viewPublication(${p.id})">
+    <i class="bi bi-eye me-1"></i>View Details
+</button>
+
+<button
+    type="button"
+    class="btn btn-sm btn-outline-primary"
+    onclick="window.viewReferences(${p.id})">
+    References
+</button>
+
+<button
+    type="button"
+    class="btn btn-sm btn-outline-secondary"
+    data-requires="publications:edit"
+    onclick="window.editPublication(${p.id})">
+    Edit
+</button>
           </div>
         </div>
       </div>
@@ -681,6 +839,29 @@ async function loadPublications(page = pubCurrentPage) {
     showToast("Error", error.message, "error");
   }
 }
+
+window.viewPublication = async function (publicationId) {
+  try {
+    const p = await api(`/publications/${publicationId}`);
+
+    window.showDetailsModal(
+      p.title,
+      [
+        ["Authors", p.authors],
+        ["Journal / Venue", p.publication_name],
+        ["Type", p.publication_type],
+        ["Publication Year", p.publication_year],
+        ["DOI", p.doi],
+        ["Status", p.status],
+        ["Citations", p.citation_count ?? 0],
+        ["Abstract", p.abstract],
+      ],
+      "Publication Details"
+    );
+  } catch (error) {
+    showToast("Error", "Unable to load publication details.", "error");
+  }
+};
 
 window.editPublication = async function (publicationId) {
   try {
@@ -785,539 +966,13 @@ document.getElementById("pubNextPage")?.addEventListener("click", () => {
 });
 
 // =========================================================================
-// Conferences
-// =========================================================================
-
-const CONF_PAGE_SIZE = 6;
-let confCurrentPage = 1;
-let editingConferenceId = null;
-
-async function loadConferenceStats() {
-  try {
-    const stats = await api("/conferences/summary/stats");
-    document.getElementById("confTotal").textContent = stats.total_conferences ?? 0;
-    document.getElementById("confOrganizers").textContent = stats.total_organizers ?? 0;
-    document.getElementById("confLocations").textContent = stats.total_locations ?? 0;
-    document.getElementById("confParticipants").textContent = stats.total_participants ?? 0;
-  } catch (error) {
-    showToast("Error", error.message, "error");
-  }
-}
-
-async function loadConferences(page = confCurrentPage) {
-  const container = document.getElementById("conferenceList");
-  if (!container) return;
-
-  confCurrentPage = page;
-
-  const query =
-    document.getElementById("confSearch")?.value.trim() ?? "";
-
-  const status =
-    document.getElementById("confStatus")?.value || "";
-
-  const sortBy =
-    document.getElementById("confSortBy")?.value || "name";
-
-  const order =
-    document.getElementById("confSortOrder")?.value || "asc";
-
-  container.innerHTML = skeletonCards(CONF_PAGE_SIZE);
-
-  try {
-
-    const params = new URLSearchParams({
-      query,
-      status,
-      sort_by: sortBy,
-      order,
-      page: String(page),
-      limit: String(CONF_PAGE_SIZE),
-    });
-
-    const conferences = await api(
-      `/conferences/search/filter?${params.toString()}`
-    );
-
-    const prevBtn = document.getElementById("confPrevPage");
-    const nextBtn = document.getElementById("confNextPage");
-    const pageNum = document.getElementById("confPageNum");
-
-    if (prevBtn) prevBtn.disabled = page === 1;
-    if (nextBtn) nextBtn.disabled = conferences.length < CONF_PAGE_SIZE;
-    if (pageNum) pageNum.textContent = `Page ${page}`;
-
-    if (conferences.length === 0) {
-
-      const addBtn = window.canDo("conferences", "create")
-        ? `
-          <button
-            type="button"
-            class="btn btn-sm btn-dark"
-            data-bs-toggle="modal"
-            data-bs-target="#addConferenceModal">
-            Add Conference
-          </button>
-        `
-        : "";
-
-      container.innerHTML = emptyStateCard(
-        "No conferences found.",
-        addBtn
-      );
-
-      return;
-    }
-
-    container.innerHTML = conferences.map(conf => {
-
-      let statusText = "";
-      let statusClass = "";
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const start = conf.start_date ? new Date(conf.start_date) : null;
-      const end = conf.end_date ? new Date(conf.end_date) : null;
-
-      if (start && end) {
-
-        if (today < start) {
-          statusText = "Upcoming";
-          statusClass = "bg-primary";
-        }
-        else if (today >= start && today <= end) {
-          statusText = "Ongoing";
-          statusClass = "bg-success";
-        }
-        else {
-          statusText = "Completed";
-          statusClass = "bg-secondary";
-        }
-
-      }
-
-      return `
-      <div class="col-md-4 mb-3">
-
-        <div class="card h-100">
-
-          <div class="card-body d-flex flex-column">
-
-            <h5 class="card-title mb-2">
-              ${escapeHtml(conf.name)}
-            </h5>
-
-            ${
-              statusText
-                ? `<span class="badge ${statusClass} mb-2" style="width:max-content;">
-                     ${statusText}
-                   </span>`
-                : ""
-            }
-
-            <p class="card-text">
-
-  <strong>Location:</strong>
-  ${escapeHtml(conf.location ?? "-")}
-  <br>
-
-  <strong>Dates:</strong>
-  ${escapeHtml(conf.start_date ?? "-")}
-  to
-  ${escapeHtml(conf.end_date ?? "-")}
-  <br>
-
-  <strong>Organizer:</strong>
-  ${escapeHtml(conf.organizer ?? "-")}
-
-  ${
-    window.currentUser?.role === "System Admin"
-      ? `
-      <br>
-      <strong>Registered Participants:</strong>
-      ${conf.participant_count}
-      `
-      : ""
-  }
-
-</p>
-
-            <div class="mt-auto d-flex flex-wrap gap-2">
-
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-dark"
-                onclick="window.viewConference(${conf.id})">
-                View Details
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                data-requires="conferences:edit"
-                onclick="window.editConference(${conf.id})">
-                Edit
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                data-requires="conferences:delete"
-                onclick="window.deleteConference(${conf.id})">
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-      `;
-
-    }).join("");
-
-    window.applyPermissionGating?.(container);
-
-  }
-  catch (error) {
-
-    container.innerHTML = `
-      <div class="text-center py-4 text-danger">
-        Unable to load conferences.
-      </div>
-    `;
-
-    showToast(
-      "Error",
-      error.message,
-      "error"
-    );
-
-  }
-}
-
-window.viewConference = async function (conferenceId) {
-  const section = document.getElementById("conferenceDetailSection");
-  if (!section) return;
-
-  try {
-    const conf = await api(`/conferences/${conferenceId}`);
-
-    document.getElementById("confDetailTitle").textContent = conf.name;
-
-    document.getElementById("confDetailInfo").innerHTML = `
-
-      <li>
-        <strong>Conference ID:</strong>
-        <span class="badge bg-dark">${conf.id}</span>
-      </li>
-
-      <li>
-        <strong>Conference Name:</strong>
-        ${escapeHtml(conf.name)}
-      </li>
-
-      <li>
-        <strong>Organizer:</strong>
-        ${escapeHtml(conf.organizer ?? "-")}
-      </li>
-
-      ${
-        localStorage.getItem("role") === "System Admin"
-          ? `
-          <li>
-            <strong>Registered Participants:</strong>
-            <span class="badge bg-primary">
-              ${conf.participant_count}
-            </span>
-          </li>
-          `
-          : ""
-      }
-
-      <li>
-        <strong>Location:</strong>
-        ${escapeHtml(conf.location ?? "-")}
-      </li>
-
-      <li>
-        <strong>Start Date:</strong>
-        ${escapeHtml(conf.start_date ?? "-")}
-      </li>
-
-      <li>
-        <strong>End Date:</strong>
-        ${escapeHtml(conf.end_date ?? "-")}
-      </li>
-
-      <li>
-        <strong>Website:</strong>
-        ${
-          conf.website
-            ? `
-              <a
-                href="${escapeHtml(conf.website)}"
-                target="_blank"
-                rel="noopener">
-                ${escapeHtml(conf.website)}
-              </a>
-            `
-            : "-"
-        }
-      </li>
-
-    `;
-
-    section.style.display = "";
-    section.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-
-  } catch (error) {
-    showToast(
-      "Error",
-      error.message || "Unable to load conference details.",
-      "error"
-    );
-  }
-};
-
-window.editConference = async function (conferenceId) {
-
-  try {
-
-    const conf = await api(`/conferences/${conferenceId}`);
-
-    editingConferenceId = conf.id;
-
-    const form = document.getElementById("addConferenceForm");
-
-    form.querySelector("[name='name']").value =
-      conf.name ?? "";
-
-    form.querySelector("[name='organizer']").value =
-      conf.organizer ?? "";
-
-    form.querySelector("[name='location']").value =
-      conf.location ?? "";
-
-    form.querySelector("[name='start_date']").value =
-      conf.start_date ?? "";
-
-    form.querySelector("[name='end_date']").value =
-      conf.end_date ?? "";
-
-    form.querySelector("[name='website']").value =
-      conf.website ?? "";
-
-    document.querySelector(
-      "#addConferenceModal .modal-title"
-    ).textContent = "Edit Conference";
-
-    document.querySelector(
-      "#addConferenceForm button[type='submit']"
-    ).textContent = "Save Changes";
-
-    bootstrap.Modal.getOrCreateInstance(
-      document.getElementById("addConferenceModal")
-    ).show();
-
-  }
-
-  catch (error) {
-
-    showToast(
-      "Error",
-      error.message,
-      "error"
-    );
-
-  }
-
-};
-
-window.deleteConference = async function (conferenceId) {
-
-  const confirmed = confirm(
-    "Are you sure you want to delete this conference?"
-  );
-
-  if (!confirmed) return;
-
-  try {
-
-    await api(`/conferences/${conferenceId}`, {
-      method: "DELETE",
-    });
-
-    showToast(
-      "Success",
-      "Conference deleted successfully.",
-      "success"
-    );
-
-    document.getElementById(
-      "conferenceDetailSection"
-    ).style.display = "none";
-
-    await loadConferences(confCurrentPage);
-    await loadConferenceStats();
-
-  } catch (error) {
-
-    showToast(
-      "Error",
-      error.message,
-      "error"
-    );
-
-  }
-
-};
-
-function bindConferenceForm() {
-
-  const form = document.getElementById("addConferenceForm");
-
-  if (!form) return;
-
-  form.addEventListener("submit", async (event) => {
-
-    event.preventDefault();
-
-    const data = formDataToJson(form);
-
-    try {
-
-      if (editingConferenceId === null) {
-
-        // CREATE
-        await api("/conferences/", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
-
-        showToast(
-          "Success",
-          "Conference added successfully.",
-          "success"
-        );
-
-      } else {
-
-        // UPDATE
-        await api(`/conferences/${editingConferenceId}`, {
-          method: "PUT",
-          body: JSON.stringify(data),
-        });
-
-        showToast(
-          "Success",
-          "Conference updated successfully.",
-          "success"
-        );
-
-        editingConferenceId = null;
-
-        document.querySelector(
-          "#addConferenceModal .modal-title"
-        ).textContent = "Add New Conference";
-
-        document.querySelector(
-          "#addConferenceForm button[type='submit']"
-        ).textContent = "Create Conference";
-      }
-
-      form.reset();
-
-      bootstrap.Modal.getInstance(
-        document.getElementById("addConferenceModal")
-      )?.hide();
-
-      await loadConferences(confCurrentPage);
-      await loadConferenceStats();
-
-    } catch (error) {
-
-      showToast(
-        "Error",
-        error.message,
-        "error"
-      );
-
-    }
-
-  });
-
-  // Reset modal when closed
-  document.getElementById("addConferenceModal")
-    ?.addEventListener("hidden.bs.modal", () => {
-
-      editingConferenceId = null;
-
-      form.reset();
-
-      document.querySelector(
-        "#addConferenceModal .modal-title"
-      ).textContent = "Add New Conference";
-
-      document.querySelector(
-        "#addConferenceForm button[type='submit']"
-      ).textContent = "Create Conference";
-
-    });
-
-}
-
-function bindParticipationForm() {
-  const form = document.getElementById("registerParticipationForm");
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    try {
-      await api("/participations/", {
-        method: "POST",
-        body: JSON.stringify(formDataToJson(form)),
-      });
-      form.reset();
-      showToast("Saved", "Participation registered.", "success");
-      await loadConferences();
-      await loadConferenceStats();
-    } catch (error) {
-      showToast("Error", error.message, "error");
-    }
-  });
-}
-
-document.getElementById("confPrevPage")?.addEventListener("click", () => {
-  if (confCurrentPage > 1) {
-    confCurrentPage--;
-    loadConferences(confCurrentPage);
-  }
-});
-document.getElementById("confNextPage")?.addEventListener("click", () => {
-  confCurrentPage++;
-  loadConferences(confCurrentPage);
-});
-document.getElementById("confSearch")?.addEventListener("input", debounce(() => loadConferences(1)));
-document.getElementById("confSortBy")?.addEventListener("change", () => loadConferences(1));
-document.getElementById("confSortOrder")?.addEventListener("change", () => loadConferences(1));
-document.getElementById("confStatus")
-  ?.addEventListener("change", () => {
-    loadConferences(1);
-  });
-
-// =========================================================================
 // Citations
 // =========================================================================
 
 const CITATION_PAGE_SIZE = 6;
 let citationCurrentPage = 1;
 let editingCitationId = null;
+let lastCitationsData = [];
 
 function renderCitationCard(c) {
   return `
@@ -1332,10 +987,51 @@ function renderCitationCard(c) {
             <span class="badge bg-light text-dark border">Ref #${c.reference_order ?? "-"}</span>
             ${c.cited_publication_id ? `<span class="badge bg-light text-dark border">Cites Pub #${c.cited_publication_id}</span>` : ""}
           </div>
-          <div class="mt-auto d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-requires="citations:edit" onclick="window.editCitation(${c.id})">Edit</button>
-            <button type="button" class="btn btn-sm btn-outline-danger" data-requires="citations:delete" onclick="window.deleteCitation(${c.id})">Delete</button>
-          </div>
+          <div class="mt-auto d-flex gap-2 flex-wrap">
+
+    <button
+        type="button"
+        class="btn btn-sm btn-outline-dark"
+        onclick="window.viewCitation(${c.id})">
+        <i class="bi bi-eye me-1"></i>View Details
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        data-requires="citations:edit"
+        onclick="window.editCitation(${c.id})">
+        Edit
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-sm btn-outline-danger"
+        data-requires="citations:delete"
+        onclick="window.deleteCitation(${c.id})">
+        Delete
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-sm btn-outline-primary"
+        onclick="copyCitation('${encodeURIComponent(c.citation_text)}')">
+        Copy
+    </button>
+    <button
+    type="button"
+    class="btn btn-sm btn-outline-success"
+    onclick="window.generateCitation(${c.id})">
+    Generate
+</button>
+<button
+    type="button"
+    class="btn btn-sm btn-outline-dark"
+    onclick="window.exportBibtex(${c.id})">
+    BibTeX
+</button>
+
+</div>
         </div>
       </div>
     </div>
@@ -1395,6 +1091,7 @@ async function loadCitations(page = citationCurrentPage) {
     });
     const citations = await api(`/citations/search/filter?${params.toString()}`);
 
+    lastCitationsData = citations;
     if (prevBtn) prevBtn.disabled = page === 1;
     if (nextBtn) nextBtn.disabled = citations.length < CITATION_PAGE_SIZE;
     if (pageNum) pageNum.textContent = `Page ${page}`;
@@ -1405,6 +1102,26 @@ async function loadCitations(page = citationCurrentPage) {
     showToast("Error", error.message, "error");
   }
 }
+
+window.viewCitation = async function (citationId) {
+  const c = lastCitationsData.find((entry) => entry.id === citationId);
+  if (!c) {
+    showToast("Error", "Unable to load citation details.", "error");
+    return;
+  }
+
+  window.showDetailsModal(
+    c.publication_title ?? `Publication #${c.publication_id}`,
+    [
+      ["Citation Text", c.citation_text],
+      ["Publication Year", c.publication_year],
+      ["DOI", c.doi],
+      ["Reference Order", c.reference_order],
+      ["Cited Publication ID", c.cited_publication_id],
+    ],
+    "Citation Details"
+  );
+};
 
 window.editCitation = async function (citationId) {
   try {
@@ -1507,18 +1224,93 @@ document.getElementById("citeNextPage")?.addEventListener("click", () => {
 bindInstitutionForm();
 bindResearcherForm();
 bindPublicationForm();
-bindConferenceForm();
-bindParticipationForm();
 bindCitationForm();
 
-document.getElementById("refreshReports")?.addEventListener("click", loadReports);
 
 loadAll().catch((error) => showToast("Load error", error.message));
 loadInstitutions();
 loadResearchers();
 loadPublications();
 loadPublicationMetrics();
-loadConferenceStats();
-loadConferences();
 loadCitations();
 loadCitationStats();
+window.copyCitation = async function (text) {
+  try {
+    const citationText = decodeURIComponent(text);
+
+    await navigator.clipboard.writeText(citationText);
+
+    showToast("Success", "Citation copied successfully.", "success");
+  } catch (error) {
+    showToast("Error", "Failed to copy citation.", "error");
+  }
+};
+window.generateCitation = async function (citationId) {
+  try {
+    const style = prompt(
+      "Enter citation style (APA, MLA, IEEE, Chicago):",
+      "APA"
+    );
+
+    if (!style) return;
+
+    const result = await api(
+      `/citations/${citationId}/generate?style=${style}`
+    );
+
+    alert(
+      `${result.style} Citation\n\n${result.citation}`
+    );
+
+  } catch (error) {
+    showToast("Error", error.message, "error");
+  }
+};
+window.exportBibtex = async function (citationId) {
+  try {
+    const result = await api(`/citations/${citationId}/bibtex`);
+
+    const blob = new Blob(
+      [result.content],
+      { type: "application/x-bibtex" }
+    );
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = result.filename;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    window.URL.revokeObjectURL(url);
+
+    showToast("Success", "BibTeX file downloaded successfully.", "success");
+
+  } catch (error) {
+    showToast("Error", error.message, "error");
+  }
+};
+window.viewReferences = async function (publicationId) {
+  try {
+    const references = await api(`/publications/${publicationId}/references`);
+
+    if (references.length === 0) {
+      alert("No references found for this publication.");
+      return;
+    }
+
+    const referenceList = references
+      .map(ref => `• ${ref.title}`)
+      .join("\n");
+
+    alert(
+      `References\n\n${referenceList}`
+    );
+
+  } catch (error) {
+    showToast("Error", error.message, "error");
+  }
+};
