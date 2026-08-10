@@ -52,37 +52,8 @@
       </div>
     </section>
 
-    <!-- Institution Detail Sections -->
-    <section class="panel wide" id="institutionDetailSection" style="display:none;">
-      <div class="panel-heading">
-        <h2 id="instDetailTitle">Institution Details</h2>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('institutionDetailSection').style.display='none';">Close</button>
-      </div>
-      <div class="panel-body" id="instDetailBody">
-        <!-- Dynamic content loaded via JS -->
-        <div class="row">
-          <div class="col-md-6">
-            <h5>Basic Information</h5>
-            <ul class="list-unstyled" id="instBasicInfo"></ul>
-          </div>
-          <div class="col-md-6">
-            <h5>Contact</h5>
-            <ul class="list-unstyled" id="instContactInfo"></ul>
-          </div>
-        </div>
-        <hr/>
-        <h5>Departments</h5>
-        <div id="instDepartments" class="mb-3"></div>
-        <h5>Researchers</h5>
-        <div id="instResearchers" class="mb-3"></div>
-        <h5>Publications</h5>
-        <div id="instPublications" class="mb-3"></div>
-        <h5>Projects</h5>
-        <div id="instProjects" class="mb-3"></div>
-        <h5>Collaboration Statistics</h5>
-        <div id="instCollabStats" class="mb-3"></div>
-      </div>
-    </section>
+    <!-- Institution details now open in the shared #viewDetailsModal
+         (see layout.html + window.showDetailsModal in nav-auth.js). -->
 
     <!-- Modal for Adding Institution -->
     <div class="modal fade" id="addInstitutionModal" tabindex="-1" aria-hidden="true">
