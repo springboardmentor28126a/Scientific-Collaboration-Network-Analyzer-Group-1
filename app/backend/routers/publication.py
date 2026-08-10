@@ -14,6 +14,7 @@ from app.backend.models.publication import Publication
 from app.backend.schemas.publication import PublicationCreate, PublicationResponse
 from app.backend.routers.audit import log_audit_event
 from app.backend.routers.notification import create_notification
+from app.backend.models.citation import Citation
 
 router = APIRouter(
     prefix="/publications",
@@ -422,3 +423,46 @@ def download_publication_pdf(
         media_type="application/pdf",
         filename=os.path.basename(file_path)
     )
+@router.get("/{publication_id}/references")
+def get_publication_references(
+    publication_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    publication = (
+        db.query(Publication)
+        .filter(Publication.id == publication_id)
+        .first()
+    )
+
+    if not publication:
+        raise HTTPException(
+            status_code=404,
+            detail="Publication not found"
+        )
+
+    citations = (
+        db.query(Citation)
+        .filter(Citation.publication_id == publication_id)
+        .all()
+    )
+
+    references = []
+
+    for citation in citations:
+        if citation.cited_publication_id:
+            cited = (
+                db.query(Publication)
+                .filter(
+                    Publication.id == citation.cited_publication_id
+                )
+                .first()
+            )
+
+            if cited:
+                references.append({
+                    "id": cited.id,
+                    "title": cited.title
+                })
+
+    return references
