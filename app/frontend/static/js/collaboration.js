@@ -5,6 +5,9 @@
 const dashboardURL = "/collaborations/dashboard";
 const recentURL = "/collaborations/recent";
 
+const COLLAB_PAGE_SIZE = 6;
+let collabCurrentPage = 1;
+
 let collaborationChart = null;
 
 
@@ -90,18 +93,55 @@ function renderCollaborationCards(data) {
     container.innerHTML = data.map(item => `
         <div class="col-md-4 mb-3">
             <div class="card h-100">
-                <div class="card-body">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">${escapeHtmlCollab(item.publication)}</h5>
                     <p class="card-text small text-muted mb-2">${escapeHtmlCollab(item.researcher)}</p>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap mb-3">
                         <span class="badge bg-light text-dark border">Author Order: ${item.author_order ?? "-"}</span>
                         <span class="badge bg-secondary">${escapeHtmlCollab(item.contribution ?? "Contribution N/A")}</span>
                     </div>
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-dark mt-auto"
+                        onclick="viewCollaborationDetails(${item.id})">
+                        <i class="bi bi-eye me-1"></i>View Details
+                    </button>
                 </div>
             </div>
         </div>
     `).join("");
 }
+
+// ===========================================
+// View Details modal
+// ===========================================
+
+window.viewCollaborationDetails = function (id) {
+    const item = lastCollaborationData.find((entry) => entry.id === id);
+    const body = document.getElementById("collabDetailsBody");
+    if (!item || !body) return;
+
+    const row = (label, value) => `
+        <div class="detail-row">
+            <dt>${escapeHtmlCollab(label)}</dt>
+            <dd>${escapeHtmlCollab(value ?? "—")}</dd>
+        </div>
+    `;
+
+    body.innerHTML = [
+        row("Publication", item.publication),
+        row("Researcher", item.researcher),
+        row("Contribution", item.contribution),
+        row("Author Order", item.author_order),
+        row("Institution", item.institution),
+        row("Publication Year", item.publication_year),
+        row("Status", item.status),
+    ].join("");
+
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("collaborationDetailsModal")
+    ).show();
+};
 
 function applyCollaborationSearchSort() {
     const query = document.getElementById("collabSearch")?.value.trim().toLowerCase() ?? "";
@@ -126,13 +166,18 @@ function applyCollaborationSearchSort() {
 // Recent Collaborations
 // ===========================================
 
-async function loadRecentCollaborations() {
+async function loadRecentCollaborations(page = collabCurrentPage) {
 
     try {
 
+        collabCurrentPage = page;
         const token = localStorage.getItem("access_token");
 
         const container = document.getElementById("recentCollaborationList");
+        const prevBtn = document.getElementById("collabPrevPage");
+        const nextBtn = document.getElementById("collabNextPage");
+        const pageNum = document.getElementById("collabPageNum");
+
         if (container) {
             container.innerHTML = Array.from({ length: 6 }, () => `
                 <div class="col-md-4 mb-3">
@@ -146,7 +191,12 @@ async function loadRecentCollaborations() {
             `).join("");
         }
 
-        const response = await fetch(recentURL, {
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(COLLAB_PAGE_SIZE),
+        });
+
+        const response = await fetch(`${recentURL}?${params.toString()}`, {
 
             headers: {
 
@@ -167,7 +217,11 @@ async function loadRecentCollaborations() {
         lastCollaborationData = data;
         applyCollaborationSearchSort();
         loadChart(data);
-        loadResearcherChart(data);
+        loadMonthlyTrendChart();
+
+        if (prevBtn) prevBtn.disabled = page === 1;
+        if (nextBtn) nextBtn.disabled = data.length < COLLAB_PAGE_SIZE;
+        if (pageNum) pageNum.textContent = `Page ${page}`;
 
     }
 
@@ -227,9 +281,9 @@ function loadChart(data) {
 
                     data: values,
 
-                    backgroundColor: "#4A90E2",
+                    backgroundColor: "#0891b2",
 
-                    borderColor: "#2E73D8",
+                    borderColor: "#0e7490",
 
                     borderWidth: 1,
 
@@ -310,62 +364,76 @@ async function refreshDashboard() {
     await loadRecentCollaborations();
 
 }
-let researcherChart = null;
+let monthlyTrendChart = null;
 
-function loadResearcherChart(data) {
+async function loadMonthlyTrendChart() {
 
-    const researcherCount = {};
-
-    data.forEach(item => {
-
-        const key = item.researcher || "Unknown";
-
-        researcherCount[key] =
-            (researcherCount[key] || 0) + 1;
-
-    });
-
-    const sorted = Object.entries(researcherCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8);
-
-    const labels = sorted.map(([name]) => name);
-    const values = sorted.map(([, count]) => count);
-
-    const canvas = document.getElementById("researcherChart");
-
+    const canvas = document.getElementById("monthlyTrendChart");
     if (!canvas) return;
 
-    if (researcherChart) {
-        researcherChart.destroy();
-    }
+    try {
 
-    researcherChart = new Chart(canvas.getContext("2d"), {
+        const token = localStorage.getItem("access_token");
+        const response = await fetch("/collaborations/monthly-trend?months=6", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
 
-        type: "bar",
+        if (!response.ok) throw new Error(await response.text());
 
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "Collaborations",
-                    data: values,
-                    backgroundColor: "#0f766e",
-                    borderRadius: 8,
-                    maxBarThickness: 22
-                }
-            ]
-        },
+        const { labels, counts } = await response.json();
 
-        options: {
-            indexAxis: "y",
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        if (monthlyTrendChart) {
+            monthlyTrendChart.destroy();
         }
 
-    });
+        const ctx = canvas.getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 260);
+        gradient.addColorStop(0, "rgba(37, 99, 235, 0.28)");
+        gradient.addColorStop(1, "rgba(37, 99, 235, 0.02)");
+
+        monthlyTrendChart = new Chart(ctx, {
+
+            type: "line",
+
+            data: {
+                labels: labels.map((m) => {
+                    const [y, mo] = m.split("-");
+                    return new Date(Number(y), Number(mo) - 1, 1)
+                        .toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+                }),
+                datasets: [
+                    {
+                        label: "New Collaborations",
+                        data: counts,
+                        borderColor: "#2563eb",
+                        backgroundColor: gradient,
+                        pointBackgroundColor: "#7c3aed",
+                        pointBorderColor: "#ffffff",
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true,
+                        borderWidth: 2
+                    }
+                ]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+
+        });
+
+    } catch (error) {
+
+        // No popup for a secondary/optional chart -- an empty trend just
+        // means "no collaboration activity logged yet", not an app error.
+        console.warn("Monthly trend chart unavailable:", error.message);
+
+    }
 
 }
 
@@ -475,5 +543,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("collabSearch")?.addEventListener("input", () => applyCollaborationSearchSort());
     document.getElementById("collabSortBy")?.addEventListener("change", () => applyCollaborationSearchSort());
+
+    document.getElementById("collabPrevPage")?.addEventListener("click", () => {
+        if (collabCurrentPage > 1) loadRecentCollaborations(collabCurrentPage - 1);
+    });
+    document.getElementById("collabNextPage")?.addEventListener("click", () => {
+        loadRecentCollaborations(collabCurrentPage + 1);
+    });
 
 });
