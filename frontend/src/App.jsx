@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Researchers from "./pages/Researchers";
 import Institutions from "./pages/Institutions";
 import Conference from "./pages/Conference";
+import Citation from "./pages/Citation";
 import Reviewers from "./pages/Reviewers";
 import Admin from "./pages/Admin";
 
@@ -24,7 +25,6 @@ function App() {
     <BrowserRouter>
 
       <Routes>
-
 
         {/* First page when website opens */}
         <Route
@@ -72,6 +72,13 @@ function App() {
         />
 
 
+        {/* Citation Management */}
+        <Route
+          path="/citation"
+          element={<Citation />}
+        />
+
+
         <Route
           path="/reviewers"
           element={<Reviewers />}
@@ -83,9 +90,7 @@ function App() {
           element={<Admin />}
         />
 
-
       </Routes>
-
 
     </BrowserRouter>
 

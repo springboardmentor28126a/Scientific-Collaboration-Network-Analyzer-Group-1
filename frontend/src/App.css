@@ -2190,3 +2190,453 @@ body {
   transition: 0.3s ease;
 
 }
+```css
+/* =========================================================
+   CITATION MANAGEMENT PAGE
+   Matches the Institutions page layout
+   ========================================================= */
+
+.citation-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #090909;
+  color: white;
+}
+
+
+/* RIGHT SIDE CONTENT */
+
+.citation-content {
+  margin-left: 240px;
+  width: calc(100% - 240px);
+  min-height: 100vh;
+
+  padding: 40px;
+
+  background: #090909;
+
+  box-sizing: border-box;
+}
+
+
+/* HEADER */
+
+.citation-content .page-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 35px;
+}
+
+.citation-content .page-header svg {
+  color: #8b1e3f;
+}
+
+.citation-content .page-header h1 {
+  margin: 0;
+  font-size: 36px;
+  color: #f5d0d0;
+}
+
+.citation-content .page-header p {
+  color: #b9a5ac;
+  margin-top: 8px;
+}
+
+
+/* ADD CITATION BUTTON */
+
+.add-citation-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  width: 100%;
+
+  padding: 14px;
+
+  margin-bottom: 25px;
+
+  background: #8b1e3f;
+  color: white;
+
+  border: none;
+  border-radius: 10px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.add-citation-btn:hover {
+  background: #b8325b;
+}
+
+
+/* FORM */
+
+.citation-form-card {
+  width: 100%;
+  box-sizing: border-box;
+
+  background: #160b12;
+
+  padding: 30px;
+
+  border-radius: 18px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  margin-bottom: 30px;
+}
+
+.citation-form-card h2 {
+  color: #f5d0d0;
+  margin-bottom: 25px;
+}
+
+
+/* FORM GRID */
+
+.citation-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 18px;
+}
+
+
+.citation-field {
+  width: 100%;
+}
+
+
+.citation-field.full {
+  grid-column: span 2;
+}
+
+
+/* INPUTS */
+
+.citation-field input,
+.citation-field select,
+.citation-field textarea {
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  background: #090909;
+
+  border: 1px solid #3b1a27;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  color: white;
+
+  font-size: 15px;
+
+  outline: none;
+}
+
+
+.citation-field input:focus,
+.citation-field select:focus,
+.citation-field textarea:focus {
+  border-color: #8b1e3f;
+}
+
+
+.citation-field textarea {
+  resize: vertical;
+}
+
+
+/* FORM BUTTONS */
+
+.citation-form-buttons {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+
+.cancel-btn,
+.save-btn {
+  flex: 1;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+
+  cursor: pointer;
+}
+
+
+.cancel-btn {
+  background: #24151b;
+
+  color: #d6c2c8;
+
+  border: 1px solid #3b1a27;
+}
+
+
+.save-btn {
+  background: #8b1e3f;
+
+  color: white;
+
+  border: none;
+}
+
+
+.save-btn:hover {
+  background: #b8325b;
+}
+
+
+/* SEARCH */
+
+.citation-search-container {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  background: #160b12;
+
+  padding: 15px 20px;
+
+  border-radius: 14px;
+
+  margin-bottom: 25px;
+}
+
+
+.citation-search-container svg {
+  color: #b8325b;
+}
+
+
+.citation-search-container input {
+
+  flex: 1;
+
+  background: none;
+
+  border: none;
+
+  outline: none;
+
+  color: white;
+
+  font-size: 16px;
+}
+
+
+.citation-search-container input::placeholder {
+  color: #8d7b82;
+}
+
+
+/* TABLE CONTAINER */
+
+.citation-table-container {
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  background: #160b12;
+
+  padding: 25px;
+
+  border-radius: 18px;
+
+  overflow-x: auto;
+}
+
+
+/* TABLE */
+
+.citation-table {
+
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+
+.citation-table th {
+
+  text-align: left;
+
+  padding: 15px;
+
+  color: #f5d0d0;
+
+  border-bottom: 1px solid #3b1a27;
+}
+
+
+.citation-table td {
+
+  padding: 15px;
+
+  color: #d6c2c8;
+
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+
+.citation-table tr:hover {
+  background: #21121a;
+}
+
+
+/* ACTION BUTTONS */
+
+.citation-table .action-buttons {
+
+  display: flex;
+
+  gap: 10px;
+}
+
+
+.citation-table .edit-btn,
+.citation-table .delete-btn {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  border: none;
+
+  padding: 8px 14px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  color: white;
+}
+
+
+.citation-table .edit-btn {
+  background: #5a1f35;
+}
+
+
+.citation-table .delete-btn {
+  background: #8b1e3f;
+}
+
+
+.citation-table .edit-btn:hover {
+  background: #7a2948;
+}
+
+
+.citation-table .delete-btn:hover {
+  background: #b8325b;
+}
+
+
+/* EMPTY STATE */
+
+.empty-citations {
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  text-align: center;
+
+  padding: 50px;
+
+  color: #8d7b82;
+}
+
+
+.empty-citations svg {
+  color: #8b1e3f;
+}
+
+
+.empty-citations h3 {
+
+  margin: 10px 0 5px;
+
+  color: #d6c2c8;
+
+  font-size: 18px;
+}
+
+
+.empty-citations p {
+  color: #8d7b82;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .citation-content {
+
+    margin-left: 240px;
+
+    width: calc(100% - 240px);
+
+    padding: 30px;
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .citation-content {
+
+    margin-left: 0;
+
+    width: 100%;
+
+    padding: 20px;
+  }
+
+
+  .citation-grid {
+
+    grid-template-columns: 1fr;
+  }
+
+
+  .citation-field.full {
+
+    grid-column: span 1;
+  }
+
+}
+

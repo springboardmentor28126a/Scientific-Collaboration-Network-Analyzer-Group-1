@@ -439,7 +439,6 @@ function Institutions() {
 
               <div className="action-buttons">
 
-
               <button
 
               className="edit-btn"
@@ -456,9 +455,6 @@ function Institutions() {
 
               </button>
 
-
-
-
               <button
 
               className="delete-btn"
@@ -473,40 +469,28 @@ function Institutions() {
 
               Delete
 
-
               </button>
-
 
               </div>
 
-
             </td>
 
-
-
           </tr>
-
 
         ))
 
         }
 
-
         </tbody>
-
 
       </table>
 
-
       </div>
-
-
 
     </div>
 
   );
 
 }
-
 
 export default Institutions;

@@ -3,3 +3,4 @@ from .researcher import Researcher
 from .institution import Institution
 from .department import Department
 from .conference import Conference
+from .citation import Citation
