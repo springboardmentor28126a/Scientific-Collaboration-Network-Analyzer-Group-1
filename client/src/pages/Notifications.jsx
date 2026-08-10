@@ -118,21 +118,31 @@ function Notifications() {
             alert(error.response?.data?.detail || "Unable to submit the review.");
         }
     };
-
     const openNotification = async (notification) => {
-        if (!notification.is_read) await markRead(notification.id);
-        const routes = {
-            publication: `/publication/${notification.resource_id}`,
-            conference: `/conference/${notification.resource_id}`,
-            verification: "/verification",
-            group_invitation: "/invitations",
-            research_group: `/groups/${notification.resource_id}`,
-            meeting: "/groups",
-            friend_request: "/collaborations",
-            user: `/researcher/${notification.resource_id}`,
-        };
-        navigate(routes[notification.resource_type] || "/notifications");
+        console.log(notification);
+    if (!notification.is_read) {
+        await markRead(notification.id);
+    }
+
+    // Group invitation should go to Invitations page first
+    if (notification.notification_type === "group_invitation") {
+        navigate("/invitations");
+        return;
+    }
+
+    const routes = {
+        publication: `/publication/${notification.resource_id}`,
+        conference: `/conference/${notification.resource_id}`,
+        verification: "/verification",
+        research_group: `/groups/${notification.resource_id}`,
+        meeting: "/groups",
+        friend_request: "/collaborations",
+        user: `/researcher/${notification.resource_id}`,
     };
+
+    navigate(routes[notification.resource_type] || "/notifications");
+};
+   
 
     const filteredNotifications = [...notifications]
         .filter((notification) => {
