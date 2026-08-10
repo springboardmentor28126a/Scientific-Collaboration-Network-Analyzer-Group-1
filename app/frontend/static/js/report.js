@@ -31,18 +31,20 @@ const response = await fetch("/reports/dashboard", {
         const data = await response.json();
 
         // ================= Summary Cards =================
+        // Graceful fallback ("—") instead of letting a missing summary
+        // field either show a blank/"undefined" card or throw and pop an
+        // error toast -- optional/missing values should never interrupt
+        // the user.
 
-        document.getElementById("researchersCount").textContent =
-            data.summary.researchers;
+        const setReportStat = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value ?? "—";
+        };
 
-        document.getElementById("publicationsCount").textContent =
-            data.summary.publications;
-
-        document.getElementById("projectsCount").textContent =
-            data.summary.projects;
-
-        document.getElementById("collaborationsCount").textContent =
-            data.summary.collaborations;
+        setReportStat("researchersCount", data.summary?.researchers);
+        setReportStat("publicationsCount", data.summary?.publications);
+        setReportStat("projectsCount", data.summary?.projects);
+        setReportStat("collaborationsCount", data.summary?.collaborations);
 
         // ================= Charts =================
 
@@ -502,43 +504,27 @@ document.getElementById("exportPDF").addEventListener("click", async () => {
 
     try {
 
-        console.log("Step 1");
-
         const { jsPDF } = window.jspdf;
-
-        console.log("Step 2");
 
         const report = document.querySelector(".workspace");
 
-        console.log(report);
-
         const canvas = await html2canvas(report);
-
-        console.log("Step 3");
 
         const imgData = canvas.toDataURL("image/png");
 
-        console.log("Step 4");
-
         const pdf = new jsPDF();
-
-        console.log("Step 5");
 
         pdf.addImage(imgData, "PNG", 10, 10, 180, 250);
 
-        console.log("Step 6");
-
         pdf.save("Research_Report.pdf");
-
-        console.log("DONE");
 
     }
 
     catch (err) {
 
-        console.error("PDF ERROR:", err);
+        console.error("PDF export error:", err);
 
-        window.showToast("Error", String(err), "error");
+        window.showToast("Error", "Unable to export the PDF report.", "error");
 
     }
 
