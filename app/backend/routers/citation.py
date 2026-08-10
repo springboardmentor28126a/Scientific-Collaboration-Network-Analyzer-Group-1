@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+import re
 from app.backend.database.database import get_db
 from app.backend.models.citation import Citation
 from app.backend.models.publication import Publication
@@ -53,6 +54,14 @@ def create_citation(
             status_code=400,
             detail="Citation text cannot be empty"
         )
+    if citation.doi:
+        doi_pattern = r"^10\.\d{4,9}/[-._;()/:A-Z0-9]+$"
+
+    if not re.match(doi_pattern, citation.doi, re.IGNORECASE):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid DOI format. Example: 10.1000/scna001"
+        )
 
     if (
         citation.reference_order is not None
@@ -62,6 +71,27 @@ def create_citation(
             status_code=400,
             detail="Reference order cannot be negative"
         )
+    if (
+    citation.cited_publication_id is not None
+    and citation.publication_id == citation.cited_publication_id):
+        raise HTTPException(
+        status_code=400,
+        detail="A publication cannot cite itself."
+    )
+    existing_citation = (
+        db.query(Citation)
+        .filter(
+            Citation.publication_id == citation.publication_id,
+            Citation.cited_publication_id == citation.cited_publication_id
+        )
+        .first()
+    )
+
+    if existing_citation:
+        raise HTTPException(
+        status_code=400,
+        detail="This citation already exists."
+    )
 
     new_citation = Citation(**citation.model_dump())
 
@@ -343,3 +373,107 @@ def filter_citations(
             "reference_order": c.reference_order,
         })
     return results
+
+@router.get("/{citation_id}/generate")
+def generate_citation(
+    citation_id: int,
+    style: str = Query("APA"),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    citation = (
+        db.query(Citation)
+        .filter(Citation.id == citation_id)
+        .first()
+    )
+
+    if not citation:
+        raise HTTPException(
+            status_code=404,
+            detail="Citation not found"
+        )
+
+    publication = (
+        db.query(Publication)
+        .filter(Publication.id == citation.publication_id)
+        .first()
+    )
+
+    if not publication:
+        raise HTTPException(
+            status_code=404,
+            detail="Publication not found"
+        )
+
+    title = publication.title
+    authors = publication.authors
+    year = publication.publication_year
+    journal = publication.publication_name
+    doi = publication.doi or ""
+
+    style = style.upper()
+
+    if style == "APA":
+        generated = f"{authors}. ({year}). {title}. {journal}. DOI: {doi}"
+
+    elif style == "MLA":
+        generated = f'{authors}. "{title}." {journal}, {year}. DOI: {doi}'
+
+    elif style == "IEEE":
+        generated = f'{authors}, "{title}," {journal}, {year}. DOI: {doi}'
+
+    elif style == "CHICAGO":
+        generated = f"{authors}. {year}. {title}. {journal}. DOI: {doi}"
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid citation style"
+        )
+
+    return {
+        "style": style,
+        "citation": generated
+    }
+@router.get("/{citation_id}/bibtex")
+def export_bibtex(
+    citation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    citation = (
+        db.query(Citation)
+        .filter(Citation.id == citation_id)
+        .first()
+    )
+
+    if not citation:
+        raise HTTPException(
+            status_code=404,
+            detail="Citation not found"
+        )
+
+    publication = (
+        db.query(Publication)
+        .filter(Publication.id == citation.publication_id)
+        .first()
+    )
+
+    if not publication:
+        raise HTTPException(
+            status_code=404,
+            detail="Publication not found"
+        )
+
+    bibtex = f"""@article{{citation{citation.id},
+  author = {{{publication.authors}}},
+  title = {{{publication.title}}},
+  journal = {{{publication.publication_name}}},
+  year = {{{publication.publication_year}}},
+  doi = {{{publication.doi or ""}}}
+}}"""
+
+    return {
+        "filename": f"citation_{citation.id}.bib",
+        "content": bibtex
+    }
