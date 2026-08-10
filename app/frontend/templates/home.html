@@ -24,8 +24,14 @@
     </section>
 
     <!-- Quick Access Module Cards -->
+    <!-- Each card carries an id that nav-auth.js's applyNavForRole() maps to
+         the matching nav link's permission tier (see DASHBOARD_CARD_TO_NAV_ID),
+         so a role that can't see a module in the navbar won't see or be able
+         to open its Dashboard card either. Cards default to visible and are
+         only hidden once the user's role is known, avoiding a flash of
+         restricted content. -->
     <section class="panel-grid">
-      <div class="panel">
+      <div class="panel" id="panelResearchers">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-people me-2"></i>Researchers</h2>
@@ -35,7 +41,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelInstitutions">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-building me-2"></i>Institutions</h2>
@@ -45,7 +51,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelPublications">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-journal-text me-2"></i>Publications</h2>
@@ -55,7 +61,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelCitations">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-bookmark-check me-2"></i>Citations</h2>
@@ -65,7 +71,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelConferences">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-calendar-event me-2"></i>Conferences</h2>
@@ -75,7 +81,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelCollaborations">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-diagram-3 me-2"></i>Collaborations</h2>
@@ -85,7 +91,7 @@
         </div>
       </div>
 
-      <div class="panel wide">
+      <div class="panel wide" id="panelReports">
         <div class="panel-heading">
           <div>
             <h2><i class="bi bi-bar-chart me-2"></i>Reports & Analytics</h2>
@@ -94,6 +100,79 @@
           <a class="btn btn-outline-dark" href="{{ url_for('reports_page') }}">Open Reports</a>
         </div>
       </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Quick Insights -->
+    <!-- ================================================= -->
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2><i class="bi bi-lightning-charge me-2"></i>Quick Insights</h2>
+          <p>At-a-glance signals pulled from the current data set.</p>
+        </div>
+      </div>
+      <div class="insight-grid" id="quickInsights">
+        <div class="text-center py-3 text-muted w-100">Loading insights...</div>
+      </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Recent Activity -->
+    <!-- ================================================= -->
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2><i class="bi bi-clock-history me-2"></i>Recent Activity</h2>
+          <p>The latest publications, collaborations, and conferences added across the network.</p>
+        </div>
+      </div>
+      <ul class="activity-feed" id="recentActivityList">
+        <li class="text-center py-3 text-muted">Loading recent activity...</li>
+      </ul>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- Latest Publications / Collaborations / Conferences -->
+    <!-- ================================================= -->
+    <section class="panel-grid">
+
+      <div class="panel" id="sectionLatestPublications">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-journal-text me-2"></i>Latest Publications</h2>
+            <p>Most recently added publications.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="latestPublicationsList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="panel" id="sectionLatestCollaborations">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-diagram-3 me-2"></i>Latest Collaborations</h2>
+            <p>Most recently added co-author records.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="latestCollaborationsList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="panel" id="sectionRecentConferences">
+        <div class="panel-heading">
+          <div>
+            <h2><i class="bi bi-calendar-event me-2"></i>Recent Conference Additions</h2>
+            <p>Newest conferences added to the directory.</p>
+          </div>
+        </div>
+        <ul class="mini-list" id="recentConferencesList">
+          <li class="text-center py-3 text-muted">Loading...</li>
+        </ul>
+      </div>
+
     </section>
   </section>
 {% endblock content %}
