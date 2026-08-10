@@ -51,28 +51,10 @@
       </div>
     </section>
 
-    <!-- Researcher Detail Section -->
-    <section class="panel wide" id="researcherDetailSection" style="display:none;">
-      <div class="panel-heading">
-        <h2 id="researcherDetailTitle">Researcher Profile</h2>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('researcherDetailSection').style.display='none';">Close</button>
-      </div>
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-md-6">
-            <h5>Profile</h5>
-            <ul class="list-unstyled" id="researcherBasicInfo"></ul>
-          </div>
-          <div class="col-md-6">
-            <h5>Research Statistics</h5>
-            <ul class="list-unstyled" id="researcherStatsInfo"></ul>
-          </div>
-        </div>
-        <hr/>
-        <h5>Recent Publications</h5>
-        <div id="researcherRecentPubs" class="mb-3"></div>
-      </div>
-    </section>
+    <!-- Researcher details now open in the shared #viewDetailsModal
+         (see layout.html + window.showDetailsModal in nav-auth.js) instead
+         of this inline section, for one consistent details experience
+         across every module. -->
 
     <!-- Modal for Adding / Editing Researcher -->
     <div class="modal fade" id="addResearcherModal" tabindex="-1" aria-hidden="true">
