@@ -86,4 +86,3 @@ def get_audit_log(
         )
 
     return audit
-

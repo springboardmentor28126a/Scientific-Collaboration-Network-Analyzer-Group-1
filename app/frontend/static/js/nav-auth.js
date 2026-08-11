@@ -43,75 +43,6 @@ function showToast(title, message, type = "info") {
 window.showToast = showToast;
 
 // -------------------------------------------------------------------------
-// Shared "View Details" modal (see #viewDetailsModal in layout.html).
-// Every module (Researchers, Institutions, Publications, Conferences,
-// Citations, Collaboration) renders its details through this one function
-// so the whole app has a single, consistent details experience instead of
-// a bespoke layout per page.
-//
-// rows: array of [label, value] pairs. Any missing/undefined/null/empty
-// value is rendered as the placeholder below instead of being left blank
-// or throwing -- optional data should never interrupt the user with a
-// popup, it should just read as "not available".
-// -------------------------------------------------------------------------
-
-const MISSING_VALUE_PLACEHOLDER = "Not Available";
-
-function escapeHtmlShared(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[ch]));
-}
-
-window.showDetailsModal = function showDetailsModal(title, rows, subtitle = "") {
-  const modalEl = document.getElementById("viewDetailsModal");
-  if (!modalEl) return;
-
-  const titleEl = document.getElementById("viewDetailsTitle");
-  const subtitleEl = document.getElementById("viewDetailsSubtitle");
-  const body = document.getElementById("viewDetailsBody");
-  if (!titleEl || !body) return;
-
-  titleEl.textContent = title || "Details";
-
-  if (subtitleEl) {
-    if (subtitle) {
-      subtitleEl.textContent = subtitle;
-      subtitleEl.style.display = "";
-    } else {
-      subtitleEl.style.display = "none";
-    }
-  }
-
-  body.innerHTML = (rows || [])
-    .map(([label, value]) => {
-      const isEmpty =
-        value === null ||
-        value === undefined ||
-        value === "" ||
-        (Array.isArray(value) && value.length === 0);
-
-      const display = isEmpty
-        ? `<span class="text-muted fst-italic">${MISSING_VALUE_PLACEHOLDER}</span>`
-        : escapeHtmlShared(Array.isArray(value) ? value.join(", ") : value);
-
-      return `
-        <div class="detail-row">
-          <dt>${escapeHtmlShared(label)}</dt>
-          <dd>${display}</dd>
-        </div>
-      `;
-    })
-    .join("");
-
-  bootstrap.Modal.getOrCreateInstance(modalEl).show();
-};
-
-// -------------------------------------------------------------------------
 // RBAC permission matrix (frontend mirror of the backend's require_role()
 // checks -- used only to decide what to SHOW; the backend is still the
 // source of truth and rejects unauthorized requests with 403 regardless).
@@ -177,25 +108,6 @@ const NAV_TIERS = {
 
 const ALL_NAV_IDS = ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "auditLink"];
 
-// Dashboard quick-access cards (home.html) map 1:1 onto the same nav ids,
-// so the exact same NAV_TIERS/roleTier logic above is reused here instead
-// of duplicating a second permission table.
-const DASHBOARD_CARD_TO_NAV_ID = {
-  panelResearchers: "navResearchers",
-  panelInstitutions: "navInstitutions",
-  panelPublications: "navPublications",
-  panelCitations: "navCitations",
-  panelConferences: "navConferences",
-  panelCollaborations: "navCollaborations",
-  panelReports: "navReports",
-  panelAudit: "auditLink",
-  // Dashboard "Recent Activity" teaser sections reuse the same mapping so
-  // a role that can't open a module doesn't see a teaser of it either.
-  sectionLatestPublications: "navPublications",
-  sectionLatestCollaborations: "navCollaborations",
-  sectionRecentConferences: "navConferences",
-};
-
 function applyNavForRole(role) {
   const tier = roleTier(role);
   const visible = new Set(NAV_TIERS[tier] ?? NAV_TIERS["User"]);
@@ -204,14 +116,6 @@ function applyNavForRole(role) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.toggle("d-none", !visible.has(id));
-  });
-
-  // Same visibility set drives the Dashboard cards -- a role that can't see
-  // a nav link also shouldn't see (or be able to open) that module's card.
-  Object.entries(DASHBOARD_CARD_TO_NAV_ID).forEach(([cardId, navId]) => {
-    const card = document.getElementById(cardId);
-    if (!card) return;
-    card.classList.toggle("d-none", !visible.has(navId));
   });
 }
 

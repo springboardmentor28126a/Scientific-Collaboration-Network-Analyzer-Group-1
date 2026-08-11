@@ -966,151 +966,6 @@ document.getElementById("pubNextPage")?.addEventListener("click", () => {
 });
 
 // =========================================================================
-// Conferences
-// =========================================================================
-
-const CONF_PAGE_SIZE = 6;
-let confCurrentPage = 1;
-
-async function loadConferenceStats() {
-  try {
-    const stats = await api("/conferences/summary/stats");
-    document.getElementById("confTotal").textContent = stats.total_conferences ?? 0;
-    document.getElementById("confOrganizers").textContent = stats.total_organizers ?? 0;
-    document.getElementById("confLocations").textContent = stats.total_locations ?? 0;
-    document.getElementById("confParticipants").textContent = stats.total_participants ?? 0;
-  } catch (error) {
-    showToast("Error", error.message, "error");
-  }
-}
-
-async function loadConferences(page = confCurrentPage) {
-  const container = document.getElementById("conferenceList");
-  if (!container) return;
-
-  confCurrentPage = page;
-  const query = document.getElementById("confSearch")?.value.trim() ?? "";
-  const sortBy = document.getElementById("confSortBy")?.value || "name";
-  const order = document.getElementById("confSortOrder")?.value || "asc";
-
-  container.innerHTML = skeletonCards(CONF_PAGE_SIZE);
-
-  try {
-    const params = new URLSearchParams({
-      query, sort_by: sortBy, order, page: String(page), limit: String(CONF_PAGE_SIZE),
-    });
-    const conferences = await api(`/conferences/search/filter?${params.toString()}`);
-
-    const prevBtn = document.getElementById("confPrevPage");
-    const nextBtn = document.getElementById("confNextPage");
-    prevBtn.disabled = page === 1;
-    nextBtn.disabled = conferences.length < CONF_PAGE_SIZE;
-    document.getElementById("confPageNum").textContent = `Page ${page}`;
-
-    if (conferences.length === 0) {
-      const addBtn = window.canDo("conferences", "create")
-        ? `<button type="button" class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#addConferenceModal">Add Conference</button>`
-        : "";
-      container.innerHTML = emptyStateCard("No conferences found.", addBtn);
-      return;
-    }
-
-    container.innerHTML = conferences.map(conf => `
-      <div class="col-md-4 mb-3">
-        <div class="card h-100">
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title mb-2">${escapeHtml(conf.name)}</h5>
-            <p class="card-text"><strong>Location:</strong> ${escapeHtml(conf.location ?? '-')}<br/>
-            <strong>Dates:</strong> ${conf.start_date ?? '-'} to ${conf.end_date ?? '-'}<br/>
-            <strong>Organizer:</strong> ${escapeHtml(conf.organizer ?? '-')}</p>
-            <div class="mt-auto">
-              <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.viewConference(${conf.id})">View Details</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `).join("");
-  } catch (error) {
-    container.innerHTML = `<div class="text-center py-4 text-danger">Unable to load conferences.</div>`;
-    showToast("Error", error.message, "error");
-  }
-}
-
-window.viewConference = async function (conferenceId) {
-  try {
-    const conf = await api(`/conferences/${conferenceId}`);
-
-    window.showDetailsModal(
-      conf.name,
-      [
-        ["Organizer", conf.organizer],
-        ["Location", conf.location],
-        ["Start Date", conf.start_date],
-        ["End Date", conf.end_date],
-        ["Website", conf.website],
-      ],
-      "Conference Details"
-    );
-  } catch (error) {
-    showToast("Error", "Unable to load conference details.", "error");
-  }
-};
-
-function bindConferenceForm() {
-  const form = document.getElementById("addConferenceForm");
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    try {
-      await api("/conferences/", {
-        method: "POST",
-        body: JSON.stringify(formDataToJson(form)),
-      });
-      form.reset();
-      showToast("Saved", "Conference added.", "success");
-      await loadConferences();
-      await loadConferenceStats();
-    } catch (error) {
-      showToast("Error", error.message, "error");
-    }
-  });
-}
-
-function bindParticipationForm() {
-  const form = document.getElementById("registerParticipationForm");
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    try {
-      await api("/participations/", {
-        method: "POST",
-        body: JSON.stringify(formDataToJson(form)),
-      });
-      form.reset();
-      showToast("Saved", "Participation registered.", "success");
-      await loadConferences();
-      await loadConferenceStats();
-    } catch (error) {
-      showToast("Error", error.message, "error");
-    }
-  });
-}
-
-document.getElementById("confPrevPage")?.addEventListener("click", () => {
-  if (confCurrentPage > 1) {
-    confCurrentPage--;
-    loadConferences(confCurrentPage);
-  }
-});
-document.getElementById("confNextPage")?.addEventListener("click", () => {
-  confCurrentPage++;
-  loadConferences(confCurrentPage);
-});
-document.getElementById("confSearch")?.addEventListener("input", debounce(() => loadConferences(1)));
-document.getElementById("confSortBy")?.addEventListener("change", () => loadConferences(1));
-document.getElementById("confSortOrder")?.addEventListener("change", () => loadConferences(1));
-
-// =========================================================================
 // Citations
 // =========================================================================
 
@@ -1369,8 +1224,6 @@ document.getElementById("citeNextPage")?.addEventListener("click", () => {
 bindInstitutionForm();
 bindResearcherForm();
 bindPublicationForm();
-bindConferenceForm();
-bindParticipationForm();
 bindCitationForm();
 
 
@@ -1379,8 +1232,6 @@ loadInstitutions();
 loadResearchers();
 loadPublications();
 loadPublicationMetrics();
-loadConferenceStats();
-loadConferences();
 loadCitations();
 loadCitationStats();
 window.copyCitation = async function (text) {
