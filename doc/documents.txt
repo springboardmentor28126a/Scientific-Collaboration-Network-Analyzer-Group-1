@@ -1,3 +1,2 @@
-python -m uvicorn app.main:app --reload --app-dir backend
-uvicorn app.main:app --reload
+
 python -m uvicorn app.main:app --reload
