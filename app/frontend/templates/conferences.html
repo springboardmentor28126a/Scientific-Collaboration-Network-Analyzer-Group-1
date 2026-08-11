@@ -1,162 +1,821 @@
 {% extends "layout.html" %}
 
 {% block content %}
-  <section class="workspace">
+
+<section class="workspace">
+
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
     <section class="page-header">
-      <div>
-        <p class="eyebrow">Conference Management</p>
-        <h1>Academic Conferences & Event Schedule</h1>
-        <p class="subtle">Browse upcoming and past academic conferences, presentation records, and participant registrations.</p>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#registerParticipationModal">
-          <i class="bi bi-person-plus me-1"></i>Register Participation
-        </button>
-        <button type="button" class="btn btn-dark" data-requires="conferences:create" data-bs-toggle="modal" data-bs-target="#addConferenceModal">
-          <i class="bi bi-plus-lg me-1"></i>Add Conference
-        </button>
-      </div>
-    </section>
 
-    <!-- Conference Stats Summary -->
-    <section class="metric-grid mb-4">
-      <div class="metric"><span>Total Conferences</span><strong id="confTotal">0</strong></div>
-      <div class="metric"><span>Total Organizers</span><strong id="confOrganizers">0</strong></div>
-      <div class="metric"><span>Total Locations</span><strong id="confLocations">0</strong></div>
-      <div class="metric"><span>Registered Participants</span><strong id="confParticipants">0</strong></div>
-    </section>
-
-    <!-- Conferences Directory & Filter -->
-    <section class="panel wide">
-      <div class="panel-heading">
         <div>
-          <h2>Conferences Directory</h2>
-          <p>Scientific symposia, summits, and workshop proceedings.</p>
-        </div>
-      </div>
 
-      <div class="module-toolbar">
-        <div class="input-group module-search">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="search" class="form-control" id="confSearch" placeholder="Search conferences..." autocomplete="off">
-        </div>
-        <div class="module-filters">
-          <select class="form-select" id="confSortBy">
-            <option value="name">Sort: Name</option>
-            <option value="start_date">Sort: Date</option>
-            <option value="organizer">Sort: Organizer</option>
-          </select>
-          <select class="form-select" id="confSortOrder">
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </select>
-        </div>
-      </div>
+            <p class="eyebrow">
+                Conference Management
+            </p>
 
-      <div id="conferenceList" class="row g-3 my-2">
-        <div class="text-center py-4 text-muted">Loading conferences...</div>
-      </div>
+            <h1>
+                Academic Conferences & Event Schedule
+            </h1>
 
-      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="confPrevPage" disabled>Previous</button>
-        <span class="text-muted small" id="confPageNum">Page 1</span>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="confNextPage">Next</button>
-      </div>
+            <p class="subtle">
+                Manage conferences, researcher participation,
+                presentations and publication records.
+            </p>
+
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <button
+                type="button"
+                class="btn btn-outline-dark"
+                data-bs-toggle="modal"
+                data-bs-target="#registerParticipationModal">
+
+                <i class="bi bi-person-plus me-1"></i>
+
+                Register Participation
+
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-dark"
+                data-requires="conferences:create"
+                data-bs-toggle="modal"
+                data-bs-target="#addConferenceModal">
+
+                <i class="bi bi-plus-lg me-1"></i>
+
+                Add Conference
+
+            </button>
+
+        </div>
+
     </section>
 
-    <!-- Conference details now open in the shared #viewDetailsModal
-         (see layout.html + window.showDetailsModal in nav-auth.js). -->
 
-    <!-- Modal for Adding Conference -->
-    <div class="modal fade" id="addConferenceModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Add New Conference</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <form id="addConferenceForm">
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Conference Name *</label>
-                <input class="form-control" name="name" placeholder="e.g. International Conference on AI" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Organizer</label>
-                <input class="form-control" name="organizer" placeholder="Organizer / Society name">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Location</label>
-                <input class="form-control" name="location" placeholder="City, Country or Virtual">
-              </div>
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Start Date</label>
-                  <input class="form-control" type="date" name="start_date">
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">End Date</label>
-                  <input class="form-control" type="date" name="end_date">
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Website</label>
-                <input class="form-control" name="website" placeholder="https://conference-url.org">
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-dark">Create Conference</button>
-            </div>
-          </form>
+    <!-- ========================================================= -->
+    <!-- STATISTICS -->
+    <!-- ========================================================= -->
+
+    <section class="metric-grid mb-4">
+
+        <div class="metric">
+            <span>Total Conferences</span>
+            <strong id="confTotal">0</strong>
         </div>
-      </div>
-    </div>
 
-    <!-- Modal for Registering Participation -->
-    <div class="modal fade" id="registerParticipationModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Register Conference Participation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <form id="registerParticipationForm">
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Conference ID *</label>
-                <input class="form-control" type="number" name="conference_id" placeholder="Enter Conference ID" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Researcher ID *</label>
-                <input class="form-control" type="number" name="researcher_id" placeholder="Enter Researcher ID" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Presentation Title</label>
-                <input class="form-control" name="presentation_title" placeholder="Paper or Keynote title">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Participation Type</label>
-                <select class="form-select" name="participation_type">
-                  <option value="Speaker">Speaker</option>
-                  <option value="Keynote Speaker">Keynote Speaker</option>
-                  <option value="Paper Presenter">Paper Presenter</option>
-                  <option value="Attendee">Attendee</option>
-                  <option value="Session Chair">Session Chair</option>
+        <div class="metric">
+            <span>Upcoming</span>
+            <strong id="confUpcoming">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Ongoing</span>
+            <strong id="confOngoing">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Completed</span>
+            <strong id="confCompleted">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Participants</span>
+            <strong id="confParticipants">0</strong>
+        </div>
+
+        <div class="metric">
+            <span>Presenters</span>
+            <strong id="confPresenters">0</strong>
+        </div>
+
+    </section>
+
+
+    <!-- ========================================================= -->
+    <!-- DIRECTORY -->
+    <!-- ========================================================= -->
+
+    <section class="panel wide">
+
+        <div class="panel-heading">
+
+            <div>
+
+                <h2>
+                    Conferences Directory
+                </h2>
+
+                <p>
+                    Search, filter, sort and manage academic conferences.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- FILTER BAR -->
+
+        <div class="module-toolbar">
+
+            <div class="input-group module-search">
+
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+
+                <input
+                    type="search"
+                    class="form-control"
+                    id="confSearch"
+                    placeholder="Search name, organizer or location..."
+                    autocomplete="off">
+
+            </div>
+
+
+            <div class="module-filters">
+
+                <select
+                    class="form-select"
+                    id="confStatus">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="Upcoming">
+                        Upcoming
+                    </option>
+
+                    <option value="Ongoing">
+                        Ongoing
+                    </option>
+
+                    <option value="Completed">
+                        Completed
+                    </option>
+
                 </select>
-              </div>
+
+
+                <select
+                    class="form-select"
+                    id="confType">
+
+                    <option value="">
+                        All Types
+                    </option>
+
+                    <option value="Conference">
+                        Conference
+                    </option>
+
+                    <option value="Symposium">
+                        Symposium
+                    </option>
+
+                    <option value="Workshop">
+                        Workshop
+                    </option>
+
+                    <option value="Summit">
+                        Summit
+                    </option>
+
+                    <option value="Seminar">
+                        Seminar
+                    </option>
+
+                </select>
+
+
+                <select
+                    class="form-select"
+                    id="confSortBy">
+
+                    <option value="name">
+                        Sort: Name
+                    </option>
+
+                    <option value="start_date">
+                        Sort: Start Date
+                    </option>
+
+                    <option value="end_date">
+                        Sort: End Date
+                    </option>
+
+                    <option value="organizer">
+                        Sort: Organizer
+                    </option>
+
+                    <option value="location">
+                        Sort: Location
+                    </option>
+
+                </select>
+
+
+                <select
+                    class="form-select"
+                    id="confSortOrder">
+
+                    <option value="asc">
+                        Ascending
+                    </option>
+
+                    <option value="desc">
+                        Descending
+                    </option>
+
+                </select>
+
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-dark">Submit Registration</button>
-            </div>
-          </form>
+
         </div>
-      </div>
+
+
+        <!-- CONFERENCE CARDS -->
+
+        <div
+            id="conferenceList"
+            class="row g-3 my-2">
+
+            <div class="text-center py-4 text-muted">
+                Loading conferences...
+            </div>
+
+        </div>
+
+
+        <!-- PAGINATION -->
+
+        <div
+            class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="confPrevPage"
+                disabled>
+
+                Previous
+
+            </button>
+
+
+            <span
+                class="text-muted small"
+                id="confPageNum">
+
+                Page 1
+
+            </span>
+
+
+            <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                id="confNextPage">
+
+                Next
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ========================================================= -->
+    <!-- ADD / EDIT CONFERENCE -->
+    <!-- ========================================================= -->
+
+    <div
+        class="modal fade"
+        id="addConferenceModal"
+        tabindex="-1"
+        aria-hidden="true">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Add New Conference
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+
+                <form id="addConferenceForm">
+
+                    <div class="modal-body">
+
+                        <div class="row">
+
+                            <div class="col-md-8 mb-3">
+
+                                <label class="form-label">
+                                    Conference Name *
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="name"
+                                    required
+                                    placeholder="International Conference on AI">
+
+                            </div>
+
+
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Conference Type
+                                </label>
+
+                                <select
+                                    class="form-select"
+                                    name="conference_type">
+
+                                    <option value="Conference">
+                                        Conference
+                                    </option>
+
+                                    <option value="Symposium">
+                                        Symposium
+                                    </option>
+
+                                    <option value="Workshop">
+                                        Workshop
+                                    </option>
+
+                                    <option value="Summit">
+                                        Summit
+                                    </option>
+
+                                    <option value="Seminar">
+                                        Seminar
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Organizer
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="organizer">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Location
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="location"
+                                    placeholder="Hyderabad, India / Virtual">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Start Date
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="date"
+                                    name="start_date">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    End Date
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="date"
+                                    name="end_date">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Registration Deadline
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="date"
+                                    name="registration_deadline">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Submission Deadline
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="date"
+                                    name="submission_deadline">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Contact Email
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="email"
+                                    name="contact_email">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Website
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="website"
+                                    placeholder="https://conference-url.org">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="modal-footer">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                            Cancel
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn btn-dark">
+
+                            Create Conference
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
     </div>
-  </section>
+
+
+    <!-- ========================================================= -->
+    <!-- PARTICIPATION -->
+    <!-- ========================================================= -->
+
+    <div
+        class="modal fade"
+        id="registerParticipationModal"
+        tabindex="-1"
+        aria-hidden="true">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Register Conference Participation
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+
+                <form id="registerParticipationForm">
+
+                    <div class="modal-body">
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Conference ID *
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="number"
+                                    name="conference_id"
+                                    required>
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Researcher ID *
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="number"
+                                    name="researcher_id"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Presentation Title
+                            </label>
+
+                            <input
+                                class="form-control"
+                                name="presentation_title"
+                                placeholder="Paper / keynote / presentation title">
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Participation Type
+                                </label>
+
+                                <select
+                                    class="form-select"
+                                    name="participation_type">
+
+                                    <option value="Attendee">
+                                        Attendee
+                                    </option>
+
+                                    <option value="Speaker">
+                                        Speaker
+                                    </option>
+
+                                    <option value="Keynote Speaker">
+                                        Keynote Speaker
+                                    </option>
+
+                                    <option value="Paper Presenter">
+                                        Paper Presenter
+                                    </option>
+
+                                    <option value="Session Chair">
+                                        Session Chair
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Presentation Type
+                                </label>
+
+                                <select
+                                    class="form-select"
+                                    name="presentation_type">
+
+                                    <option value="">
+                                        Not Applicable
+                                    </option>
+
+                                    <option value="Oral">
+                                        Oral
+                                    </option>
+
+                                    <option value="Poster">
+                                        Poster
+                                    </option>
+
+                                    <option value="Keynote">
+                                        Keynote
+                                    </option>
+
+                                    <option value="Workshop">
+                                        Workshop
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Presentation Date
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="date"
+                                    name="presentation_date">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Presentation Time
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="time"
+                                    name="presentation_time">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Session / Track
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    name="session_name"
+                                    placeholder="Artificial Intelligence Track">
+
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Publication ID
+                                </label>
+
+                                <input
+                                    class="form-control"
+                                    type="number"
+                                    name="publication_id"
+                                    placeholder="Optional">
+
+                            </div>
+
+                        </div>
+
+
+                        <input
+                            type="hidden"
+                            name="status"
+                            value="Registered">
+
+                        <input
+                            type="hidden"
+                            name="presentation_status"
+                            value="Not Scheduled">
+
+                    </div>
+
+
+                    <div class="modal-footer">
+
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                            Cancel
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn btn-dark">
+
+                            Submit Registration
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
 {% endblock content %}
 
+
 {% block scripts %}
-  <script type="module" src="{{ url_for('static', path='js/app.js') }}"></script>
+
+<script
+    type="module"
+    src="{{ url_for('static', path='js/conference.js') }}">
+</script>
+
 {% endblock scripts %}
