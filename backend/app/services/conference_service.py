@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-
+from app.models.researcher import Researcher
 from app.models.conference import Conference
 from app.models.user import User
 from app.schemas.conference import ConferenceCreate, ConferenceUpdate
@@ -28,28 +28,19 @@ def create_conference(
         meeting_link=conference.meeting_link,
         status=conference.status,
     )
-
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
-    # Notify Institution Admins
-    admins = (
-        db.query(User)
-        .filter(User.role == UserRole.INSTITUTION_ADMIN.value)
-        .all()
-    )
 
-    for admin in admins:
-        create_notification(
-            db,
-            NotificationCreate(
-                user_id=admin.id,
-                title="New Conference Created",
-                message=f"{db_conference.title} has been created.",
-                notification_type="CONFERENCE",
-                reference_id=db_conference.id,
-            ),
-        )
+    researchers = db.query(Researcher).all()
+    for researcher in researchers:
+        create_notification(db, NotificationCreate(
+            user_id=researcher.user_id,
+            title="New conference announced",
+            message=f"{db_conference.title} has been added — {db_conference.start_date.strftime('%b %d, %Y')} at {db_conference.venue or 'TBA'}.",
+            notification_type="CONFERENCE_UPDATE",
+            reference_id=db_conference.id,
+        ))
 
     return db_conference
 

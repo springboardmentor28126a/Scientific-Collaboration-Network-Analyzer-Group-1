@@ -10,7 +10,9 @@ import {
   fetchResearcherReport,
   fetchPublicationReport,
   fetchConferenceReport,
-  exportPublicationReport,
+  exportPublicationReportCSV,
+  exportPublicationReportExcel,
+  exportPublicationReportPDF,
 } from "../services/reportService";
 
 const TABS = ["Researchers", "Publications", "Conferences"];
@@ -78,14 +80,16 @@ function ReportsPage() {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const handleExport = async () => {
-    try {
-      await exportPublicationReport(cleanFilters());
-      toast.success("Report downloaded.");
-    } catch (err) {
-      toast.error("Could not export report.");
-    }
-  };
+  const handleExport = async (format) => {
+  try {
+    if (format === "csv") await exportPublicationReportCSV(cleanFilters());
+    if (format === "excel") await exportPublicationReportExcel(cleanFilters());
+    if (format === "pdf") await exportPublicationReportPDF(cleanFilters());
+    toast.success("Report downloaded.");
+  } catch (err) {
+    toast.error("Could not export report.");
+  }
+};
 
   const isSystemAdmin = auth?.role === "SYSTEM_ADMIN";
 
@@ -166,10 +170,12 @@ function ReportsPage() {
                     </select>
                   </div>
                   <div className="col-md-3 mb-2">
-                    <button className="btn btn-outline-primary w-100" onClick={handleExport}>
-                      Export CSV
-                    </button>
-                  </div>
+  <div className="btn-group w-100">
+    <button className="btn btn-outline-primary" onClick={() => handleExport("csv")}>CSV</button>
+    <button className="btn btn-outline-primary" onClick={() => handleExport("excel")}>Excel</button>
+    <button className="btn btn-outline-primary" onClick={() => handleExport("pdf")}>PDF</button>
+  </div>
+</div>
                 </>
               )}
             </div>
