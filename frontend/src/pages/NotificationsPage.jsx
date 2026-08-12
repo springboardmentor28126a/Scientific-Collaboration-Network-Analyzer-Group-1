@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import {
   fetchNotifications,
-  markNotificationAsRead,
-} from "../services/notificationService";
+  markNotificationRead,
+} from "../services/notificationsService";
 import { toast } from "react-toastify";
 
 function NotificationsPage() {
@@ -24,7 +24,7 @@ function NotificationsPage() {
 
   const handleRead = async (id) => {
     try {
-      await markNotificationAsRead(id);
+      await markNotificationRead(id);
       loadNotifications();
     } catch {
       toast.error("Failed to update notification");
