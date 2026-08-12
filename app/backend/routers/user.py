@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+import secrets
 
 from app.backend.database.database import SessionLocal
 from app.backend.models.user import User
@@ -14,6 +16,7 @@ from app.backend.utils.security import (
 
 from app.backend.routers.audit import log_audit_event
 from app.backend.routers.notification import create_notification
+from app.backend.utils.email import send_verification_email
 
 router = APIRouter(
     prefix="/users",
@@ -46,16 +49,24 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
+    verification_token = secrets.token_urlsafe(32)
+
     new_user = User(
-        username=user.username,
-        email=user.email,
-        password=hash_password(user.password),
-        role=user.role
+    username=user.username,
+    email=user.email,
+    password=hash_password(user.password),
+    role=user.role,
+    email_verified=False,
+    verification_token=verification_token
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    send_verification_email(
+    new_user.email,
+    new_user.verification_token
+    )
 
     log_audit_event(db, "User Registered", "User", f"New user registered: {new_user.email} with role {new_user.role}", new_user.id)
     create_notification(db, "New User Registered", f"User {new_user.username} ({new_user.role}) has joined the platform.", None, "user")
@@ -65,7 +76,45 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         "id": new_user.id
     }
 
+# ---------------------------
+# Verify Email
+# ---------------------------
 
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.verification_token == token
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid verification token"
+        )
+
+    if user.email_verified:
+        return {
+            "message": "Email is already verified."
+        }
+
+    user.email_verified = True
+    user.verification_token = None
+
+    db.commit()
+    db.refresh(user)
+
+    log_audit_event(
+        db,
+        "Email Verified",
+        "User",
+        f"Email verified successfully: {user.email}",
+        user.id
+    )
+
+    return RedirectResponse(
+    url="/email-verified",
+    status_code=303
+    )
 # ---------------------------
 # Login
 # ---------------------------
@@ -82,11 +131,16 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             status_code=404,
             detail="User not found"
         )
-
+    if not db_user.email_verified:
+        raise HTTPException(
+        status_code=403,
+        detail="Please verify your email before logging in."
+    )
     if not verify_password(
         user.password,
         db_user.password
     ):
+        
         log_audit_event(db, "Login Failed", "Security", f"Invalid password attempt for: {user.email}", db_user.id)
         raise HTTPException(
             status_code=401,

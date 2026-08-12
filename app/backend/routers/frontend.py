@@ -153,3 +153,12 @@ def audit_page(request: Request):
             "title": "Audit Logs",
         },
     )
+@router.get("/email-verified")
+def email_verified_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "email_verified.html",
+        {
+            "title": "Email Verified",
+        },
+    )
