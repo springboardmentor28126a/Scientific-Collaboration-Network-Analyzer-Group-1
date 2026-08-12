@@ -16,6 +16,7 @@ This README is based on the current source tree, SQLAlchemy models, route declar
 - [Configuration](#configuration)
 - [Running the project](#running-the-project)
 - [Testing and quality checks](#testing-and-quality-checks)
+- [Docker Setup](#docker-setup)
 - [Problems faced and solutions](#problems-faced-and-solutions)
 - [Important implementation notes](#important-implementation-notes)
 - [Future improvements](#future-improvements)
@@ -841,6 +842,89 @@ SCNA currently provides a broad, modular collaboration platform with active Fast
 ## Contributors
 
 Git remotes and branch names identify repository participants, but the current repository does not provide a reliable contributor-to-feature mapping. No individual names are invented here. For a final academic submission, use the repository's verified GitHub contributors or the team's approved project record to complete this section.
+
+## Docker Setup
+
+Docker preparation preserves the existing repository layout. The active React application remains in `client/`; the separate `frontend/` directory is preserved as an unreferenced Vite starter/template. The Compose stack contains a React/Nginx frontend, FastAPI backend, and PostgreSQL database.
+
+```mermaid
+flowchart TD
+    B[Browser] --> F[frontend\nReact build served by Nginx :8080]
+    B -->|VITE_API_URL| A[backend\nFastAPI :8000]
+    A --> P[(postgres\nPostgreSQL 16)]
+    A --> S[Supabase Storage\ngroup-files bucket]
+    A --> U[(paper_uploads volume\n/uploads/papers)]
+    P --> V[(postgres_data volume)]
+```
+
+### Prerequisites
+
+- Docker Desktop or Docker Engine with the Compose plugin.
+- A Supabase project and `group-files` bucket if group-file features are required. The current storage module requires Supabase credentials during backend startup.
+- No local Python virtual environment or Node.js installation is needed to run the Compose services, although both remain useful for non-Docker development.
+
+### Environment setup
+
+Copy the safe template and fill in values locally. Do not commit the resulting file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Set at least:
+
+```text
+POSTGRES_DB=         # database name used by the postgres container
+POSTGRES_USER=       # database user
+POSTGRES_PASSWORD=   # local database password
+SCNA_DATABASE_URL=   # postgresql+psycopg2://<user>:<password>@postgres:5432/<database>
+SCNA_SECRET_KEY=     # long random JWT signing key
+SCNA_CORS_ORIGINS=   # http://localhost:8080
+SUPABASE_URL=        # Supabase project URL
+SUPABASE_KEY=        # Supabase storage key
+VITE_API_URL=        # http://localhost:8000
+```
+
+`VITE_API_URL` is compiled into the browser bundle, so it must be a URL reachable by the user's browser. The Docker Compose design uses `http://localhost:8000`, not the internal service name `http://backend:8000`; `backend` is reachable only from other containers, while the React app's Axios requests run in the browser.
+
+### Build and start
+
+```powershell
+docker compose config
+docker compose build
+docker compose up
+```
+
+Open:
+
+- Frontend: `http://localhost:8080`
+- Backend API: `http://localhost:8000`
+- FastAPI documentation: `http://localhost:8000/docs`
+
+The backend waits for PostgreSQL's health check before starting. SQLAlchemy creates the current tables at backend startup; this project does not yet use Alembic migrations. PostgreSQL data is stored in the named `postgres_data` volume. Paper uploads are stored in the named `paper_uploads` volume. Group files remain in Supabase Storage.
+
+### Stop and inspect
+
+```powershell
+docker compose down       # stop containers and keep named volumes
+docker compose ps
+docker compose logs backend
+```
+
+To remove the database and paper-upload volumes as well, use `docker compose down -v`. This is destructive to the Docker-managed data and should only be done when that data is no longer needed.
+
+### Troubleshooting
+
+- If Compose reports missing variables, copy `.env.example` to `.env` and fill every required value.
+- If the backend fails while importing storage code, verify `SUPABASE_URL`, `SUPABASE_KEY`, and the Supabase `group-files` bucket.
+- If the browser reports CORS errors, set `SCNA_CORS_ORIGINS=http://localhost:8080` and ensure `VITE_API_URL` points to the browser-accessible backend URL.
+- If the frontend shows an API network error, do not use `http://backend:8000` as `VITE_API_URL`; use the host-published URL such as `http://localhost:8000`.
+- If data disappears, confirm that the named volumes are still present and that `docker compose down -v` was not used.
+- The Compose setup uses PostgreSQL, while ordinary development without `SCNA_DATABASE_URL` still uses the existing SQLite file. Moving existing SQLite records into PostgreSQL is a separate migration task and is not performed automatically.
+
+### Docker deployment status
+
+The repository now contains Dockerfiles and a Compose definition for local Docker development. Render deployment has not been performed or verified in this environment, so the project should be considered Docker-ready for review/testing but not yet certified as Render-ready. Production concerns still requiring deployment validation include real secret management, Supabase configuration, exact CORS origins, database migration strategy, health checks, TLS/custom domains, and persistent/object storage policies.
 
 ## License
 
