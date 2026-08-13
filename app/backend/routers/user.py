@@ -17,7 +17,10 @@ from app.backend.utils.security import (
 from app.backend.routers.audit import log_audit_event
 from app.backend.routers.notification import create_notification
 from app.backend.utils.email import send_verification_email
-
+import os
+import requests
+from dotenv import load_dotenv
+load_dotenv()
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
@@ -120,6 +123,21 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 # ---------------------------
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    captcha_response = requests.post(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data={
+            "secret": os.getenv("RECAPTCHA_SECRET_KEY"),
+            "response": user.captcha_token,
+        },
+    )
+
+    captcha_result = captcha_response.json()
+
+    if not captcha_result.get("success"):
+        raise HTTPException(
+            status_code=400,
+            detail="CAPTCHA verification failed."
+        )
 
     db_user = db.query(User).filter(
         User.email == user.email

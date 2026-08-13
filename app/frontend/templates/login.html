@@ -9,12 +9,20 @@
       <input name="email" type="email" required>
       <label>Password</label>
       <input name="password" type="password" required>
+
+      <div class="g-recaptcha"
+        data-sitekey="{{ recaptcha_site_key }}">
+      </div>
+
       <button type="submit">Login</button>
+
       <p class="subtle">New user? <a href="{{ url_for('register_page') }}">Create an account</a>.</p>
     </form>
   </section>
 {% endblock content %}
 
 {% block scripts %}
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script type="module" src="{{ url_for('static', path='js/auth-page.js') }}"></script>
+
 {% endblock scripts %}

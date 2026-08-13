@@ -23,7 +23,16 @@ if (loginForm) {
     event.preventDefault();
     try {
       const payload = Object.fromEntries(new FormData(loginForm).entries());
-      const data = await postJson("/users/login", payload);
+
+const captchaToken = grecaptcha.getResponse();
+
+if (!captchaToken) {
+  throw new Error("Please complete the CAPTCHA.");
+}
+
+payload.captcha_token = captchaToken;
+
+const data = await postJson("/users/login", payload);
       localStorage.setItem("access_token", data.access_token);
       window.location.href = "/";
     } catch (error) {

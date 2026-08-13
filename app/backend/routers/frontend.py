@@ -1,7 +1,10 @@
 from pathlib import Path
+import os
 
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
+load_dotenv()
 
 APP_DIR = Path(__file__).resolve().parents[2]
 TEMPLATES_DIR = APP_DIR / "frontend" / "templates"
@@ -110,7 +113,6 @@ def reports_page(request: Request):
         },
     )
 
-
 @router.get("/login")
 def login_page(request: Request):
     return templates.TemplateResponse(
@@ -118,6 +120,7 @@ def login_page(request: Request):
         "login.html",
         {
             "title": "Login",
+            "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY"),
         },
     )
 

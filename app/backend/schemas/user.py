@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    captcha_token: str
 
 
 class UserUpdate(BaseModel):
