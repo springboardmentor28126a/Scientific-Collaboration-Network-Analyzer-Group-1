@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<section class="workspace">
+
+    <!-- ========================================= -->
+    <!-- Page Header -->
+    <!-- ========================================= -->
+
+    <section class="page-header">
+
+        <div>
+
+            <p class="eyebrow">
+                <i class="bi bi-stars me-1"></i>AI-Assisted Feature
+            </p>
+
+            <h1>
+                AI Collaboration Recommender
+            </h1>
+
+            <p class="subtle">
+                Discover researchers who could be valuable potential collaborators based on
+                research interests, skills, publications and network relationships in the SCNA database.
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- ========================================= -->
+    <!-- Researcher Selector -->
+    <!-- ========================================= -->
+
+    <section class="panel wide">
+
+        <div class="panel-heading">
+            <div>
+                <h2>Select Researcher</h2>
+                <p>Choose a researcher to find their strongest potential collaborators.</p>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end">
+
+            <div class="col-md-8">
+                <label class="form-label" for="aiResearcherSelect">Researcher</label>
+                <select class="form-select" id="aiResearcherSelect">
+                    <option value="">Loading researchers...</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label" for="aiResultLimit">Results</label>
+                <select class="form-select" id="aiResultLimit">
+                    <option value="3">Top 3</option>
+                    <option value="5" selected>Top 5</option>
+                    <option value="10">Top 10</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button type="button" class="btn btn-dark" id="findCollaboratorsBtn" disabled>
+                    <i class="bi bi-search-heart me-1"></i>Find Collaborators
+                </button>
+            </div>
+
+        </div>
+
+        <p class="text-muted small mt-3 mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Match scores are an AI-assisted collaboration compatibility estimate calculated from
+            real database records (research interests, skills, publications, conferences, institution
+            and existing collaboration/citation links). This is not a scientifically validated score.
+        </p>
+
+    </section>
+
+    <!-- ========================================= -->
+    <!-- Results -->
+    <!-- ========================================= -->
+
+    <section class="panel wide" id="aiResultsPanel" style="display:none;">
+
+        <div class="panel-heading">
+            <div>
+                <h2 id="aiResultsHeading">Potential Collaborators</h2>
+                <p id="aiResultsSubheading">Best matches based on shared and complementary profile data.</p>
+            </div>
+        </div>
+
+        <div id="aiCollaborationResults" class="row g-3 my-2">
+            <!-- Populated by ai-collaboration.js -->
+        </div>
+
+    </section>
+
+</section>
+
+{% endblock content %}
+
+{% block scripts %}
+
+<script src="{{ url_for('static', path='js/ai-collaboration.js') }}"></script>
+
+{% endblock scripts %}

@@ -101,6 +101,15 @@ def collaborations_page(request: Request):
             "title": "Collaborations",
         },
     )
+@router.get("/ai-collaboration-page")
+def ai_collaboration_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "ai_collaboration.html",
+        {
+            "title": "AI Collaboration",
+        },
+    )
 
 
 @router.get("/reports-page")

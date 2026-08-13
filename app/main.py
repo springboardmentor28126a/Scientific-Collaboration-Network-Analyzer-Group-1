@@ -17,6 +17,7 @@ from app.backend.models.conference import Conference, ConferenceParticipation
 from app.backend.models.citation import Citation
 from app.backend.models.audit import AuditLog
 from app.backend.models.notification import Notification
+from app.backend.routers import ai_collaboration
 
 # Import routers
 from app.backend.routers import user
@@ -71,6 +72,7 @@ app.include_router(report.router)
 app.include_router(analytics.router)
 
 app.include_router(notification.router)
+app.include_router(ai_collaboration.router)
 
 
 @app.get("/health", tags=["Health"])
