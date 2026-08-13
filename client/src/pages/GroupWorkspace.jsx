@@ -7,7 +7,6 @@ import GroupMembers from "../components/groupWorkspace/GroupMembers";
 import GroupChat from "../components/groupWorkspace/GroupChat";
 import GroupMeetings from "../components/groupWorkspace/GroupMeetings";
 import GroupFiles from "../components/groupWorkspace/GroupFiles";
-import GroupAnalytics from "../components/groupWorkspace/GroupAnalytics";
 
 export default function GroupWorkspace() {
 
@@ -105,8 +104,6 @@ export default function GroupWorkspace() {
 
                 <button onClick={() => setActiveTab("files")}>Files</button>
 
-                <button onClick={() => setActiveTab("analytics")}>Analytics</button>
-
             </div>
 
             {activeTab === "overview" &&
@@ -127,10 +124,6 @@ export default function GroupWorkspace() {
 
             {activeTab === "files" &&
                 <GroupFiles groupId={groupId} />
-            }
-
-            {activeTab === "analytics" &&
-                <GroupAnalytics groupId={groupId} />
             }
 
         </div>

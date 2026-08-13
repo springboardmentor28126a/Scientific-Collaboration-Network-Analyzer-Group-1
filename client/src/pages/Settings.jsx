@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { getAuthUser } from "../utils/authStorage";
+import api from "../services/api";
 
 function Settings({ toggleTheme }) {
   const user = getAuthUser();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [recoveryCodes, setRecoveryCodes] = useState([]);
+  const [mfaMessage, setMfaMessage] = useState("");
 
   useEffect(() => {
     const settings = JSON.parse(localStorage.getItem("scna_settings"));
@@ -30,6 +35,9 @@ function Settings({ toggleTheme }) {
       setSaving(false);
     }
   };
+
+  const setupMfa = async () => { const response = await api.post("/auth/mfa/setup"); setMfaSecret(response.data.secret); setMfaMessage("Scan the otpauth URI with your authenticator, then enter the generated code."); };
+  const enableMfa = async () => { try { const response = await api.post("/auth/mfa/enable", { code: mfaCode }); setRecoveryCodes(response.data.recovery_codes || []); setMfaMessage("MFA enabled. Store these recovery codes securely; they will not be shown again."); } catch (error) { setMfaMessage(error.response?.data?.detail || "Unable to enable MFA."); } };
 
   return (
     <div style={{ padding: "30px" }}>
@@ -73,6 +81,15 @@ function Settings({ toggleTheme }) {
             <span>In-app alerts</span>
             <input type="checkbox" checked={notifications} onChange={() => setNotifications((prev) => !prev)} />
           </label>
+        </section>
+
+        <section style={sectionCard}>
+          <h2>Multi-factor authentication</h2>
+          <p>Use an authenticator app as a second factor after password login.</p>
+          <button style={themeToggleButton} onClick={setupMfa}>Start MFA setup</button>
+          {mfaSecret && <><p>Setup secret: <code>{mfaSecret}</code></p><input inputMode="numeric" maxLength="6" value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} placeholder="6-digit authenticator code" /><button style={saveButton} onClick={enableMfa}>Verify and enable MFA</button></>}
+          {mfaMessage && <p>{mfaMessage}</p>}
+          {recoveryCodes.length > 0 && <pre>{recoveryCodes.join("\n")}</pre>}
         </section>
 
         <section style={sectionCard}>

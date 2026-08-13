@@ -7,4 +7,5 @@ backend/venv/
 venv/
 .env
 backend/.env
+*.env
 dist/

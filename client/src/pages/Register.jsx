@@ -3,7 +3,7 @@
 // It keeps your existing functionality and is structured so you can
 // extend it with password strength, live validation, etc.
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
@@ -21,6 +21,7 @@ import { MdEmail } from "react-icons/md";
 import { RiLockPasswordFill } from "react-icons/ri";
 
 import "./Register.css";
+import CaptchaWidget from "../components/CaptchaWidget";
 
 export default function Register() {
 
@@ -53,6 +54,9 @@ export default function Register() {
     const [serverError, setServerError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [captchaState, setCaptchaState] = useState({ token: "", captcha: null, answer: "" });
+    const [captchaReset, setCaptchaReset] = useState(0);
+    const handleCaptchaChange = useCallback((value) => setCaptchaState(value), []);
 
     const validate = () => {
 
@@ -77,8 +81,11 @@ export default function Register() {
             e.email = "Please enter a valid email";
         }
 
-        if (!formData.password) {
+    if (!formData.password) {
             e.password = "Password is required";
+        }
+        else if (formData.password.length < 8) {
+            e.password = "Password must be at least 8 characters.";
         }
 
         if (!formData.confirmPassword) {
@@ -139,9 +146,14 @@ export default function Register() {
 
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (event) => {
+        event?.preventDefault();
 
         if (!validate()) return;
+        if (captchaState.captcha?.required && !captchaState.token && !captchaState.answer) {
+            setServerError("Please complete the CAPTCHA.");
+            return;
+        }
 
         try {
 
@@ -154,6 +166,10 @@ export default function Register() {
     email: formData.email,
 
     password: formData.password,
+    confirm_password: formData.confirmPassword,
+    captcha_token: captchaState.token,
+    captcha_id: captchaState.captcha?.captcha_id,
+    captcha_answer: captchaState.answer,
 
     role: formData.role,
 
@@ -181,16 +197,17 @@ export default function Register() {
 
         catch (err) {
 
-            if ([400, 409].includes(err.response?.status)) {
-
-                setServerError(err.response.data.detail);
+            if (err.response?.data?.detail) {
+                const detail = err.response.data.detail;
+                setServerError(detail === "CAPTCHA verification failed." ? "CAPTCHA verification failed. Please try again." : detail);
+                if (detail.includes("CAPTCHA")) { setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1); }
 
             }
 
             else {
 
                 setServerError(
-                    "Something went wrong. Please try again."
+                    "Unable to create your account right now. Please try again."
                 );
 
             }
@@ -261,7 +278,7 @@ export default function Register() {
 
             <div className="register-right">
 
-                <div className="register-card">
+                <form className="register-card" onSubmit={handleSubmit}>
 
                     <h2 className="register-heading">
                         Create Account
@@ -341,6 +358,7 @@ export default function Register() {
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 placeholder="Create password"
+                                autoComplete="new-password"
                                 value={formData.password}
                                 onChange={handleChange}
                             />
@@ -368,6 +386,7 @@ export default function Register() {
                                 {errors.password}
                             </small>
                         }
+                        <small>Password must be at least 8 characters.</small>
 
                     </div>
 
@@ -385,6 +404,7 @@ export default function Register() {
                                 type={showPassword ? "text" : "password"}
                                 name="confirmPassword"
                                 placeholder="Confirm password"
+                                autoComplete="new-password"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                             />
@@ -547,12 +567,16 @@ export default function Register() {
                     }
 
                     {/* REGISTER BUTTON */}
+                    <div className="form-group">
+                        <label>CAPTCHA</label>
+                        <CaptchaWidget key={captchaReset} resetSignal={captchaReset} onChange={handleCaptchaChange} />
+                    </div>
 
                     <button
 
                         className="register-btn"
 
-                        onClick={handleSubmit}
+                        type="submit"
 
                         disabled={
     loading ||
@@ -618,7 +642,7 @@ export default function Register() {
 
                     </p>
 
-                </div>
+                </form>
 
             </div>
 
