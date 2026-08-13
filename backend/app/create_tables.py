@@ -6,6 +6,14 @@ from app.models.institution import Institution
 from app.models.department import Department
 from app.models.researcher import Researcher
 
+from app.models.publication import Publication
+from app.models.citation import Citation
+from app.models.collaboration import Collaboration
+
+from app.models.conference import Conference
+from app.models.conference_registration import ConferenceRegistration
+
+from app.models.notification import Notification
 
 def main():
     print("Creating database tables...")

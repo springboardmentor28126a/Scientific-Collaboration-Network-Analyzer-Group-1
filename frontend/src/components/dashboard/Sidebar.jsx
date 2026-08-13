@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import NotificationBell from "./NotificationBell";
 
 const NAV_BY_ROLE = {
   SYSTEM_ADMIN: [
@@ -9,19 +10,24 @@ const NAV_BY_ROLE = {
     { label: "Researchers", path: "/researchers" },
     { label: "Users", path: "/users" },
     { label: "Browse Publications", path: "/publications" },
-    { label: "Conferences", path: "/conferences" } 
+    { label: "Conferences", path: "/conferences" }, 
+    { label: "Reports", path: "/reports" },
+    { label: "Analytics", path: "/analytics" }
   ],
   INSTITUTION_ADMIN: [
     { label: "Overview", path: "/institution-admin/dashboard" },
     { label: "Departments", path: "/departments" },
     { label: "Researchers", path: "/researchers" },
     { label: "Browse Publications", path: "/publications" },
-    { label: "Conferences", path: "/conferences" } 
+    { label: "Conferences", path: "/conferences" },
+    { label: "Reports", path: "/reports" },
+    { label: "Analytics", path: "/analytics" }
   ],
   RESEARCHER: [
     { label: "Overview", path: "/researcher/dashboard" },
     { label: "Browse Publications", path: "/publications" },
-    { label: "Conferences", path: "/conferences" } 
+    { label: "Conferences", path: "/conferences" } ,
+    { label: "Collaborations", path: "/collaborations" },
   ],
   REVIEWER: [
     { label: "Overview", path: "/reviewer/dashboard" },
@@ -61,6 +67,9 @@ function Sidebar() {
       </nav>
 
       <div className="dash-sidebar-footer">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
+          <NotificationBell />
+        </div>
         <div className="dash-user-chip">
           <span className="dash-avatar">{initials(auth?.username)}</span>
           <div>

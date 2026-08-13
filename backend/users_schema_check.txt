@@ -1,0 +1,31 @@
+                                           Table "public.users"
+       Column        |           Type           | Collation | Nullable |              Default              
+---------------------+--------------------------+-----------+----------+-----------------------------------
+ id                  | integer                  |           | not null | nextval('users_id_seq'::regclass)
+ username            | character varying(50)    |           | not null | 
+ email               | character varying(100)   |           | not null | 
+ password_hash       | character varying(255)   |           | not null | 
+ role                | character varying(50)    |           | not null | 
+ is_active           | boolean                  |           |          | 
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ status              | user_status              |           | not null | 'APPROVED'::user_status
+ must_reset_password | boolean                  |           | not null | false
+ institution_id      | integer                  |           |          | 
+ created_by          | integer                  |           |          | 
+ approved_by         | integer                  |           |          | 
+ approved_at         | timestamp with time zone |           |          | 
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+    "ix_users_id" btree (id)
+    "users_email_key" UNIQUE CONSTRAINT, btree (email)
+    "users_username_key" UNIQUE CONSTRAINT, btree (username)
+Foreign-key constraints:
+    "users_approved_by_fkey" FOREIGN KEY (approved_by) REFERENCES users(id)
+    "users_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id)
+    "users_institution_id_fkey" FOREIGN KEY (institution_id) REFERENCES institutions(id)
+Referenced by:
+    TABLE "researchers" CONSTRAINT "researchers_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "users" CONSTRAINT "users_approved_by_fkey" FOREIGN KEY (approved_by) REFERENCES users(id)
+    TABLE "users" CONSTRAINT "users_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id)
+

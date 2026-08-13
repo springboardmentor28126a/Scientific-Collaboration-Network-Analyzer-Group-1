@@ -32,3 +32,8 @@ class PublicationType(str, Enum):
 class ConferenceRole(str, Enum):
     ATTENDEE = "ATTENDEE"
     PRESENTER = "PRESENTER"
+
+class CollaborationStatus(str, Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"

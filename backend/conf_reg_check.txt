@@ -1,0 +1,17 @@
+                                           Table "public.conference_registrations"
+       Column       |           Type           | Collation | Nullable |                       Default                        
+--------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                 | integer                  |           | not null | nextval('conference_registrations_id_seq'::regclass)
+ conference_id      | integer                  |           | not null | 
+ researcher_id      | integer                  |           | not null | 
+ role               | character varying(20)    |           | not null | 
+ presentation_title | character varying(500)   |           |          | 
+ registered_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "conference_registrations_pkey" PRIMARY KEY, btree (id)
+    "ix_conference_registrations_id" btree (id)
+    "uq_conference_researcher" UNIQUE CONSTRAINT, btree (conference_id, researcher_id)
+Foreign-key constraints:
+    "conference_registrations_conference_id_fkey" FOREIGN KEY (conference_id) REFERENCES conferences(id)
+    "conference_registrations_researcher_id_fkey" FOREIGN KEY (researcher_id) REFERENCES researchers(id)
+

@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-
+from app.models.researcher import Researcher
 from app.models.conference import Conference
+from app.models.user import User
 from app.schemas.conference import ConferenceCreate, ConferenceUpdate
-
+from app.schemas.notification import NotificationCreate
+from app.services.notification_service import create_notification
+from app.utils.constants import UserRole
 
 def create_conference(
     db: Session,
@@ -21,12 +24,23 @@ def create_conference(
         end_date=conference.end_date,
         submission_deadline=conference.submission_deadline,
         website=conference.website,
+        mode=conference.mode,
+        meeting_link=conference.meeting_link,
         status=conference.status,
     )
-
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+
+    researchers = db.query(Researcher).all()
+    for researcher in researchers:
+        create_notification(db, NotificationCreate(
+            user_id=researcher.user_id,
+            title="New conference announced",
+            message=f"{db_conference.title} has been added — {db_conference.start_date.strftime('%b %d, %Y')} at {db_conference.venue or 'TBA'}.",
+            notification_type="CONFERENCE_UPDATE",
+            reference_id=db_conference.id,
+        ))
 
     return db_conference
 
@@ -72,10 +86,30 @@ def update_conference(
     conference.end_date = conference_data.end_date
     conference.submission_deadline = conference_data.submission_deadline
     conference.website = conference_data.website
+    conference.mode = conference_data.mode
+    conference.meeting_link = conference_data.meeting_link
     conference.status = conference_data.status
 
     db.commit()
     db.refresh(conference)
+    # Notify Institution Admins
+    admins = (
+        db.query(User)
+        .filter(User.role == UserRole.INSTITUTION_ADMIN.value)
+        .all()
+    )
+
+    for admin in admins:
+        create_notification(
+            db,
+            NotificationCreate(
+                user_id=admin.id,
+                title="Conference Updated",
+                message=f"{conference.title} has been updated.",
+                notification_type="CONFERENCE",
+                reference_id=conference.id,
+            ),
+        )
 
     return conference
 

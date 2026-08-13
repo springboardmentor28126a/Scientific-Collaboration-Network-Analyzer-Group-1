@@ -27,7 +27,8 @@ class Conference(Base):
     submission_deadline = Column(DateTime(timezone=True), nullable=True)
 
     website = Column(String(500), nullable=True)
-
+    mode = Column(String(20), nullable=False, default="IN_PERSON")  # IN_PERSON, ONLINE, HYBRID
+    meeting_link = Column(String(500), nullable=True)
     status = Column(String(30), default="Upcoming")
 
     created_at = Column(

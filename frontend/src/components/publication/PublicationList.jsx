@@ -5,6 +5,7 @@ import {
   archivePublication,
   downloadPublicationFile,
 } from "../../services/publicationService";
+import CitationPanel from "./CitationPanel";
 
 const STATUS_STYLES = {
   DRAFT: { label: "Draft", className: "pub-badge pub-badge-draft" },
@@ -114,12 +115,12 @@ function PublicationList({ publications, onEdit, onSubmit, onDelete, onFileUploa
                       type="button"
                       className="btn-ghost-outline btn-sm"
                       onClick={async () => {
-  try {
-    await downloadPublicationFile(pub.id, pub.title);
-  } catch (err) {
-    toast.error("Could not download file.");
-  }
-}}
+                        try {
+                          await downloadPublicationFile(pub.id);
+                        } catch (err) {
+                          toast.error("Could not download file.");
+                        }
+                      }}
                     >
                       Download
                     </button>
@@ -160,12 +161,23 @@ function PublicationList({ publications, onEdit, onSubmit, onDelete, onFileUploa
                   Archive
                 </button>
                 {fileUrl && (
-                  <button className="btn-ghost-outline btn-sm" onClick={() => downloadPublicationFile(pub.id)}>
+                  <button
+                    className="btn-ghost-outline btn-sm"
+                    onClick={async () => {
+                      try {
+                        await downloadPublicationFile(pub.id);
+                      } catch (err) {
+                        toast.error("Could not download file.");
+                      }
+                    }}
+                  >
                     Download
                   </button>
                 )}
               </div>
             )}
+
+            <CitationPanel publicationId={pub.id} canEdit={pub.is_owner !== false} />
           </div>
         );
       })}

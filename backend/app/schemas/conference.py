@@ -16,6 +16,8 @@ class ConferenceBase(BaseModel):
     end_date: datetime
     submission_deadline: Optional[datetime] = None
     website: Optional[str] = None
+    mode: Optional[str] = "IN_PERSON"
+    meeting_link: Optional[str] = None
     status: Optional[str] = "Upcoming"
 
 
@@ -35,6 +37,8 @@ class ConferenceUpdate(BaseModel):
     end_date: Optional[datetime] = None
     submission_deadline: Optional[datetime] = None
     website: Optional[str] = None
+    mode: Optional[str] = None
+    meeting_link: Optional[str] = None
     status: Optional[str] = None
 
 
