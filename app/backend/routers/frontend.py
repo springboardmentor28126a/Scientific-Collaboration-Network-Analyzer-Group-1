@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -5,6 +6,12 @@ from fastapi.templating import Jinja2Templates
 
 APP_DIR = Path(__file__).resolve().parents[2]
 TEMPLATES_DIR = APP_DIR / "frontend" / "templates"
+
+# Public Turnstile site key (safe to expose to the browser -- only the
+# TURNSTILE_SECRET_KEY in utils/captcha.py must stay server-side). This
+# project is server-rendered Jinja2, not Vite, so instead of a VITE_ build
+# -time env var it's read here and passed into the login template.
+TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.cache = None
@@ -111,6 +118,17 @@ def reports_page(request: Request):
     )
 
 
+@router.get("/ai-collaboration-page")
+def ai_collaboration_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "ai_collaboration.html",
+        {
+            "title": "AI Collaboration",
+        },
+    )
+
+
 @router.get("/login")
 def login_page(request: Request):
     return templates.TemplateResponse(
@@ -118,6 +136,7 @@ def login_page(request: Request):
         "login.html",
         {
             "title": "Login",
+            "turnstile_site_key": TURNSTILE_SITE_KEY,
         },
     )
 
@@ -129,6 +148,7 @@ def register_page(request: Request):
         "register.html",
         {
             "title": "Register",
+            "turnstile_site_key": TURNSTILE_SITE_KEY,
         },
     )
 

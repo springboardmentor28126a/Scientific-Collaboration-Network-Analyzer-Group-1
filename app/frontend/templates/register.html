@@ -19,6 +19,20 @@
         <option value="Admin">Admin</option>
         <option value="System Admin">System Admin</option>
       </select>
+
+      {% if turnstile_site_key %}
+        <div class="cf-turnstile mt-2 mb-2"
+             data-sitekey="{{ turnstile_site_key }}"
+             data-callback="scnaOnTurnstileSuccess"
+             data-expired-callback="scnaOnTurnstileExpired"
+             data-error-callback="scnaOnTurnstileExpired">
+        </div>
+      {% else %}
+        <p class="small text-muted mt-2 mb-2">
+          CAPTCHA is not configured for this environment.
+        </p>
+      {% endif %}
+
       <button type="submit">Create account</button>
       <p class="subtle">Already registered? <a href="{{ url_for('login_page') }}">Login</a>.</p>
     </form>
@@ -26,5 +40,8 @@
 {% endblock content %}
 
 {% block scripts %}
+  {% if turnstile_site_key %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
   <script type="module" src="{{ url_for('static', path='js/auth-page.js') }}"></script>
 {% endblock scripts %}

@@ -33,6 +33,7 @@ from app.backend.routers import report
 from app.backend.routers import analytics
 from app.backend.routers import frontend
 from app.backend.routers import notification
+from app.backend.routers import ai_collaboration
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -71,6 +72,7 @@ app.include_router(report.router)
 app.include_router(analytics.router)
 
 app.include_router(notification.router)
+app.include_router(ai_collaboration.router)
 
 
 @app.get("/health", tags=["Health"])
