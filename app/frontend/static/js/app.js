@@ -30,7 +30,9 @@ async function api(path, options = {}) {
     } catch {
       message = response.statusText;
     }
-    throw new Error(message);
+    const err = new Error(message);
+    err.status = response.status;
+    throw err;
   }
 
   if (response.status === 204) return null;
@@ -368,7 +370,7 @@ function renderInstitutionCard(inst) {
             ${escapeHtml(inst.city ?? "-")}, ${escapeHtml(inst.country ?? "-")}
           </p>
           <div class="mt-auto d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.viewInstitution(${inst.id})">View</button>
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.viewInstitution(${inst.id})"><i class="bi bi-eye me-1"></i>View Details</button>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-requires="institutions:edit" onclick="window.editInstitution(${inst.id})">Edit</button>
             <button type="button" class="btn btn-sm btn-outline-danger" data-requires="institutions:delete" onclick="window.deleteInstitution(${inst.id})">Delete</button>
           </div>
@@ -419,6 +421,7 @@ async function loadInstitutions(page = instCurrentPage) {
 }
 
 window.viewInstitution = async function (institutionId) {
+  window.showDetailsLoading?.("Institution Details");
   try {
     const details = await api(`/institutions/${institutionId}/details`);
 
@@ -443,7 +446,11 @@ window.viewInstitution = async function (institutionId) {
       "Institution Profile"
     );
   } catch (error) {
-    showToast("Error", "Unable to load institution details.", "error");
+    if (error.status === 404) {
+      window.showDetailsNotFound?.("institution");
+    } else {
+      window.showDetailsError?.(error.message);
+    }
   }
 };
 
@@ -546,7 +553,7 @@ function renderResearcherCard(r) {
           <p class="card-text text-muted small mb-3">${escapeHtml(r.institution ?? "-")}</p>
           <p class="card-text small mb-3"><strong>Interests:</strong> ${escapeHtml(r.research_interest ?? "-")}</p>
           <div class="mt-auto d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.viewResearcher(${r.id})">View Profile</button>
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.viewResearcher(${r.id})"><i class="bi bi-eye me-1"></i>View Details</button>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-requires="researchers:edit" onclick="window.editResearcher(${r.id})">Edit</button>
             <button type="button" class="btn btn-sm btn-outline-danger" data-requires="researchers:delete" onclick="window.deleteResearcher(${r.id})">Delete</button>
           </div>
@@ -597,6 +604,7 @@ async function loadResearchers(page = researcherCurrentPage) {
 }
 
 window.viewResearcher = async function (researcherId) {
+  window.showDetailsLoading?.("Researcher Details");
   try {
     const stats = await api(`/researchers/${researcherId}/profile-stats`);
     const recentPubs = stats.recent_publications ?? [];
@@ -618,7 +626,11 @@ window.viewResearcher = async function (researcherId) {
       "Researcher Profile"
     );
   } catch (error) {
-    showToast("Error", "Unable to load researcher details.", "error");
+    if (error.status === 404) {
+      window.showDetailsNotFound?.("researcher");
+      return;
+    }
+    window.showDetailsError?.(error.message);
   }
 };
 
@@ -841,6 +853,7 @@ async function loadPublications(page = pubCurrentPage) {
 }
 
 window.viewPublication = async function (publicationId) {
+  window.showDetailsLoading?.("Publication Details");
   try {
     const p = await api(`/publications/${publicationId}`);
 
@@ -859,7 +872,11 @@ window.viewPublication = async function (publicationId) {
       "Publication Details"
     );
   } catch (error) {
-    showToast("Error", "Unable to load publication details.", "error");
+    if (error.status === 404) {
+      window.showDetailsNotFound?.("publication");
+    } else {
+      window.showDetailsError?.(error.message);
+    }
   }
 };
 
@@ -1106,7 +1123,7 @@ async function loadCitations(page = citationCurrentPage) {
 window.viewCitation = async function (citationId) {
   const c = lastCitationsData.find((entry) => entry.id === citationId);
   if (!c) {
-    showToast("Error", "Unable to load citation details.", "error");
+    window.showDetailsNotFound?.("citation");
     return;
   }
 

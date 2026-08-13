@@ -49,7 +49,9 @@ async function conferenceApi(path, options = {}) {
             message = response.statusText;
         }
 
-        throw new Error(message);
+        const err = new Error(message);
+        err.status = response.status;
+        throw err;
     }
 
     if (response.status === 204) {
@@ -365,7 +367,7 @@ function renderConferenceCard(conf) {
                             class="btn btn-sm btn-outline-dark"
                             onclick="window.viewConference(${conf.id})">
                             <i class="bi bi-eye me-1"></i>
-                            Details
+                            View Details
                         </button>
 
                         <button
@@ -654,6 +656,9 @@ async function loadConferences(
 // ========================================================================
 
 window.viewConference = async function (conferenceId) {
+
+    window.showDetailsLoading?.("Conference Details");
+    window.setDetailsModalWide?.(true);
 
     try {
 
@@ -1076,12 +1081,12 @@ window.viewConference = async function (conferenceId) {
             error
         );
 
-        conferenceToast(
-            "Error",
-            error.message ||
-            "Unable to load conference details.",
-            "error"
-        );
+        if (error.status === 404) {
+            window.showDetailsNotFound?.("conference");
+        } else {
+            window.showDetailsError?.(error.message);
+        }
+        window.setDetailsModalWide?.(true);
     }
 };
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from app.backend.utils.security import (
     create_access_token,
     verify_access_token
 )
+from app.backend.utils.captcha import verify_turnstile_token
 
 from app.backend.routers.audit import log_audit_event
 from app.backend.routers.notification import create_notification
@@ -36,7 +37,32 @@ def get_db():
 # Register
 # ---------------------------
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
+    # ------------------------------------------------------------------
+    # CAPTCHA verification (Cloudflare Turnstile) -- checked BEFORE any
+    # database writes, same as /users/login. See utils/captcha.py for
+    # provider-error/fallback handling.
+    # ------------------------------------------------------------------
+    captcha_result = verify_turnstile_token(
+        user.captcha_token,
+        remote_ip=request.client.host if request.client else None,
+    )
+
+    if not captcha_result.success:
+        log_audit_event(
+            db,
+            "Registration Failed",
+            "Security",
+            f"CAPTCHA verification failed ({captcha_result.reason}) for: {user.email}",
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=CAPTCHA_ERROR_MESSAGES.get(
+                captcha_result.reason,
+                "CAPTCHA verification failed. Please try again.",
+            ),
+        )
+
     existing_user = db.query(User).filter(User.email == user.email).first()
 
     if existing_user:
@@ -66,11 +92,45 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 
+CAPTCHA_ERROR_MESSAGES = {
+    "missing_token": "CAPTCHA verification failed. Please complete the CAPTCHA and try again.",
+    "invalid_token": "CAPTCHA verification failed. Please try again.",
+    "expired_token": "CAPTCHA verification failed. Please refresh the CAPTCHA and try again.",
+    "provider_timeout": "CAPTCHA verification timed out. Please try again.",
+    "provider_unavailable": "CAPTCHA verification is temporarily unavailable. Please try again shortly.",
+}
+
+
 # ---------------------------
 # Login
 # ---------------------------
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
+
+    # ------------------------------------------------------------------
+    # CAPTCHA verification (Cloudflare Turnstile) -- checked BEFORE any
+    # password lookup so the backend never trusts the frontend widget on
+    # its own. See utils/captcha.py for provider-error/fallback handling.
+    # ------------------------------------------------------------------
+    captcha_result = verify_turnstile_token(
+        user.captcha_token,
+        remote_ip=request.client.host if request.client else None,
+    )
+
+    if not captcha_result.success:
+        log_audit_event(
+            db,
+            "Login Failed",
+            "Security",
+            f"CAPTCHA verification failed ({captcha_result.reason}) for: {user.email}",
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=CAPTCHA_ERROR_MESSAGES.get(
+                captcha_result.reason,
+                "CAPTCHA verification failed. Please try again.",
+            ),
+        )
 
     db_user = db.query(User).filter(
         User.email == user.email

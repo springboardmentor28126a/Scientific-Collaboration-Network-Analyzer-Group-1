@@ -100,13 +100,13 @@ function roleTier(role) {
 // spec's per-role nav lists; Citations is treated as part of "every module"
 // for Admin/System Admin, and Audit Logs stays System-Admin-only.
 const NAV_TIERS = {
-  "User": ["navDashboard", "navResearchers", "navPublications", "navReports"],
-  "Institution Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCollaborations", "navReports"],
-  "Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports"],
-  "System Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "auditLink"],
+  "User": ["navDashboard", "navResearchers", "navPublications", "navReports", "navAICollaboration"],
+  "Institution Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCollaborations", "navReports", "navAICollaboration"],
+  "Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "navAICollaboration"],
+  "System Admin": ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "navAICollaboration", "auditLink"],
 };
 
-const ALL_NAV_IDS = ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "auditLink"];
+const ALL_NAV_IDS = ["navDashboard", "navResearchers", "navInstitutions", "navPublications", "navConferences", "navCitations", "navCollaborations", "navReports", "navAICollaboration", "auditLink"];
 
 function applyNavForRole(role) {
   const tier = roleTier(role);
@@ -225,6 +225,173 @@ async function downloadFile(url, filename, triggerEl) {
   }
 }
 window.downloadFile = downloadFile;
+
+// -------------------------------------------------------------------------
+// Shared "View Details" modal (used by Researchers, Institutions,
+// Publications, Citations, and Conferences so every module has one
+// consistent details experience). Conference has its own richer renderer
+// in conference.js, but it reuses the SAME #viewDetailsModal element, so
+// all the plumbing (widen/reset, escaping, loading/error/not-found states)
+// lives here in one place.
+// -------------------------------------------------------------------------
+
+function detailsEscapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function detailsFormatValue(value) {
+  if (Array.isArray(value)) {
+    return value.length ? detailsEscapeHtml(value.join(", ")) : "—";
+  }
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+  return detailsEscapeHtml(value);
+}
+
+// Conference details use a wider modal (see conference.js). Every other
+// module uses the default width, so we reset it before showing anything
+// else through this shared element.
+function setDetailsModalWide(isWide) {
+  const dialog = document.querySelector("#viewDetailsModal .modal-dialog");
+  if (!dialog) return;
+  dialog.classList.toggle("modal-details-wide", !!isWide);
+}
+window.setDetailsModalWide = setDetailsModalWide;
+
+// window.showDetailsModal(title, rows, subtitle)
+//   title    - modal heading (record name)
+//   rows     - array of [label, value] pairs. value may be a string,
+//              number, null/undefined (rendered as "—"), or an array
+//              (rendered as a comma-separated list).
+//   subtitle - optional small text shown under the title
+function showDetailsModal(title, rows, subtitle) {
+  const modal = document.getElementById("viewDetailsModal");
+  const titleEl = document.getElementById("viewDetailsTitle");
+  const bodyEl = document.getElementById("viewDetailsBody");
+  const subtitleEl = document.getElementById("viewDetailsSubtitle");
+
+  if (!modal || !titleEl || !bodyEl) return;
+
+  setDetailsModalWide(false);
+
+  titleEl.textContent = title || "Details";
+
+  if (subtitleEl) {
+    if (subtitle) {
+      subtitleEl.style.display = "block";
+      subtitleEl.textContent = subtitle;
+    } else {
+      subtitleEl.style.display = "none";
+      subtitleEl.textContent = "";
+    }
+  }
+
+  bodyEl.innerHTML = (rows || [])
+    .map(
+      ([label, value]) => `
+        <div class="detail-row">
+          <dt>${detailsEscapeHtml(label)}</dt>
+          <dd>${detailsFormatValue(value)}</dd>
+        </div>
+      `
+    )
+    .join("");
+
+  bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+window.showDetailsModal = showDetailsModal;
+
+// window.showDetailsLoading(title) - call before an async fetch so the
+// modal opens immediately instead of waiting in silence.
+function showDetailsLoading(title) {
+  const modal = document.getElementById("viewDetailsModal");
+  const titleEl = document.getElementById("viewDetailsTitle");
+  const bodyEl = document.getElementById("viewDetailsBody");
+  const subtitleEl = document.getElementById("viewDetailsSubtitle");
+
+  if (!modal || !titleEl || !bodyEl) return;
+
+  setDetailsModalWide(false);
+  titleEl.textContent = title || "Loading...";
+  if (subtitleEl) {
+    subtitleEl.style.display = "none";
+    subtitleEl.textContent = "";
+  }
+
+  bodyEl.innerHTML = `
+    <div class="text-center text-muted py-4">
+      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+      Loading details...
+    </div>
+  `;
+
+  bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+window.showDetailsLoading = showDetailsLoading;
+
+// window.showDetailsNotFound(entityLabel) - used when the API returns 404
+// for a record the user tried to open (deleted record, stale link, etc).
+function showDetailsNotFound(entityLabel) {
+  const modal = document.getElementById("viewDetailsModal");
+  const titleEl = document.getElementById("viewDetailsTitle");
+  const bodyEl = document.getElementById("viewDetailsBody");
+  const subtitleEl = document.getElementById("viewDetailsSubtitle");
+
+  if (!modal || !titleEl || !bodyEl) return;
+
+  setDetailsModalWide(false);
+  titleEl.textContent = "Record Not Found";
+  if (subtitleEl) {
+    subtitleEl.style.display = "none";
+    subtitleEl.textContent = "";
+  }
+
+  bodyEl.innerHTML = `
+    <div class="text-center text-muted py-4">
+      <i class="bi bi-search fs-2 d-block mb-2"></i>
+      The requested ${detailsEscapeHtml(entityLabel || "record")} could not be found.
+      It may have been deleted or the link is out of date.
+    </div>
+  `;
+
+  bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+window.showDetailsNotFound = showDetailsNotFound;
+
+// window.showDetailsError(message) - generic fetch/server failure while a
+// details modal was already open (or about to open).
+function showDetailsError(message) {
+  const modal = document.getElementById("viewDetailsModal");
+  const titleEl = document.getElementById("viewDetailsTitle");
+  const bodyEl = document.getElementById("viewDetailsBody");
+  const subtitleEl = document.getElementById("viewDetailsSubtitle");
+
+  if (!modal || !titleEl || !bodyEl) return;
+
+  setDetailsModalWide(false);
+  titleEl.textContent = "Unable to Load Details";
+  if (subtitleEl) {
+    subtitleEl.style.display = "none";
+    subtitleEl.textContent = "";
+  }
+
+  bodyEl.innerHTML = `
+    <div class="text-center text-muted py-4">
+      <i class="bi bi-exclamation-triangle fs-2 d-block mb-2"></i>
+      Unable to load details. Please try again.
+      <div class="small mt-1">${detailsEscapeHtml(message || "")}</div>
+    </div>
+  `;
+
+  bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+window.showDetailsError = showDetailsError;
 
 bindNavLogout();
 loadNavAuthState();

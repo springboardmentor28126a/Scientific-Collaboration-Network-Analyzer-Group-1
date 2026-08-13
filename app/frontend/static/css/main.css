@@ -807,6 +807,34 @@ pre {
   color: var(--ink);
   font-weight: 600;
   text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Feature 4: wider "View Details" modal for the Conference module (the
+   default Bootstrap modal is too narrow for a two-column info grid +
+   participants table). Toggled on/off via window.setDetailsModalWide()
+   since #viewDetailsModal is shared by every module. */
+#viewDetailsModal .modal-dialog.modal-details-wide {
+  max-width: 900px;
+  width: 90%;
+}
+
+@media (max-width: 767.98px) {
+  #viewDetailsModal .modal-dialog.modal-details-wide {
+    max-width: 100%;
+    width: 100%;
+    margin: 0.5rem;
+  }
+}
+
+#viewDetailsModal .modal-body {
+  overflow-x: hidden;
+}
+
+#viewDetailsModal .modal-body a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Chart containers */
