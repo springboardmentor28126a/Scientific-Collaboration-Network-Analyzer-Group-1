@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class LoginRequest(BaseModel):
@@ -15,3 +16,15 @@ class TokenResponse(BaseModel):
     role: str
     status: str
     must_reset_password: bool
+    institution_id: Optional[int] = None
+
+
+class MfaRequiredResponse(BaseModel):
+    mfa_required: bool = True
+    user_id: int
+    message: str = "A verification code has been sent to your email."
+
+
+class OtpVerifyRequest(BaseModel):
+    user_id: int
+    otp_code: str

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-
+import { Turnstile } from "@marsidev/react-turnstile";
 import { registerUser } from "../services/authService";
 import { fetchInstitutions } from "../services/institutionService";
 import { fetchDepartmentsByInstitution } from "../services/departmentService";
@@ -24,6 +24,7 @@ function RegisterPage() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const turnstileRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,7 +49,12 @@ function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const captchaToken = turnstileRef.current?.getResponse();
 
+if (!captchaToken) {
+  toast.error("Please complete the CAPTCHA.");
+  return;
+}
     if (form.password !== form.confirmPassword) {
       toast.error("Passwords do not match.");
       return;
@@ -64,10 +70,12 @@ function RegisterPage() {
         last_name: form.last_name,
         institution_id: Number(form.institution_id),
         department_id: Number(form.department_id),
+        captcha_token: captchaToken,
       });
       setSubmitted(true);
     } catch (err) {
       toast.error(err?.response?.data?.detail || "Registration failed.");
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -148,9 +156,14 @@ function RegisterPage() {
             {departments.map((d) => (
               <option key={d.id} value={d.id}>{d.department_name}</option>
             ))}
-          </select>
+          </select> 
 
           <p className="auth-hint">Passwords need 8+ characters, uppercase, lowercase, a number, and a symbol.</p>
+
+          <Turnstile
+  ref={turnstileRef}
+  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+/>
 
           <button type="submit" className="btn-primary btn-block" disabled={loading}>
             {loading ? "Creating account..." : "Create account"}

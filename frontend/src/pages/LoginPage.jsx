@@ -12,6 +12,7 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
   const turnstileRef = useRef(null);
 
   const { login } = useAuth();
@@ -36,8 +37,18 @@ function LoginPage() {
         captcha_token: captchaToken,
       });
 
+      // MFA is required → go to OTP verification page
+      if (data.mfa_required) {
+        navigate("/verify-otp", {
+          state: { userId: data.user_id },
+        });
+        return;
+      }
+
+      // Fallback for direct token response
       login(data);
 
+      // Force password change if required
       if (data.must_reset_password) {
         navigate("/change-password");
       } else {
@@ -45,6 +56,7 @@ function LoginPage() {
       }
     } catch (err) {
       const detail = err?.response?.data?.detail;
+
       toast.error(detail || "Invalid username or password.");
 
       // Reset CAPTCHA so the user gets a fresh token
