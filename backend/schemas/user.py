@@ -25,6 +25,10 @@ is_verified: bool
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    captcha_token: str | None = None
+    captcha_id: str | None = None
+    captcha_answer: str | None = None
+    mfa_code: str | None = None
 
 
 # class UserUpdate(BaseModel):
@@ -132,6 +136,10 @@ class RegisterRequest(BaseModel):
     email: EmailStr
 
     password: str
+    confirm_password: str | None = None
+    captcha_token: str | None = None
+    captcha_id: str | None = None
+    captcha_answer: str | None = None
 
     role: str
 

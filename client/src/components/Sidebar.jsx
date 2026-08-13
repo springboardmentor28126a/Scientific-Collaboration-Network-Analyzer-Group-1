@@ -293,7 +293,7 @@ function Sidebar() {
     onClick={() => navigate("/groups")}
 />
             <MenuItem
-    icon={<FaComments />}
+                icon={<FaComments />}
     text="Chat"
     active={location.pathname === "/chat"}
     onClick={() => navigate("/chat")}
@@ -312,6 +312,7 @@ function Sidebar() {
                 active={location.pathname === "/institution"}
                 onClick={() => navigate("/institution")}
             />
+            <MenuItem icon={<FaShieldAlt />} text="Research AI" active={location.pathname === "/research-ai"} onClick={() => navigate("/research-ai")} />
 
             <MenuItem
                 icon={<FaSchool />}

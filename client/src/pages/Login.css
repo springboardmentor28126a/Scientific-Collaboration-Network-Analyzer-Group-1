@@ -94,10 +94,10 @@ body{
 }
 
 .login-card{
-    width:420px;
+    width:min(440px, calc(100vw - 32px));
     background:#ffffff;
     border-radius:20px;
-    padding:40px;
+    padding:38px;
     border:1px solid #e5e7eb;
     box-shadow:
         0 10px 25px rgba(0,0,0,.08),
@@ -123,8 +123,13 @@ body{
     text-align:center;
     color:#6b7280;
     margin-top:8px;
-    margin-bottom:35px;
+    margin-bottom:24px;
 }
+
+.auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:28px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px}
+.auth-tab{border:0;border-radius:9px;padding:10px 12px;background:transparent;color:#64748b;font-size:14px;font-weight:600;cursor:pointer}
+.auth-tab.active{color:#1d4ed8;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.auth-tab:focus-visible,.text-button:focus-visible,.back-button:focus-visible,.login-btn:focus-visible,.forgot-link:focus-visible{outline:3px solid rgba(37,99,235,.25);outline-offset:2px}
 
 .form-group{
     margin-bottom:22px;
@@ -299,3 +304,9 @@ body{
 }
 
 }
+
+.text-button,.back-button{display:block;margin:14px auto 0;border:0;background:transparent;color:#2563eb;font-size:14px;font-weight:600;cursor:pointer}
+.back-button{margin-top:10px;color:#64748b;font-weight:500}
+.text-button:disabled,.back-button:disabled{color:#94a3b8;cursor:not-allowed}
+.otp-step h3{margin:0 0 6px;color:#1f2937;font-size:18px}
+.otp-message{margin-bottom:18px;color:#64748b;font-size:14px;line-height:1.5}

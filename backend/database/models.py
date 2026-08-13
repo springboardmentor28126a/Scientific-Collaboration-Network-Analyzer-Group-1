@@ -142,6 +142,41 @@ class User(Base):
     account_status = Column(String, default="Active", nullable=False)
     warning_count = Column(Integer, default=0, nullable=False)
     moderation_reason = Column(Text, nullable=True)
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_secret = Column(String, nullable=True)
+    mfa_recovery_codes = Column(Text, nullable=True)
+
+
+class EmailOTP(Base):
+    __tablename__ = "email_otp_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    purpose = Column(String, nullable=False, default="login")
+    code_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+
+class AuthRateLimit(Base):
+    __tablename__ = "auth_rate_limits"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, nullable=False, index=True)
+    window_started_at = Column(DateTime(timezone=True), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0)
+
+
+class CaptchaChallenge(Base):
+    __tablename__ = "captcha_challenges"
+
+    id = Column(String, primary_key=True)
+    answer_hash = Column(String, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    attempts = Column(Integer, nullable=False, default=0)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
 
 class Publication(Base):
     __tablename__ = "publications"

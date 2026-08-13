@@ -1,16 +1,27 @@
 
-from fastapi import APIRouter, Depends, HTTPException
+import hashlib
+import logging
+import os
+import re
+import secrets
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from backend.utils.security import create_access_token, get_current_user
 from backend.utils.passwords import hash_password, verify_password
 from backend.database.database import get_db
-from backend.database.models import User
+from backend.database.models import User, EmailOTP, AuthRateLimit
 from backend.models.verification_document import VerificationDocument
 from backend.schemas.user import RegisterRequest, UserLogin, UserUpdate, UserResponse
+from backend.schemas.security import OTPRequest, OTPVerify, MFACode
+from backend.services.captcha_service import verify_captcha, issue_development_captcha, verify_development_captcha
+from backend.services.email_service import send_otp_email, send_security_notice, email_configured
+from backend.services.mfa_service import generate_secret, generate_recovery_codes, verify_totp
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+logger = logging.getLogger(__name__)
 
 VALID_ROLES = {
     "Researcher",
@@ -19,11 +30,52 @@ VALID_ROLES = {
     "System Admin",
 }
 
+GENERIC_LOGIN_ERROR = "Unable to authenticate with those credentials."
+
+
+def _captcha_or_reject(token: str | None, captcha_id: str | None, captcha_answer: str | None, request: Request, db: Session) -> None:
+    if os.getenv("CAPTCHA_REQUIRED", "true").lower() != "true":
+        return
+    mode = os.getenv("CAPTCHA_MODE", "development").lower()
+    valid = verify_development_captcha(db, captcha_id, captcha_answer) if mode == "development" else verify_captcha(token, request.client.host if request.client else None)
+    if not valid:
+        raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
+
+
+def _rate_limit(db: Session, key: str, limit: int, seconds: int) -> None:
+    now = datetime.now(timezone.utc)
+    record = db.query(AuthRateLimit).filter(AuthRateLimit.key == key).first()
+    if not record or (now - record.window_started_at.replace(tzinfo=timezone.utc)).total_seconds() >= seconds:
+        if record:
+            record.window_started_at, record.attempts = now, 1
+        else:
+            db.add(AuthRateLimit(key=key, window_started_at=now, attempts=1))
+        db.commit()
+        return
+    if record.attempts >= limit:
+        raise HTTPException(status_code=429, detail="Too many attempts. Please try again later.")
+    record.attempts += 1
+    db.commit()
+
+
+def _password_error(password: str) -> str | None:
+    if len(password) < 8:
+        return "Password must be at least 8 characters."
+    return None
+
 @router.post("/register")
 def register(
     user: RegisterRequest,
+    request: Request,
     db: Session = Depends(get_db)
 ):
+
+    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db)
+    password_error = _password_error(user.password)
+    if password_error:
+        raise HTTPException(status_code=422, detail=password_error)
+    if user.confirm_password is not None and user.password != user.confirm_password:
+        raise HTTPException(status_code=422, detail="Passwords do not match.")
 
     existing_user = db.query(User).filter(
         User.email == user.email
@@ -111,6 +163,22 @@ def forgot_password(email: str):
     }
 
 
+@router.get("/email/status")
+def email_status():
+    return {"configured": email_configured()}
+
+
+
+
+@router.get("/captcha")
+def captcha(db: Session = Depends(get_db)):
+    try:
+        if os.getenv("CAPTCHA_MODE", "development").lower() != "development":
+            return {"mode": "recaptcha", "site_key": os.getenv("CAPTCHA_SITE_KEY"), "required": os.getenv("CAPTCHA_REQUIRED", "true").lower() == "true"}
+        return {"mode": "development", "required": os.getenv("CAPTCHA_REQUIRED", "true").lower() == "true", **issue_development_captcha(db)}
+    except Exception:
+        logger.exception("CAPTCHA challenge endpoint failed")
+        raise HTTPException(status_code=503, detail="CAPTCHA service is temporarily unavailable.")
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -178,7 +246,8 @@ def update_user(
     if user.email is not None:
         existing_user.email = user.email
 
-    if user.password is not None:
+    password_changed = user.password is not None
+    if password_changed:
         existing_user.password = hash_password(user.password)
 
     if user.role is not None:
@@ -236,6 +305,8 @@ def update_user(
 
     db.commit()
     db.refresh(existing_user)
+    if password_changed:
+        send_security_notice(existing_user.email, "SCNA password changed", "Your SCNA password was changed. If you did not make this change, contact an administrator immediately.")
 
     return {
         "id": existing_user.id,
@@ -272,15 +343,22 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 # 👇 Paste the login API HERE
 
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
+
+    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db)
+    _rate_limit(db, f"login:{request.client.host if request.client else 'unknown'}", 10, 300)
 
     existing_user = db.query(User).filter(User.email == user.email).first()
 
     if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=401, detail=GENERIC_LOGIN_ERROR)
 
     if not verify_password(user.password, existing_user.password):
-        raise HTTPException(status_code=401, detail="Invalid Password")
+        raise HTTPException(status_code=401, detail=GENERIC_LOGIN_ERROR)
+
+    if existing_user.mfa_enabled:
+        if not user.mfa_code or not verify_totp(existing_user.mfa_secret or "", user.mfa_code):
+            raise HTTPException(status_code=401, detail="A valid MFA code is required.")
 
     # The user-table default must not imply that a document was submitted.
     # The latest verification document is the source of truth for login state.
@@ -325,7 +403,8 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "sub": existing_user.email,
         "role": existing_user.role
     }
-)
+    )
+    send_security_notice(existing_user.email, "SCNA sign-in notification", "A sign-in to your SCNA account was completed.")
 
     return {
     "access_token": access_token,
@@ -343,3 +422,69 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         ),
     }
 }
+
+
+@router.post("/request-otp")
+def request_otp(payload: OTPRequest, request: Request, db: Session = Depends(get_db)):
+    _captcha_or_reject(payload.captcha_token, payload.captcha_id, payload.captcha_answer, request, db)
+    _rate_limit(db, f"otp:{payload.email.lower()}:{request.client.host if request.client else 'unknown'}", 3, 900)
+    now = datetime.now(timezone.utc)
+    user = db.query(User).filter(User.email == payload.email).first()
+    # Always return the same response to reduce account enumeration.
+    if user:
+        code = f"{secrets.randbelow(1000000):06d}"
+        db.add(EmailOTP(email=payload.email.lower(), purpose="login", code_hash=hashlib.sha256(code.encode()).hexdigest(), expires_at=now + timedelta(minutes=5)))
+        db.commit()
+        if not send_otp_email(user.email, code):
+            raise HTTPException(status_code=503, detail="Email delivery is temporarily unavailable.")
+    return {"message": "If the account is eligible, a sign-in code has been sent."}
+
+
+@router.post("/verify-otp")
+def verify_otp(payload: OTPVerify, db: Session = Depends(get_db)):
+    otp = db.query(EmailOTP).filter(EmailOTP.email == payload.email.lower(), EmailOTP.purpose == "login", EmailOTP.consumed_at.is_(None)).order_by(EmailOTP.created_at.desc()).first()
+    if not otp or otp.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc) or otp.attempts >= 5:
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+    if not secrets.compare_digest(otp.code_hash, hashlib.sha256(payload.code.encode()).hexdigest()):
+        otp.attempts += 1
+        db.commit()
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+    otp.consumed_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"access_token": create_access_token({"sub": user.email, "role": user.role}), "token_type": "bearer", "user": {"id": user.id, "name": user.name, "email": user.email, "role": user.role, "is_verified": user.is_verified, "verification_status": user.verification_status}}
+
+
+@router.post("/mfa/setup")
+def setup_mfa(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    secret = generate_secret()
+    current_user.mfa_secret = secret
+    current_user.mfa_enabled = False
+    db.commit()
+    return {"secret": secret, "otpauth_uri": f"otpauth://totp/SCNA:{current_user.email}?secret={secret}&issuer=SCNA"}
+
+
+@router.post("/mfa/enable")
+def enable_mfa(payload: MFACode, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.mfa_secret or not verify_totp(current_user.mfa_secret, payload.code):
+        raise HTTPException(status_code=400, detail="Invalid MFA code.")
+    codes = generate_recovery_codes()
+    current_user.mfa_enabled = True
+    current_user.mfa_recovery_codes = "\n".join(hashlib.sha256(code.encode()).hexdigest() for code in codes)
+    db.commit()
+    send_security_notice(current_user.email, "SCNA MFA enabled", "Multi-factor authentication was enabled for your SCNA account.")
+    return {"message": "MFA enabled.", "recovery_codes": codes}
+
+
+@router.post("/mfa/disable")
+def disable_mfa(payload: MFACode, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.mfa_secret or not verify_totp(current_user.mfa_secret, payload.code):
+        raise HTTPException(status_code=400, detail="Invalid MFA code.")
+    current_user.mfa_enabled = False
+    current_user.mfa_secret = None
+    current_user.mfa_recovery_codes = None
+    db.commit()
+    send_security_notice(current_user.email, "SCNA MFA disabled", "Multi-factor authentication was disabled for your SCNA account.")
+    return {"message": "MFA disabled."}

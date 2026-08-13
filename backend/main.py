@@ -1,11 +1,13 @@
 import asyncio
 import logging
 import os
+import re
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.database.database import Base, engine, SessionLocal
 from backend.database.models import User
@@ -41,6 +43,7 @@ from backend.models.verification_document import VerificationDocument
 from backend.routers import reviewer
 from backend.routers import faculty
 from backend.routers import admin
+from backend.routers import ai
 from backend.routers.dashboard import run_due_reminders
 
 logger = logging.getLogger(__name__)
@@ -108,6 +111,9 @@ def apply_sqlite_schema_migration() -> None:
             "account_status": "VARCHAR NOT NULL DEFAULT 'Active'",
             "warning_count": "INTEGER NOT NULL DEFAULT 0",
             "moderation_reason": "TEXT",
+            "mfa_enabled": "BOOLEAN NOT NULL DEFAULT 0",
+            "mfa_secret": "VARCHAR",
+            "mfa_recovery_codes": "TEXT",
         },
     }
     with engine.begin() as connection:
@@ -186,6 +192,7 @@ app.include_router(verification.router)
 app.include_router(reviewer.router)
 app.include_router(faculty.router)
 app.include_router(admin.router)
+app.include_router(ai.router)
 # Home
 
 @app.get("/")
@@ -219,13 +226,56 @@ def apply_publication_review_migration():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR DEFAULT 'Active' NOT NULL",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS warning_count INTEGER DEFAULT 0 NOT NULL",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS moderation_reason TEXT",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN DEFAULT FALSE NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret VARCHAR",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_recovery_codes TEXT",
+        "CREATE TABLE IF NOT EXISTS email_otp_codes (id SERIAL PRIMARY KEY, email VARCHAR NOT NULL, purpose VARCHAR NOT NULL DEFAULT 'login', code_hash VARCHAR NOT NULL, expires_at TIMESTAMP WITH TIME ZONE NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, consumed_at TIMESTAMP WITH TIME ZONE, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)",
+        "CREATE INDEX IF NOT EXISTS ix_email_otp_codes_email ON email_otp_codes(email)",
+        "CREATE TABLE IF NOT EXISTS auth_rate_limits (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE NOT NULL, window_started_at TIMESTAMP WITH TIME ZONE NOT NULL, attempts INTEGER NOT NULL DEFAULT 0)",
         "CREATE TABLE IF NOT EXISTS conference_registrations (id SERIAL PRIMARY KEY, conference_id INTEGER NOT NULL REFERENCES conferences(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, registered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, CONSTRAINT uq_conference_registration UNIQUE (conference_id, user_id))",
         "CREATE TABLE IF NOT EXISTS moderation_events (id SERIAL PRIMARY KEY, target_user_id INTEGER NOT NULL, moderator_id INTEGER REFERENCES users(id) ON DELETE SET NULL, action VARCHAR NOT NULL, reason TEXT, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)",
     )
 
+    alter_column_pattern = re.compile(
+        r"ALTER TABLE (?:\"?)([A-Za-z_][A-Za-z0-9_]*)(?:\"?) ADD COLUMN(?: IF NOT EXISTS)? (?:\"?)([A-Za-z_][A-Za-z0-9_]*)(?:\"?)",
+        re.IGNORECASE,
+    )
+
     with engine.begin() as connection:
+        inspector = inspect(connection)
+        existing_columns = {}
+        for table_name in ("publications", "conferences", "users"):
+            if inspector.has_table(table_name):
+                existing_columns[table_name] = {
+                    column["name"] for column in inspector.get_columns(table_name)
+                }
+
         for statement in statements:
-            connection.execute(text(statement))
+            match = alter_column_pattern.match(statement)
+            if match:
+                table_name, column_name = match.groups()
+                if column_name in existing_columns.get(table_name, set()):
+                    logger.info(
+                        "Skipping already-applied migration column %s.%s",
+                        table_name,
+                        column_name,
+                    )
+                    continue
+
+            try:
+                # Avoid waiting for an unrelated long-running transaction during
+                # import/startup. A failed optional migration is logged and does
+                # not make the API unavailable; the next deployment can retry it.
+                with connection.begin_nested():
+                    connection.execute(text("SET LOCAL lock_timeout = '2s'"))
+                    connection.execute(text(statement))
+            except SQLAlchemyError as exc:
+                logger.warning(
+                    "Optional PostgreSQL migration failed; startup will continue. "
+                    "Statement=%s Error=%s",
+                    statement,
+                    str(exc).splitlines()[0],
+                )
 
 
 apply_publication_review_migration()

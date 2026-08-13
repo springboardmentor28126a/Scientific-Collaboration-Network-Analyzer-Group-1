@@ -33,6 +33,7 @@ import Verification from "./pages/Verification";
 import ProtectedRoute from "./components/ProtectedRoute";
 import VerificationRequests from "./pages/VerificationRequests";
 import Notifications from "./pages/Notifications";
+import ResearchAI from "./pages/ResearchAI";
 
 
 import Citations from "./pages/Citations";
@@ -85,6 +86,8 @@ function App() {
             </ProtectedRoute>
         }
     />
+
+    <Route path="/research-ai" element={<ProtectedRoute><ResearchAI /></ProtectedRoute>} />
 
     <Route
         path="/researchers"

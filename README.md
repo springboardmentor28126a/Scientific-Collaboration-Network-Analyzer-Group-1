@@ -61,7 +61,7 @@ SCNA provides one place for academic collaboration workflows:
 | Verification workflow | Implemented | Verification document upload/status/pending/approve/reject routes and pages |
 | Role-based administration | Implemented | Faculty, reviewer, institution-admin, and system-admin routes/pages |
 | Dashboard analytics/network graph | Implemented | `/analytics/overview`, `/analytics/network`, dashboard pages |
-| AI-based researcher recommendations | Planned | No AI/recommendation implementation was verified in the current repository |
+| AI Research Assistant and recommendations | Partially implemented | `/ai/status`, `/ai/chat`, `/ai/recommendations`, and `/research-ai`; requires an AI provider for generated responses |
 
 The historical names “collaborations” and “workspace” are represented by friend-request collaboration records and research-group/private workspace pages. A legacy frontend `Workspace.jsx` also references `/collaboration/workspace/{id}`, but no matching backend router was verified; that legacy path should not be treated as a complete active workflow.
 
@@ -115,8 +115,8 @@ The historical names “collaborations” and “workspace” are represented by
 | Backend | Python, FastAPI, Uvicorn |
 | Validation | Pydantic |
 | ORM/database access | SQLAlchemy |
-| Local database | SQLite |
-| Production database option | PostgreSQL, including Supabase Postgres |
+| Development database fallback | SQLite only for local fallback |
+| Production database | Supabase PostgreSQL through `SCNA_DATABASE_URL` |
 | Authentication | JWT with `python-jose`, bcrypt/password hashing |
 | File storage | Supabase Storage for group files; local `uploads/papers` for paper files |
 | API communication | REST/JSON with CORS configured for local Vite ports |
@@ -465,7 +465,7 @@ The repository supports these objectives:
 - support document verification and role-based administration; and
 - summarize publication and collaboration activity through dashboards.
 
-An independent recommendation engine, AI matching, and production-scale performance are not verified in this repository.
+The AI assistant and database-backed researcher matching are implemented. Generated explanations require configured AI credentials; database recommendations remain available from authorized SCNA records.
 
 ## System architecture
 
@@ -476,10 +476,13 @@ flowchart TD
     A --> R[FastAPI REST routers]
     R --> V[Pydantic schemas and\nFastAPI dependencies]
     V --> S[SQLAlchemy models/services]
-    S --> D[(SQLite in development\nPostgreSQL when configured)]
+    S --> D[(Supabase PostgreSQL in production\nSQLite only as local fallback)]
     S --> X[Supabase Storage\ngroup-files bucket]
     R --> N[60-second reminder scheduler]
     N --> D
+    R --> E[Configurable SMTP email service]
+    R --> C[Development CAPTCHA or production provider]
+    R --> I[Configurable AI provider]
 ```
 
 The current root ASGI entry point is `main.py`, which imports `app` from `backend.main`. The backend creates tables at startup and applies limited compatibility migrations. The database backend is selected by `SCNA_DATABASE_URL`/`DATABASE_URL`; it defaults to SQLite only in development. Supabase Storage is used by the group-file service.
@@ -493,6 +496,7 @@ The current root ASGI entry point is `main.py`, which imports `app` from `backen
 - `backend/schemas/` contains Pydantic request and response contracts.
 - `backend/routers/` separates the REST API by feature. Routers use database sessions and dependencies for authentication, verification, permissions, and ownership checks.
 - `backend/services/` contains publication, researcher, authentication, and storage-related service logic.
+- `backend/services/email_service.py` sends configurable security emails; `captcha_service.py` supports development challenges and production provider verification; `mfa_service.py` implements TOTP; and `ai_service.py` calls an OpenAI-compatible provider without sending secrets.
 - `backend/utils/` contains JWT security, bcrypt helpers, role permissions, dependency checks, and Supabase helpers.
 
 The normal request path is: route matching → dependency authentication/authorization → Pydantic validation → SQLAlchemy query or service operation → commit/response. FastAPI raises `HTTPException` for invalid credentials, missing records, forbidden actions, and validation/business-rule failures. SQLAlchemy provides parameterized ORM queries rather than manually concatenated SQL for normal data operations.
@@ -929,3 +933,22 @@ The repository now contains Dockerfiles and a Compose definition for local Docke
 ## License
 
 This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full text.
+## Authentication and security additions
+
+SCNA supports bcrypt password registration/login, generic authentication errors, rate-limited passwordless email OTP login, and authenticator-app TOTP MFA. OTP and security email delivery use the configured SMTP service.
+
+CAPTCHA has two explicit modes. `CAPTCHA_MODE=development` uses a server-generated, expiring, single-use CAPTCHA challenge at `GET /auth/captcha` for local testing. `CAPTCHA_MODE=recaptcha` renders the Google reCAPTCHA v2 checkbox in the browser and verifies its token server-side using `CAPTCHA_SECRET_KEY`; the secret is never sent to the browser. `CAPTCHA_SITE_KEY` is public/frontend-safe and is supplied as a Vite Docker build argument. `CAPTCHA_REQUIRED=true` blocks registration, password login, and OTP requests until CAPTCHA is valid. Development CAPTCHA must not be treated as production protection.
+
+If SMTP is not configured, SCNA returns a safe email-delivery failure and does not authenticate an OTP request without sending the code. Configure `SMTP_*`, `CAPTCHA_*`, and `AI_*` values in the ignored environment file; never place credentials in this repository.
+
+Provider setup requires real values only in ignored `backend/.env`: SMTP host/port/username/password/from address (with `SMTP_USE_TLS` or `SMTP_USE_SSL`), production CAPTCHA site/secret keys and verification URL, and AI provider/base URL/API key/model. `GET /auth/email/status` and `GET /ai/status` expose configuration status only, never credentials. Provider-backed flows are not live until those values are configured.
+
+Registration passwords must be at least 8 characters. No uppercase, lowercase, number, or special-character rule is required.
+
+## SCNA Research AI
+
+Verified users can open `/research-ai` to ask research questions. `/ai/status` returns only availability and a safe reason such as `not_configured`; it never exposes environment variable names, keys, or stack traces. The backend sends only the authenticated user’s permitted profile/publication context to the configured OpenAI-compatible provider. `/ai/recommendations` returns candidate researchers from SCNA database records and labels the source; an unconfigured AI provider returns a professional unavailable state rather than a fabricated answer.
+
+## Testing
+
+Run backend contract tests with `python -m unittest discover backend/tests` and build the client with `npm run build` from `client/`. Production Docker deployments require Supabase PostgreSQL through `SCNA_DATABASE_URL`; SQLite is retained only as the legacy local-development fallback.
