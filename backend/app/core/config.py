@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
+    TURNSTILE_SECRET: str
+
     UPLOAD_DIR: str = "uploads/publications"
 
     # Email Settings

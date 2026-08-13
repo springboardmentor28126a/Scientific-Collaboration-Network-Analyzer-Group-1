@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -7,10 +7,13 @@ from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import ChangePasswordRequest, UserResponse
 from app.services.auth_service import authenticate_user
 from app.services.user_service import change_password
+from app.services.turnstile_service import verify_turnstile_token
 from app.core.dependencies import get_current_user
 from app.models.user import User
 
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
 
 ERROR_MESSAGES = {
     "pending_approval": "Your account is pending approval from your institution admin.",
@@ -21,8 +24,32 @@ ERROR_MESSAGES = {
 
 # Existing login endpoint (used by frontend)
 @router.post("/login", response_model=TokenResponse)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    result = authenticate_user(db, login_data.username, login_data.password)
+async def login(
+    login_data: LoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    # Get client IP address
+    client_ip = request.client.host if request.client else None
+
+    # Verify Cloudflare Turnstile CAPTCHA
+    captcha_valid = await verify_turnstile_token(
+        login_data.captcha_token,
+        client_ip,
+    )
+
+    if not captcha_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CAPTCHA verification failed. Please try again.",
+        )
+
+    # Existing authentication logic
+    result = authenticate_user(
+        db,
+        login_data.username,
+        login_data.password,
+    )
 
     if result is None:
         raise HTTPException(
@@ -33,13 +60,16 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     if "error" in result:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=ERROR_MESSAGES.get(result["error"], "Login not allowed."),
+            detail=ERROR_MESSAGES.get(
+                result["error"],
+                "Login not allowed.",
+            ),
         )
 
     return result
 
 
-# New login endpoint (used only by Swagger Authorize)
+# Login endpoint used only by Swagger Authorize
 @router.post("/swagger-login", response_model=TokenResponse)
 def swagger_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -60,7 +90,10 @@ def swagger_login(
     if "error" in result:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=ERROR_MESSAGES.get(result["error"], "Login not allowed."),
+            detail=ERROR_MESSAGES.get(
+                result["error"],
+                "Login not allowed.",
+            ),
         )
 
     return result
