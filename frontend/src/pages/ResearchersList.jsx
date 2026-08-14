@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../config/api';
 import Pagination from '../components/Pagination';
 import '../styles/cards.css';
+import { AuthContext } from '../context/AuthContext';
+import CollaborationRequestModal from '../components/CollaborationRequestModal';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -11,6 +13,8 @@ const ResearchersList = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [collaborationTarget, setCollaborationTarget] = useState(null);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     fetchResearchers();
@@ -89,6 +93,7 @@ const ResearchersList = () => {
                     <Link to={`/researchers/${researcher.id}`} className="btn btn-sm btn-primary">
                       <i className="bi bi-eye"></i> View Profile
                     </Link>
+                    {['researcher', 'system_admin'].includes(user?.role) && researcher.user_id !== user?.id && <button className="btn btn-sm btn-outline-primary ms-2" onClick={() => setCollaborationTarget({ user_id: researcher.user_id, name: fullName })}>Collaborate</button>}
                   </div>
                 </div>
               </div>
@@ -100,6 +105,7 @@ const ResearchersList = () => {
       </div>
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      {collaborationTarget && <CollaborationRequestModal researcher={collaborationTarget} onClose={() => setCollaborationTarget(null)} />}
     </div>
   );
 };

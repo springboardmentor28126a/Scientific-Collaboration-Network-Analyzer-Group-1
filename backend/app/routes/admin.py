@@ -1,14 +1,74 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from datetime import datetime
 from ..database import get_db
-from ..models import User, UserRole, Institution, ResearcherProfile
-from ..schemas import UserCreate, UserResponse
+from ..models import User, UserRole, Institution, ResearcherProfile, RoleRequest
+from ..schemas import UserCreate, UserResponse, RoleRequestDecision
 from ..auth import get_current_user, hash_password
 from ..config import settings
+from ..notification_service import create_notification
 from fastapi import Header
 from ..models import UserRole
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+def require_admin(current_user):
+    if current_user.role != UserRole.SYSTEM_ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+
+def role_request_data(item):
+    profile = item.user.researcher_profile if item.user else None
+    return {
+        "id": item.id, "user_id": item.user_id, "user_name": item.user.full_name if item.user else None,
+        "email": item.user.email if item.user else None, "requested_role": item.requested_role.value,
+        "status": item.status, "rejection_reason": item.rejection_reason, "submitted_at": item.submitted_at,
+        "reviewed_at": item.reviewed_at, "reviewed_by": item.reviewed_by,
+        "profile": {"id": profile.id, "institution_id": profile.institution_id, "department": profile.department,
+                    "designation": profile.designation, "skills": profile.skills, "research_interests": profile.research_interests,
+                    "bio": profile.bio, "profile_picture_url": profile.profile_picture_url} if profile else None,
+    }
+
+@router.get("/role-requests")
+def list_role_requests(request_status: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_admin(current_user)
+    query = db.query(RoleRequest).options(joinedload(RoleRequest.user).joinedload(User.researcher_profile))
+    if request_status:
+        query = query.filter(RoleRequest.status == request_status)
+    return [role_request_data(item) for item in query.order_by(RoleRequest.submitted_at.desc()).all()]
+
+@router.get("/role-requests/{request_id}")
+def get_role_request(request_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_admin(current_user)
+    item = db.query(RoleRequest).options(joinedload(RoleRequest.user).joinedload(User.researcher_profile)).filter(RoleRequest.id == request_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Role request not found")
+    data = role_request_data(item)
+    data["history"] = [role_request_data(request) for request in db.query(RoleRequest).options(joinedload(RoleRequest.user).joinedload(User.researcher_profile)).filter(RoleRequest.user_id == item.user_id).order_by(RoleRequest.submitted_at.desc()).all()]
+    return data
+
+@router.patch("/role-requests/{request_id}")
+def decide_role_request_record(request_id: int, decision: RoleRequestDecision, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_admin(current_user)
+    item = db.get(RoleRequest, request_id)
+    if not item or item.status != "pending":
+        raise HTTPException(status_code=404, detail="Pending role request not found")
+    if not decision.approved and not (decision.rejection_reason or "").strip():
+        raise HTTPException(status_code=422, detail="A rejection reason is required")
+    user = db.get(User, item.user_id)
+    item.status = "approved" if decision.approved else "rejected"
+    item.rejection_reason = None if decision.approved else decision.rejection_reason.strip()
+    item.reviewed_at = datetime.utcnow(); item.reviewed_by = current_user.id
+    if decision.approved:
+        user.role = item.requested_role
+        if user.role == UserRole.INSTITUTION_ADMIN and user.researcher_profile:
+            user.assigned_institution_id = user.researcher_profile.institution_id
+        user.requested_role = None; user.role_request_status = "approved"
+        create_notification(db, user.id, "Role request approved", f"Your {item.requested_role.value.replace('_', ' ')} role request has been approved.", "role_request_approved")
+    else:
+        user.requested_role = item.requested_role.value; user.role_request_status = "rejected"
+        create_notification(db, user.id, "Role request rejected", "Your role request was not approved. Review the reason, update your profile, and resubmit.", "role_request_rejected")
+    db.commit()
+    return role_request_data(item)
 
 @router.get("/users", response_model=list[UserResponse])
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

@@ -22,7 +22,10 @@ import PublicationCreate from './pages/PublicationCreate';
 import PublicationDetails from './pages/PublicationDetails';
 import ConferencesList from './pages/ConferencesList';
 import ConferenceCreate from './pages/ConferenceCreate';
-import ReviewQueue from './pages/ReviewQueue';
+import ReviewerDashboard from './pages/ReviewerDashboard';
+import AssignedReviews from './pages/AssignedReviews';
+import ReviewDetails from './pages/ReviewDetails';
+import ReviewHistory from './pages/ReviewHistory';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import CollaborationHub from './pages/CollaborationHub';
@@ -81,6 +84,10 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="/reviewer/dashboard" element={<PrivateRoute allowedRoles={['reviewer']}><ReviewerDashboard /></PrivateRoute>} />
+            <Route path="/reviews/assigned" element={<PrivateRoute allowedRoles={['reviewer', 'system_admin']}><AssignedReviews /></PrivateRoute>} />
+            <Route path="/reviews/history" element={<PrivateRoute allowedRoles={['reviewer', 'system_admin']}><ReviewHistory /></PrivateRoute>} />
+            <Route path="/reviews/:id" element={<PrivateRoute allowedRoles={['reviewer', 'system_admin']}><ReviewDetails /></PrivateRoute>} />
             <Route
               path="/profile"
               element={
@@ -149,7 +156,7 @@ function App() {
             <Route
               path="/publications"
               element={
-                <PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}>
+                <PrivateRoute allowedRoles={['researcher', 'institution_admin', 'system_admin']}>
                   <PublicationsList />
                 </PrivateRoute>
               }
@@ -157,7 +164,7 @@ function App() {
             <Route
               path="/publications/:id"
               element={
-                <PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}>
+                <PrivateRoute allowedRoles={['researcher', 'institution_admin', 'system_admin']}>
                   <PublicationDetails />
                 </PrivateRoute>
               }
@@ -175,14 +182,6 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}>
                   <ConferencesList />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/review-queue"
-              element={
-                <PrivateRoute allowedRoles={['reviewer', 'system_admin']}>
-                  <ReviewQueue />
                 </PrivateRoute>
               }
             />
@@ -210,9 +209,9 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route path="/collaborations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><CollaborationHub /></PrivateRoute>} />
-            <Route path="/collaborations/projects/:id" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><ProjectDetails /></PrivateRoute>} />
-            <Route path="/citations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><Citations /></PrivateRoute>} />
+            <Route path="/collaborations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'system_admin']}><CollaborationHub /></PrivateRoute>} />
+            <Route path="/collaborations/projects/:id" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'system_admin']}><ProjectDetails /></PrivateRoute>} />
+            <Route path="/citations" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'system_admin']}><Citations /></PrivateRoute>} />
             <Route path="/notifications" element={<PrivateRoute allowedRoles={['researcher', 'institution_admin', 'reviewer', 'system_admin']}><Notifications /></PrivateRoute>} />
             <Route
               path="/access-denied"

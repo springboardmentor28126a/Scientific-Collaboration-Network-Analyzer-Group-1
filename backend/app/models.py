@@ -83,6 +83,7 @@ class User(Base):
     collaboration_requests_sent = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.sender_id", back_populates="sender")
     collaboration_requests_received = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.receiver_id", back_populates="receiver")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    role_requests = relationship("RoleRequest", foreign_keys="RoleRequest.user_id", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User {self.username}>"
@@ -126,6 +127,23 @@ class ResearcherProfile(Base):
     
     def __repr__(self):
         return f"<ResearcherProfile {self.user.username}>"
+
+
+class RoleRequest(Base):
+    """Auditable role approval history; User fields remain a compatibility summary."""
+    __tablename__ = "role_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    requested_role = Column(Enum(UserRole), nullable=False)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    rejection_reason = Column(Text, nullable=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    reviewed_at = Column(DateTime, nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id], back_populates="role_requests")
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
 
 class Publication(Base):
     __tablename__ = "publications"
@@ -185,8 +203,12 @@ class ConferenceRegistration(Base):
 
 
 class ReviewStatus(str, enum.Enum):
-    PENDING = "pending"
-    COMPLETED = "completed"
+    # The original PostgreSQL enum persisted member names in uppercase. Keep
+    # that storage contract so existing PENDING/COMPLETED records remain valid.
+    PENDING = "PENDING"
+    DRAFT = "DRAFT"
+    COMPLETED = "COMPLETED"
+    REVISION_REQUIRED = "REVISION_REQUIRED"
 
 
 class Review(Base):
@@ -200,6 +222,9 @@ class Review(Base):
     recommendation = Column(String, nullable=True)  # accept / reject / undecided
     file_path = Column(String, nullable=True)
     status = Column(Enum(ReviewStatus), default=ReviewStatus.PENDING)
+    due_date = Column(DateTime, nullable=True)
+    submitted_at = Column(DateTime, nullable=True)
+    criteria_scores = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -288,11 +313,20 @@ class Citation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_verified = Column(Boolean, default=False)
     is_flagged = Column(Boolean, default=False)
+    status = Column(String(24), nullable=False, default="pending", index=True)
+    verified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    verification_note = Column(Text, nullable=True)
+    rejected_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    rejected_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
     __table_args__ = (UniqueConstraint("citing_publication_id", "cited_publication_id", name="uq_citation"),)
 
     citing_publication = relationship("Publication", foreign_keys=[citing_publication_id], back_populates="citations_made")
     cited_publication = relationship("Publication", foreign_keys=[cited_publication_id], back_populates="citations_received")
     creator = relationship("User", foreign_keys=[created_by_id])
+    verifier = relationship("User", foreign_keys=[verified_by])
+    rejecter = relationship("User", foreign_keys=[rejected_by])
 
 
 class Reference(Base):

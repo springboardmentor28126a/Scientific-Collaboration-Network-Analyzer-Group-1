@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Any
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional, List, Any, Dict
 from datetime import datetime, date
 from .models import UserRole, PublicationType, PublicationStatus, ConferenceStatus, ProjectMemberStatus, CollaborationRequestStatus, ReferenceType
 
@@ -83,6 +83,10 @@ class ResearcherProfileResponse(ResearcherProfileBase):
 class RoleRequest(BaseModel):
     requested_role: UserRole
 
+class RoleRequestDecision(BaseModel):
+    approved: bool
+    rejection_reason: Optional[str] = None
+
 class PublicationBase(BaseModel):
     title: str
     abstract: Optional[str] = None
@@ -155,9 +159,22 @@ class CitationResponse(BaseModel):
     cited_title: Optional[str] = None
     is_verified: bool
     is_flagged: bool
+    status: str
+    verified_by: Optional[int] = None
+    verified_at: Optional[datetime] = None
+    verification_note: Optional[str] = None
+    rejected_by: Optional[int] = None
+    rejected_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+class CitationDecision(BaseModel):
+    note: Optional[str] = None
+
+class CitationRejection(BaseModel):
+    reason: str
 
 
 class ReferenceCreate(BaseModel):
@@ -174,10 +191,47 @@ class ReferenceCreate(BaseModel):
     doi: Optional[str] = None
     url: Optional[str] = None
 
+    @field_validator("doi")
+    @classmethod
+    def validate_doi(cls, value):
+        if not value:
+            return value
+        import re
+        value = value.strip()
+        if not re.fullmatch(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+", value, re.IGNORECASE):
+            raise ValueError("DOI must use the format 10.xxxx/identifier")
+        return value
 
-class ReferenceResponse(ReferenceCreate):
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value):
+        if not value:
+            return value
+        from urllib.parse import urlparse
+        value = value.strip()
+        if urlparse(value).scheme not in {"http", "https"} or not urlparse(value).netloc:
+            raise ValueError("URL must be a valid http or https address")
+        return value
+
+
+class ReferenceResponse(BaseModel):
     id: int
     publication_id: int
+    title: str
+    reference_type: Optional[ReferenceType] = ReferenceType.JOURNAL
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    conference: Optional[str] = None
+    publisher: Optional[str] = None
+    year: Optional[int] = None
+    volume: Optional[str] = None
+    issue: Optional[str] = None
+    pages: Optional[str] = None
+    # Read responses deliberately do not run input validators. Older records
+    # may contain an incomplete DOI or URL; they should be viewable and
+    # correctable, not make a publication-details request fail with HTTP 500.
+    doi: Optional[str] = None
+    url: Optional[str] = None
     is_verified: bool
     is_flagged: bool
 
@@ -230,7 +284,7 @@ class ProjectResponse(ProjectCreate):
 
 class CollaborationRequestCreate(BaseModel):
     receiver_id: int
-    project_id: Optional[int] = None
+    project_id: int
     institution_id: Optional[int] = None
     collaboration_type: Optional[str] = "Research"
     message: Optional[str] = None
@@ -322,7 +376,18 @@ class DashboardStats(BaseModel):
     recent_users: Optional[List[dict[str, Any]]] = None
     pending_reviews: Optional[int] = None
     completed_reviews: Optional[int] = None
+    under_review_count: Optional[int] = None
+    revision_required_count: Optional[int] = None
+    recent_review_assignments: Optional[List[dict[str, Any]]] = None
     h_index: Optional[int] = None
+    active_users_count: Optional[int] = None
+    pending_role_requests_count: Optional[int] = None
+    new_users_this_month: Optional[int] = None
+    new_publications_this_month: Optional[int] = None
+    new_collaborations_this_month: Optional[int] = None
+    citations_count: Optional[int] = None
+    pending_requests_count: Optional[int] = None
+    institution_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -332,9 +397,15 @@ class ReviewBase(BaseModel):
     rating: Optional[int] = None
     comments: Optional[str] = None
     recommendation: Optional[str] = None
+    criteria_scores: Optional[Dict[str, int]] = None
 
 class ReviewCreate(ReviewBase):
     pass
+
+class ReviewAssignmentCreate(BaseModel):
+    publication_id: int
+    reviewer_id: int
+    due_date: Optional[datetime] = None
 
 class ReviewResponse(ReviewBase):
     id: int
@@ -343,6 +414,14 @@ class ReviewResponse(ReviewBase):
     file_path: Optional[str] = None
     status: str
     created_at: datetime
+    creator_name: Optional[str] = None
+    citation_count: int = 0
+    total_citation_count: int = 0
+    updated_at: Optional[datetime] = None
+    due_date: Optional[datetime] = None
+    submitted_at: Optional[datetime] = None
+    publication_title: Optional[str] = None
+    authors: Optional[List[str]] = None
 
     class Config:
         from_attributes = True

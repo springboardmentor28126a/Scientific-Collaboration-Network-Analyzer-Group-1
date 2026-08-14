@@ -8,6 +8,7 @@ const ProfileView = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [roleRequests, setRoleRequests] = useState([]);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -16,8 +17,8 @@ const ProfileView = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get('/researchers/profile/me');
-      setProfile(response.data);
+      const [response, requestsResponse] = await Promise.all([api.get('/researchers/profile/me'), api.get('/researchers/profile/me/role-requests')]);
+      setProfile(response.data); setRoleRequests(requestsResponse.data || []);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to fetch profile');
     } finally {
@@ -26,6 +27,13 @@ const ProfileView = () => {
   };
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
+  const latestRoleRequest = roleRequests[0];
+  const resubmit = async () => {
+    try {
+      await api.post(`/researchers/profile/me/role-requests/${latestRoleRequest.id}/resubmit`);
+      await fetchProfile();
+    } catch (err) { setError(err.response?.data?.detail || 'Unable to resubmit role request'); }
+  };
 
   return (
     <div className="container py-5">
@@ -50,7 +58,8 @@ const ProfileView = () => {
                 </Link>
               </div>
               <div className="card-body">
-                {user?.role_request_status === 'pending' && <div className="alert alert-warning">Role request for <strong>{user?.requested_role?.replace('_', ' ')}</strong> is awaiting administrator approval. Your current role remains researcher.</div>}
+                {latestRoleRequest?.status === 'pending' && <div className="alert alert-warning">Role request for <strong>{latestRoleRequest.requested_role?.replace('_', ' ')}</strong> is awaiting administrator approval. Your current role remains researcher.</div>}
+                {latestRoleRequest?.status === 'rejected' && <div className="alert alert-danger"><h5>Role Request Status: Rejected</h5><p className="mb-2">{latestRoleRequest.rejection_reason}</p><Link className="btn btn-outline-primary btn-sm me-2" to="/profile/edit">Edit Profile</Link><button className="btn btn-primary btn-sm" onClick={resubmit}>Resubmit Request</button></div>}
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <strong><i className="bi bi-building"></i> Department:</strong>
@@ -65,6 +74,7 @@ const ProfileView = () => {
                   <strong><i className="bi bi-building"></i> Institution:</strong>
                   <p>{profile.institution_id ? <Link to={`/institutions/${profile.institution_id}`}>{profile.institution_name || 'View institution'}</Link> : <span className="text-muted">No institution selected</span>}</p>
                 </div>
+                {roleRequests.length > 0 && <div className="mt-4"><h5>Role Request History</h5><ul className="list-group">{roleRequests.map((item) => <li className="list-group-item" key={item.id}><strong>{item.requested_role.replace('_', ' ')}</strong> <span className={`badge ms-2 ${item.status === 'approved' ? 'bg-success' : item.status === 'rejected' ? 'bg-danger' : 'bg-warning text-dark'}`}>{item.status}</span><div className="small text-muted">Submitted {new Date(item.submitted_at).toLocaleString()}{item.reviewed_at ? ` · Reviewed ${new Date(item.reviewed_at).toLocaleString()}` : ''}</div>{item.rejection_reason && <div className="small mt-1">Reason: {item.rejection_reason}</div>}</li>)}</ul></div>}
                 <div className="mb-3">
                   <strong><i className="bi bi-file-text"></i> Bio:</strong>
                   <p>{profile.bio || 'N/A'}</p>

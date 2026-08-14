@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../config/api';
 import { WebSocketContext } from '../context/WebSocketContext';
+import { Link } from 'react-router-dom';
 
 const typeIcon = (type) => ({ 
   project_member_added: 'bi-person-plus', 
@@ -121,6 +122,7 @@ export default function Notifications() {
                     <small className="text-muted">{new Date(n.created_at).toLocaleString()}</small>
                   </div>
                   <div>{n.message}</div>
+                  {n.type === 'collaboration_request' && <Link to="/collaborations?tab=incoming" className="btn btn-sm btn-outline-primary mt-2">Open collaboration request</Link>}
                   <small className="text-muted">{n.type.replaceAll('_',' ')}</small>
                 </div>
                 <div className="text-nowrap">

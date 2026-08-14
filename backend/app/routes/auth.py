@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..database import get_db, ensure_database_sequences
-from ..models import User, UserRole
+from ..models import User, UserRole, RoleRequest
 from fastapi.security import OAuth2PasswordRequestForm
 from ..schemas import UserCreate, Token, UserResponse
 from ..auth import hash_password, verify_password, create_access_token
@@ -72,14 +72,23 @@ def register(user: UserCreate, background_tasks: BackgroundTasks, db: Session = 
                 db.rollback()
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
             db.refresh(retry_user)
+            if normalized_requested_role:
+                db.add(RoleRequest(user_id=retry_user.id, requested_role=UserRole(normalized_requested_role), status="pending"))
+                db.commit()
             return retry_user
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username already registered")
     db.refresh(db_user)
+    if normalized_requested_role:
+        db.add(RoleRequest(user_id=db_user.id, requested_role=UserRole(normalized_requested_role), status="pending"))
+        db.commit()
     
     # Notify system admins about the new user
     system_admins = db.query(User).filter(User.role == UserRole.SYSTEM_ADMIN).all()
     for admin in system_admins:
         create_notification(db, admin.id, "New researcher registered", f"A new user '{db_user.username}' has registered.", "user_registered", background_tasks)
+        if normalized_requested_role:
+            create_notification(db, admin.id, "New role request", f"{db_user.full_name} requested the {normalized_requested_role.replace('_', ' ')} role.", "role_request", background_tasks)
+    db.commit()
     
     return db_user
 

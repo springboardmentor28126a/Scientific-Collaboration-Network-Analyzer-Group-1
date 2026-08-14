@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../config/api';
 import { AuthContext } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
@@ -8,9 +8,10 @@ const emptyProject = { title: '', description: '', start_date: '', end_date: '',
 
 export default function CollaborationHub() {
   const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
   const canManageProjects = ['researcher', 'system_admin'].includes(user?.role);
   
-  const [tab, setTab] = useState('projects');
+  const [tab, setTab] = useState(() => searchParams.get('tab') === 'incoming' ? 'incoming' : 'projects');
   
   const [projects, setProjects] = useState([]);
   const [incoming, setIncoming] = useState([]);

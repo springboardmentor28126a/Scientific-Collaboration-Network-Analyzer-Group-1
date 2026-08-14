@@ -4,7 +4,7 @@ import os
 from fastapi.openapi.utils import get_openapi
 from .database import engine, Base, ensure_user_access_columns, ensure_database_sequences
 from .models import User, ResearcherProfile, Institution
-from .routes import auth, researchers, institutions, publications, conferences, reviews, admin, dashboard, collaborations, citations, notifications, reports
+from .routes import auth, researchers, institutions, publications, conferences, reviews, admin, dashboard, collaborations, citations, notifications, reports, ai_recommendations
 
 Base.metadata.create_all(bind=engine)
 ensure_user_access_columns()
@@ -39,6 +39,7 @@ app.include_router(collaborations.router)
 app.include_router(citations.router)
 app.include_router(notifications.router)
 app.include_router(reports.router)
+app.include_router(ai_recommendations.router)
 
 # Files are deliberately not publicly mounted.  Publication downloads go through
 # an authenticated endpoint so private drafts and papers are not exposed by URL.

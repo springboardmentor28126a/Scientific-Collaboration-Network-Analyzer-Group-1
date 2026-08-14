@@ -73,6 +73,19 @@ def ensure_user_access_columns():
             for name, definition in citation_additions.items():
                 if name not in citation_columns:
                     connection.execute(text(f"ALTER TABLE citations ADD COLUMN {name} {definition}"))
+            verification_additions = {
+                "status": "VARCHAR(24) DEFAULT 'pending'",
+                "verified_by": "INTEGER",
+                "verified_at": "TIMESTAMP",
+                "verification_note": "TEXT",
+                "rejected_by": "INTEGER",
+                "rejected_at": "TIMESTAMP",
+                "rejection_reason": "TEXT",
+            }
+            for name, definition in verification_additions.items():
+                if name not in citation_columns:
+                    connection.execute(text(f"ALTER TABLE citations ADD COLUMN {name} {definition}"))
+            connection.execute(text("UPDATE citations SET status = CASE WHEN is_verified THEN 'verified' ELSE 'pending' END WHERE status IS NULL OR status = ''"))
 
     reference_columns = {column["name"] for column in inspect(engine).get_columns("references")} if "references" in inspect(engine).get_table_names() else set()
     reference_additions = {
@@ -91,6 +104,38 @@ def ensure_user_access_columns():
         timestamp_type = "TIMESTAMP" if engine.dialect.name == "postgresql" else "DATETIME"
         with engine.begin() as connection:
             connection.execute(text(f"ALTER TABLE conferences ADD COLUMN updated_at {timestamp_type}"))
+
+    # Review assignments existed before structured review drafts.  Keep older
+    # development databases compatible without creating a parallel table.
+    review_columns = {column["name"] for column in inspect(engine).get_columns("reviews")} if "reviews" in inspect(engine).get_table_names() else set()
+    review_additions = {
+        "due_date": "TIMESTAMP",
+        "submitted_at": "TIMESTAMP",
+        "criteria_scores": "TEXT",
+    }
+    if review_columns:
+        with engine.begin() as connection:
+            if engine.dialect.name == "postgresql":
+                for value in ("DRAFT", "REVISION_REQUIRED"):
+                    connection.execute(text(f"ALTER TYPE reviewstatus ADD VALUE IF NOT EXISTS '{value}'"))
+            for name, definition in review_additions.items():
+                if name not in review_columns:
+                    connection.execute(text(f"ALTER TABLE reviews ADD COLUMN {name} {definition}"))
+        # A previous development build briefly introduced lowercase enum
+        # values. Normalize any rows it created after the new enum values have
+        # been committed (PostgreSQL cannot use a freshly added enum value in
+        # the same transaction).
+        if engine.dialect.name == "postgresql":
+            with engine.begin() as connection:
+                connection.execute(text("""
+                    UPDATE reviews
+                    SET status = CASE status::text
+                        WHEN 'draft' THEN 'DRAFT'::reviewstatus
+                        WHEN 'revision_required' THEN 'REVISION_REQUIRED'::reviewstatus
+                        ELSE status
+                    END
+                    WHERE status::text IN ('draft', 'revision_required')
+                """))
 
 def get_db():
     db = SessionLocal()

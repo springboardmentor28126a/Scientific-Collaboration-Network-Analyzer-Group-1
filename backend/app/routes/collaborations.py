@@ -7,11 +7,16 @@ from datetime import datetime
 from ..auth import get_current_user
 from ..notification_service import create_notification
 from ..database import get_db
-from ..models import CollaborationRequest, CollaborationRequestStatus, CoAuthor, ProjectMember, ProjectMemberStatus, ResearchProject, User, UserRole, Publication
+from ..models import CollaborationRequest, CollaborationRequestStatus, CoAuthor, ProjectMember, ProjectMemberStatus, ResearchProject, ResearcherProfile, User, UserRole, Publication
 from ..schemas import (CollaborationRequestCreate, CollaborationRequestResponse, CollaborationRequestUpdate, CoAuthorCreate,
     CoAuthorResponse, ProjectCreate, ProjectMemberCreate, ProjectMemberResponse, ProjectResponse, ProjectUpdate)
 
-router = APIRouter(prefix="/collaborations", tags=["collaborations"])
+def require_non_reviewer(current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.REVIEWER:
+        raise HTTPException(status_code=403, detail="Reviewer accounts cannot access collaboration management")
+    return current_user
+
+router = APIRouter(prefix="/collaborations", tags=["collaborations"], dependencies=[Depends(require_non_reviewer)])
 
 def project_data(project):
     return {**{c.name: getattr(project, c.name) for c in ResearchProject.__table__.columns},
@@ -35,6 +40,16 @@ def assert_project_manager(project, user):
 
 def institution_id_for(user):
     return user.assigned_institution_id or (user.researcher_profile.institution_id if user.researcher_profile else None)
+
+@router.get("/projects/eligible-to-invite", response_model=List[ProjectResponse])
+def list_projects_eligible_to_invite(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Projects the current user owns and can therefore invite people into."""
+    if current_user.role not in (UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN):
+        raise HTTPException(status_code=403, detail="Only researchers can send collaboration invitations")
+    query = db.query(ResearchProject)
+    if current_user.role != UserRole.SYSTEM_ADMIN:
+        query = query.filter(ResearchProject.created_by == current_user.id)
+    return [project_data(project) for project in query.order_by(ResearchProject.created_at.desc()).all()]
 
 @router.get("/projects", response_model=List[ProjectResponse])
 def list_projects(search: str | None = None, project_status: str | None = Query(None, alias="status"), skip: int = 0, limit: int = Query(50, le=100), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -150,15 +165,16 @@ def send_invitation(payload: CollaborationRequestCreate, background_tasks: Backg
         
     if not db.get(User, payload.receiver_id): 
         raise HTTPException(status_code=404, detail="Receiver not found")
+    if not db.query(ResearcherProfile).filter(ResearcherProfile.user_id == payload.receiver_id).first():
+        raise HTTPException(status_code=404, detail="Target researcher profile not found")
         
-    project = None
-    if payload.project_id:
-        project = db.get(ResearchProject, payload.project_id)
-        if not project: raise HTTPException(status_code=404, detail="Project not found")
-        assert_project_manager(project, current_user)
-        # Check if already a member
-        if db.query(ProjectMember).filter_by(project_id=payload.project_id, researcher_id=payload.receiver_id, status=ProjectMemberStatus.ACTIVE).first():
-            raise HTTPException(status_code=409, detail="Researcher is already an active member")
+    project = db.get(ResearchProject, payload.project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    assert_project_manager(project, current_user)
+    # Check if already a member
+    if db.query(ProjectMember).filter_by(project_id=payload.project_id, researcher_id=payload.receiver_id, status=ProjectMemberStatus.ACTIVE).first():
+        raise HTTPException(status_code=409, detail="Researcher is already an active member of this project")
 
     # Check for duplicate pending requests
     existing = db.query(CollaborationRequest).filter_by(
@@ -166,6 +182,13 @@ def send_invitation(payload: CollaborationRequestCreate, background_tasks: Backg
     ).first()
     if existing:
         raise HTTPException(status_code=409, detail="A pending request already exists")
+    previous = db.query(CollaborationRequest).filter_by(
+        sender_id=current_user.id, receiver_id=payload.receiver_id, project_id=payload.project_id
+    ).first()
+    if previous:
+        if previous.status == CollaborationRequestStatus.ACCEPTED:
+            raise HTTPException(status_code=409, detail="This researcher has already accepted an invitation for this project")
+        raise HTTPException(status_code=409, detail="A previous collaboration request already exists for this project")
 
     item = CollaborationRequest(
         sender_id=current_user.id, 
@@ -179,7 +202,7 @@ def send_invitation(payload: CollaborationRequestCreate, background_tasks: Backg
     db.flush()
     db.refresh(item)
     
-    msg = f"{current_user.full_name} invited you to join project '{project.title}'" if project else f"{current_user.full_name} sent a collaboration request"
+    msg = f"{current_user.full_name} invited you to collaborate on '{project.title}'."
     create_notification(db, payload.receiver_id, "New Collaboration Request", msg, "collaboration_request", background_tasks)
     
     db.commit()
@@ -213,7 +236,7 @@ def accept_request(request_id: int, background_tasks: BackgroundTasks, db: Sessi
         else:
             db.add(ProjectMember(project_id=item.project_id, researcher_id=current_user.id, role="Contributor", status=ProjectMemberStatus.ACTIVE))
             
-    create_notification(db, item.sender_id, "Request Accepted", f"{current_user.full_name} accepted your request.", "request_accepted", background_tasks)
+    create_notification(db, item.sender_id, "Request Accepted", f"{current_user.full_name} accepted your collaboration request for '{item.project.title}'.", "request_accepted", background_tasks)
     db.commit()
     db.refresh(item)
     return collaboration_request_data(item)
@@ -229,7 +252,7 @@ def reject_request(request_id: int, background_tasks: BackgroundTasks, db: Sessi
     item.status = CollaborationRequestStatus.REJECTED
     item.responded_at = datetime.utcnow()
     
-    create_notification(db, item.sender_id, "Request Rejected", f"{current_user.full_name} rejected your request.", "request_rejected", background_tasks)
+    create_notification(db, item.sender_id, "Request Rejected", f"{current_user.full_name} rejected your collaboration request for '{item.project.title}'.", "request_rejected", background_tasks)
     db.commit()
     db.refresh(item)
     return collaboration_request_data(item)

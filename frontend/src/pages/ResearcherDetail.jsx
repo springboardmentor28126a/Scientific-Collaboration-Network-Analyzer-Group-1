@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../config/api';
+import { AuthContext } from '../context/AuthContext';
+import CollaborationRequestModal from '../components/CollaborationRequestModal';
 
 const ResearcherDetail = () => {
   const { id } = useParams();
   const [researcher, setResearcher] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [showCollaboration, setShowCollaboration] = useState(false);
 
   useEffect(() => {
     fetchResearcher();
@@ -94,11 +98,13 @@ const ResearcherDetail = () => {
                 <Link to="/researchers" className="btn btn-secondary">
                   <i className="bi bi-arrow-left"></i> Back to Researchers
                 </Link>
+                {['researcher', 'system_admin'].includes(user?.role) && researcher.user_id !== user?.id && <button className="btn btn-primary ms-2" onClick={() => setShowCollaboration(true)}>Collaborate</button>}
               </div>
             </div>
           </div>
         </div>
       </div>
+      {showCollaboration && <CollaborationRequestModal researcher={{ user_id: researcher.user_id, name: researcher.full_name || 'Researcher' }} onClose={() => setShowCollaboration(false)} />}
     </div>
   );
 };

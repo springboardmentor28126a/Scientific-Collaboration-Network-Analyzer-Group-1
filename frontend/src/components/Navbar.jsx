@@ -51,13 +51,18 @@ const Navbar = () => {
               <>
                 {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
                   <li className="nav-item mx-1">
-                    <Link className="nav-link" to="/dashboard" onClick={closeMenu}>
+                      <Link className="nav-link" to={role === 'reviewer' ? '/reviewer/dashboard' : '/dashboard'} onClick={closeMenu}>
                       <i className="bi bi-speedometer2"></i> Dashboard
                     </Link>
                   </li>
                 )}
 
-                {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
+                {canAccess(role, ['reviewer']) && <>
+                  <li className="nav-item mx-1"><Link className="nav-link" to="/reviews/assigned" onClick={closeMenu}>Assigned Reviews</Link></li>
+                  <li className="nav-item mx-1"><Link className="nav-link" to="/reviews/history" onClick={closeMenu}>Review History</Link></li>
+                </>}
+
+                {canAccess(role, ['researcher', 'institution_admin', 'system_admin']) && (
                   <li className="nav-item mx-1"><Link className="nav-link" to="/collaborations" onClick={closeMenu}><i className="bi bi-diagram-3"></i> Collaborations</Link></li>
                 )}
 
@@ -68,7 +73,7 @@ const Navbar = () => {
                   </Link></li>
                 )}
 
-                {canAccess(role, ['researcher', 'reviewer', 'system_admin']) && (
+                {canAccess(role, ['researcher', 'system_admin']) && (
                   <li className="nav-item mx-1"><Link className="nav-link" to="/citations" onClick={closeMenu}><i className="bi bi-quote"></i> Citations</Link></li>
                 )}
 
@@ -78,7 +83,7 @@ const Navbar = () => {
                   </Link>
                 </li>
 
-                {canAccess(role) && (
+                {canAccess(role, ['researcher', 'institution_admin', 'system_admin']) && (
                   <li className="nav-item mx-1">
                     <Link className="nav-link" to="/researchers" onClick={closeMenu}>
                       <i className="bi bi-people"></i> Researchers
@@ -86,7 +91,7 @@ const Navbar = () => {
                   </li>
                 )}
 
-                {canAccess(role) && (
+                {canAccess(role, ['researcher', 'institution_admin', 'system_admin']) && (
                   <li className="nav-item mx-1">
                     <Link className="nav-link" to="/institutions" onClick={closeMenu}>
                       <i className="bi bi-building"></i> Institutions
@@ -94,7 +99,7 @@ const Navbar = () => {
                   </li>
                 )}
 
-                {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
+                {canAccess(role, ['researcher', 'institution_admin', 'system_admin']) && (
                   <li className="nav-item mx-1">
                     <Link className="nav-link" to="/publications" onClick={closeMenu}>
                       <i className="bi bi-journal-text"></i> Publications
@@ -102,18 +107,10 @@ const Navbar = () => {
                   </li>
                 )}
 
-                {canAccess(role, ['researcher', 'institution_admin', 'reviewer', 'system_admin']) && (
+                {canAccess(role, ['researcher', 'institution_admin', 'system_admin']) && (
                   <li className="nav-item mx-1">
                     <Link className="nav-link" to="/conferences" onClick={closeMenu}>
                       <i className="bi bi-calendar-event"></i> Conferences
-                    </Link>
-                  </li>
-                )}
-
-                {canAccess(role, ['reviewer', 'system_admin']) && (
-                  <li className="nav-item mx-1">
-                    <Link className="nav-link" to="/review-queue" onClick={closeMenu}>
-                      <i className="bi bi-list-check"></i> Review Queue
                     </Link>
                   </li>
                 )}

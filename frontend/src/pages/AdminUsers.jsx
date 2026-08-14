@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../config/api';
 import Pagination from '../components/Pagination';
+import { Link } from 'react-router-dom';
 
 const ITEMS_PER_PAGE = 10;
 const roleLabel = (role) => (role || 'researcher').replaceAll('_', ' ');
@@ -13,13 +14,15 @@ const AdminUsers = () => {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState('');
+  const [roleRequests, setRoleRequests] = useState([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, institutionsRes] = await Promise.all([api.get('/admin/users'), api.get('/institutions/?limit=1000')]);
+      const [usersRes, institutionsRes, requestsRes] = await Promise.all([api.get('/admin/users'), api.get('/institutions/?limit=1000'), api.get('/admin/role-requests?request_status=pending')]);
       setUsers(usersRes.data || []);
       setInstitutions(institutionsRes.data || []);
+      setRoleRequests(requestsRes.data || []);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to fetch users');
     } finally { setLoading(false); }
@@ -32,6 +35,12 @@ const AdminUsers = () => {
   };
   const decideRequest = async (id, approved) => {
     try { await api.put(`/admin/users/${id}/role-request`, null, { params: { approved } }); fetchData(); }
+    catch (err) { alert(err.response?.data?.detail || 'Failed to process role request'); }
+  };
+  const decideRoleRequest = async (request, approved) => {
+    const rejection_reason = approved ? null : window.prompt('Provide a meaningful rejection reason:');
+    if (!approved && !rejection_reason?.trim()) return;
+    try { await api.patch(`/admin/role-requests/${request.id}`, { approved, rejection_reason }); fetchData(); }
     catch (err) { alert(err.response?.data?.detail || 'Failed to process role request'); }
   };
   const assignInstitution = async (id, institutionId) => {
@@ -86,6 +95,8 @@ const AdminUsers = () => {
 
       {loading && <p>Loading...</p>}
       {error && <div className="alert alert-danger">{error}</div>}
+
+      {!loading && <div className="card shadow-sm mb-4"><div className="card-header"><strong>Pending Role Requests</strong></div><div className="list-group list-group-flush">{roleRequests.length ? roleRequests.map((request) => <div className="list-group-item" key={request.id}><div className="d-flex justify-content-between gap-3"><div><strong>{request.user_name}</strong><div className="small text-muted">{request.email} · Submitted {new Date(request.submitted_at).toLocaleString()}</div><div className="mt-1"><span className="badge bg-warning text-dark">Requested: {roleLabel(request.requested_role)}</span>{request.profile ? <span className="small ms-2">{request.profile.department || 'No department'} · {request.profile.skills || 'No skills'}</span> : <span className="small ms-2 text-danger">Profile incomplete</span>}</div></div><div className="text-nowrap">{request.profile && <Link className="btn btn-sm btn-outline-primary me-1" to={`/researchers/${request.profile.id}`}>View Profile</Link>}<button className="btn btn-sm btn-success me-1" onClick={() => decideRoleRequest(request, true)}>Approve</button><button className="btn btn-sm btn-outline-danger" onClick={() => decideRoleRequest(request, false)}>Reject</button></div></div></div>) : <div className="list-group-item text-muted">No pending role requests.</div>}</div></div>}
 
       {!loading && (
         <>

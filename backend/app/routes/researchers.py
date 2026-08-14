@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
-from ..models import User, ResearcherProfile, UserRole
+from ..models import User, ResearcherProfile, UserRole, RoleRequest as RoleRequestModel
 from ..schemas import ResearcherProfileResponse, ResearcherProfileCreate, ResearcherProfileUpdate, RoleRequest
 from ..auth import get_current_user
 
@@ -14,16 +14,48 @@ def request_role_change(
     db: Session = Depends(get_db),
 ):
     """Request an elevated role without changing the user's granted role."""
+    if current_user.role == UserRole.REVIEWER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reviewer role changes must be managed by an administrator")
     if request.requested_role == UserRole.SYSTEM_ADMIN:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="System administrator access cannot be requested")
     if request.requested_role == current_user.role:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already have this role")
     if request.requested_role == UserRole.INSTITUTION_ADMIN and (not current_user.researcher_profile or not current_user.researcher_profile.institution_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Select your institution in your profile before requesting institution administrator access")
+    pending = db.query(RoleRequestModel).filter(RoleRequestModel.user_id == current_user.id, RoleRequestModel.status == "pending").first()
+    if pending:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Your role request is already under review")
     current_user.requested_role = request.requested_role.value
     current_user.role_request_status = "pending"
+    db.add(RoleRequestModel(user_id=current_user.id, requested_role=request.requested_role, status="pending"))
     db.commit()
     return {"detail": "Role request submitted for administrator approval"}
+
+@router.get("/profile/me/role-requests")
+def my_role_requests(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role == UserRole.REVIEWER:
+        return []
+    requests = db.query(RoleRequestModel).filter(RoleRequestModel.user_id == current_user.id).order_by(RoleRequestModel.submitted_at.desc()).all()
+    return [{"id": item.id, "requested_role": item.requested_role.value, "status": item.status, "rejection_reason": item.rejection_reason, "submitted_at": item.submitted_at, "reviewed_at": item.reviewed_at} for item in requests]
+
+@router.post("/profile/me/role-requests/{request_id}/resubmit")
+def resubmit_role_request(request_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role == UserRole.REVIEWER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reviewer role changes must be managed by an administrator")
+    previous = db.get(RoleRequestModel, request_id)
+    if not previous or previous.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Role request not found")
+    if previous.status != "rejected":
+        raise HTTPException(status_code=400, detail="Only rejected role requests can be resubmitted")
+    if db.query(RoleRequestModel).filter(RoleRequestModel.user_id == current_user.id, RoleRequestModel.status == "pending").first():
+        raise HTTPException(status_code=409, detail="Your role request is already under review")
+    if previous.requested_role == UserRole.INSTITUTION_ADMIN and (not current_user.researcher_profile or not current_user.researcher_profile.institution_id):
+        raise HTTPException(status_code=400, detail="Select your institution in your profile before resubmitting")
+    new_request = RoleRequestModel(user_id=current_user.id, requested_role=previous.requested_role, status="pending")
+    current_user.requested_role = previous.requested_role.value
+    current_user.role_request_status = "pending"
+    db.add(new_request); db.commit(); db.refresh(new_request)
+    return {"detail": "Role request resubmitted for administrator approval", "id": new_request.id}
 
 
 def serialize_profile(profile, current_user=None):

@@ -53,7 +53,10 @@ def serialize_publication(publication: Publication):
     data["creator_name"] = publication.creator.full_name if getattr(publication, "creator", None) else None
     # A stable application URL, not a filesystem path.
     data["file_path"] = f"/publications/{publication.id}/file" if publication.file_path else None
-    data["citation_count"] = len(publication.citations_received)
+    data["total_citation_count"] = len(publication.citations_received)
+    # Only reviewed/verified incoming relationships contribute to the official
+    # citation count. Legacy verified rows remain included.
+    data["citation_count"] = sum(1 for citation in publication.citations_received if citation.status == "verified" or citation.is_verified)
     return data
 
 @router.post("/", response_model=PublicationResponse)
@@ -82,8 +85,8 @@ def get_publications(
     if current_user.role in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN]:
         query = db.query(Publication)
     elif current_user.role == UserRole.REVIEWER:
-        # Reviewers may browse submitted work; drafts remain private to their owners.
-        query = db.query(Publication).filter(Publication.status.in_([PublicationStatus.SUBMITTED, PublicationStatus.PUBLISHED]))
+        # Peer reviewers only see papers explicitly assigned to them.
+        query = db.query(Publication).join(Review, Review.publication_id == Publication.id).filter(Review.reviewer_id == current_user.id)
 
     else:
         profile = current_user.researcher_profile
@@ -112,8 +115,10 @@ def get_publication(pub_id: int, db: Session = Depends(get_db), current_user: Us
     publication = db.query(Publication).filter(Publication.id == pub_id).first()
     if not publication:
         raise HTTPException(status_code=404, detail="Publication not found")
-    if current_user.role == UserRole.REVIEWER and publication.status == PublicationStatus.DRAFT:
-        raise HTTPException(status_code=403, detail="Not authorized to view draft publications")
+    if current_user.role == UserRole.REVIEWER:
+        assigned = db.query(Review).filter(Review.publication_id == publication.id, Review.reviewer_id == current_user.id).first()
+        if not assigned:
+            raise HTTPException(status_code=403, detail="This publication is not assigned to you for review")
     if current_user.role not in [UserRole.RESEARCHER, UserRole.SYSTEM_ADMIN] and publication.status == PublicationStatus.DRAFT:
         profile = current_user.researcher_profile
         if publication.created_by_id != current_user.id:
@@ -167,6 +172,8 @@ def download_publication_file(pub_id: int, db: Session = Depends(get_db), curren
     publication = db.query(Publication).filter(Publication.id == pub_id).first()
     if not publication or not publication.file_path:
         raise HTTPException(status_code=404, detail="Publication file not found")
+    if current_user.role == UserRole.REVIEWER and not db.query(Review).filter(Review.publication_id == publication.id, Review.reviewer_id == current_user.id).first():
+        raise HTTPException(status_code=403, detail="This publication is not assigned to you for review")
     # Owners can read drafts; everyone else only gets submitted/published work.
     if publication.created_by_id != current_user.id and publication.status == PublicationStatus.DRAFT:
         raise HTTPException(status_code=403, detail="Draft files are available only to their publisher")

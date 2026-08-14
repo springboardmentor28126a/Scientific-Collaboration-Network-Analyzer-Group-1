@@ -23,6 +23,7 @@ export default function PublicationDetails() {
   const { user } = useContext(AuthContext);
   const [publication, setPublication] = useState(null);
   const [citations, setCitations] = useState([]);
+  const [citedBy, setCitedBy] = useState([]);
   const [references, setReferences] = useState([]);
   const [availablePublications, setAvailablePublications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,13 +37,15 @@ export default function PublicationDetails() {
   const load = async () => {
     try {
       setLoading(true);
-      const [publicationResponse, citationsResponse, publicationsResponse] = await Promise.all([
+      const [publicationResponse, citationsResponse, citedByResponse, publicationsResponse] = await Promise.all([
         api.get(`/publications/${id}`),
         api.get(`/citations?publication_id=${id}`),
+        api.get(`/citations/publications/${id}/cited-by`),
         api.get('/publications/'),
       ]);
       setPublication(publicationResponse.data);
       setCitations(citationsResponse.data || []);
+      setCitedBy(citedByResponse.data || []);
       setAvailablePublications((publicationsResponse.data || []).filter((item) => String(item.id) !== String(id)));
       const referencesResponse = await api.get(`/citations/publications/${id}/references`);
       setReferences(referencesResponse.data || []);
@@ -188,6 +191,8 @@ export default function PublicationDetails() {
                       <strong>{item.title}</strong>
                       <div className="small text-muted">
                         {item.authors ? `${item.authors} · ` : ''}{item.journal || item.conference || item.publisher || item.reference_type}
+                        {item.doi && <a className="ms-2" href={`https://doi.org/${item.doi}`} target="_blank" rel="noreferrer">DOI</a>}
+                        {item.url && <a className="ms-2" href={item.url} target="_blank" rel="noreferrer">Source</a>}
                         {item.year ? ` · ${item.year}` : ''}
                       </div>
                       <div className="mt-2">
@@ -209,7 +214,7 @@ export default function PublicationDetails() {
                 </ul>
               )}
             </>
-          ) : (
+            ) : (
             <>
               {canManage && (
                 <form onSubmit={saveCitation} className="border rounded p-3 mb-4">
@@ -250,6 +255,7 @@ export default function PublicationDetails() {
                   ))}
                 </ul>
               )}
+              <hr /><h6>Cited By ({citedBy.length})</h6>{citedBy.length ? <ul className="list-group mb-3">{citedBy.map((item) => <li className="list-group-item" key={item.id}><Link to={`/publications/${item.citing_publication_id}`}>{item.citing_title || 'Unknown publication'}</Link></li>)}</ul> : <p className="text-muted">No publications cite this work yet.</p>}
             </>
           )}
         </div>
