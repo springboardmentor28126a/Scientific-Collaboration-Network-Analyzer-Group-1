@@ -9,10 +9,19 @@ from app.schemas.researcher import (
     ResearcherUpdate
 )
 
+from app.services.audit_service import create_audit_log
+from app.schemas.audit import AuditLogCreate
+
+
 router = APIRouter(
     prefix="/researchers",
     tags=["Researcher Management"]
 )
+
+
+# =========================
+# CREATE RESEARCHER
+# =========================
 
 @router.post("/", response_model=ResearcherResponse)
 def create_researcher(
@@ -31,26 +40,41 @@ def create_researcher(
         )
 
     new_researcher = Researcher(
-    name=researcher.name,
-    email=researcher.email,
-    university=researcher.university,
-    department=researcher.department,
-    designation=researcher.designation,
-    experience=researcher.experience,
-    phone=researcher.phone,
-    research_interests=researcher.research_interests,
-    skills=researcher.skills,
-    bio=researcher.bio
-)
+        name=researcher.name,
+        email=researcher.email,
+        university=researcher.university,
+        department=researcher.department,
+        designation=researcher.designation,
+        experience=researcher.experience,
+        phone=researcher.phone,
+        research_interests=researcher.research_interests,
+        skills=researcher.skills,
+        bio=researcher.bio
+    )
 
     db.add(new_researcher)
     db.commit()
     db.refresh(new_researcher)
+
+    # Audit notification
+    create_audit_log(
+        db,
+        AuditLogCreate(
+            user_id=None,
+            action="RESEARCHER_ADDED",
+            module="Researcher",
+            description=f"Researcher {new_researcher.name} was added",
+            entity_type="Researcher",
+            entity_id=new_researcher.id
+        )
+    )
+
     return new_researcher
 
-    return {
-        "message": "Researcher created successfully"
-    }
+
+# =========================
+# GET ALL RESEARCHERS
+# =========================
 
 @router.get("/", response_model=list[ResearcherResponse])
 def get_all_researchers(
@@ -58,6 +82,11 @@ def get_all_researchers(
 ):
     researchers = db.query(Researcher).all()
     return researchers
+
+
+# =========================
+# GET RESEARCHER
+# =========================
 
 @router.get("/{researcher_id}", response_model=ResearcherResponse)
 def get_researcher(
@@ -76,6 +105,12 @@ def get_researcher(
         )
 
     return researcher
+
+
+# =========================
+# UPDATE RESEARCHER
+# =========================
+
 @router.put("/{researcher_id}", response_model=ResearcherResponse)
 def update_researcher(
     researcher_id: int,
@@ -106,7 +141,13 @@ def update_researcher(
 
     db.commit()
     db.refresh(researcher)
+
     return researcher
+
+
+# =========================
+# DELETE RESEARCHER
+# =========================
 
 @router.delete("/{researcher_id}")
 def delete_researcher(

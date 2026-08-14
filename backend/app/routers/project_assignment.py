@@ -8,11 +8,19 @@ from app.schemas.project_assignment import (
     ProjectAssignmentUpdate
 )
 
+from app.services.audit_service import create_audit_log
+from app.schemas.audit import AuditLogCreate
+
+
 router = APIRouter(
     prefix="/project-assignments",
     tags=["Project Assignments"]
 )
 
+
+# =========================
+# CREATE ASSIGNMENT
+# =========================
 
 @router.post("/")
 def create_assignment(
@@ -30,11 +38,31 @@ def create_assignment(
     db.commit()
     db.refresh(new_assignment)
 
+    # Audit notification
+    create_audit_log(
+        db,
+        AuditLogCreate(
+            user_id=None,
+            action="RESEARCHER_ADDED_TO_PROJECT",
+            module="Project Assignment",
+            description=(
+                f"Researcher {new_assignment.researcher_id} "
+                f"was added to project {new_assignment.project_id}"
+            ),
+            entity_type="ProjectAssignment",
+            entity_id=new_assignment.id
+        )
+    )
+
     return {
         "message": "Assignment created successfully",
         "assignment": new_assignment
     }
 
+
+# =========================
+# GET ALL ASSIGNMENTS
+# =========================
 
 @router.get("/")
 def get_assignments(
@@ -42,6 +70,10 @@ def get_assignments(
 ):
     return db.query(ProjectAssignment).all()
 
+
+# =========================
+# GET ASSIGNMENT
+# =========================
 
 @router.get("/{assignment_id}")
 def get_assignment(
@@ -63,6 +95,10 @@ def get_assignment(
 
     return assignment
 
+
+# =========================
+# UPDATE ASSIGNMENT
+# =========================
 
 @router.put("/{assignment_id}")
 def update_assignment(
@@ -94,6 +130,10 @@ def update_assignment(
         "message": "Assignment updated successfully"
     }
 
+
+# =========================
+# DELETE ASSIGNMENT
+# =========================
 
 @router.delete("/{assignment_id}")
 def delete_assignment(

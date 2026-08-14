@@ -5,10 +5,20 @@ from app.database import get_db
 from app.models.conference import Conference
 from app.schemas.conference import ConferenceCreate, ConferenceUpdate
 
+from app.services.audit_service import create_audit_log
+from app.schemas.audit import AuditLogCreate
+
+
 router = APIRouter(
     prefix="/conferences",
     tags=["Conference Management"]
 )
+
+
+# =========================
+# CREATE CONFERENCE
+# =========================
+
 @router.post("/")
 def create_conference(
     conference: ConferenceCreate,
@@ -32,18 +42,40 @@ def create_conference(
     db.commit()
     db.refresh(new_conference)
 
+    create_audit_log(
+    db,
+    AuditLogCreate(
+        action="CONFERENCE_ADDED",
+        module="Conference",
+        description=f"Conference '{conference.conference_name}' added",
+        entity_type="Conference",
+        entity_id=new_conference.id
+    )
+)
+
     return {
         "message": "Conference Added Successfully"
     }
+
+
+# =========================
+# GET ALL CONFERENCES
+# =========================
+
 @router.get("/")
-def get_all_conferences(db: Session = Depends(get_db)):
-    print("Before Query")
+def get_all_conferences(
+    db: Session = Depends(get_db)
+):
 
     data = db.query(Conference).all()
 
-    print("After Query")
-
     return data
+
+
+# =========================
+# GET CONFERENCE
+# =========================
+
 @router.get("/{conference_id}")
 def get_conference(
     conference_id: int,
@@ -61,6 +93,12 @@ def get_conference(
         )
 
     return conference
+
+
+# =========================
+# UPDATE CONFERENCE
+# =========================
+
 @router.put("/{conference_id}")
 def update_conference(
     conference_id: int,
@@ -92,9 +130,25 @@ def update_conference(
     db.commit()
     db.refresh(conference)
 
+    create_audit_log(
+    db,
+    AuditLogCreate(
+        action="CONFERENCE_UPDATED",
+        module="Conference",
+        description=f"Conference '{conference.conference_name}' updated",
+        entity_type="Conference",
+        entity_id=conference.id
+    )
+)
     return {
         "message": "Conference Updated Successfully"
     }
+
+
+# =========================
+# DELETE CONFERENCE
+# =========================
+
 @router.delete("/{conference_id}")
 def delete_conference(
     conference_id: int,
@@ -113,7 +167,23 @@ def delete_conference(
 
     db.delete(conference)
     db.commit()
+    
+    conference_name = conference.conference_name
+    conference_id = conference.id
 
+    db.delete(conference)
+    db.commit()
+
+    create_audit_log(
+    db,
+    AuditLogCreate(
+        action="CONFERENCE_DELETED",
+        module="Conference",
+        description=f"Conference '{conference_name}' deleted",
+        entity_type="Conference",
+        entity_id=conference_id
+    )
+)
     return {
-        "message": "Conference Deleted Successfully"
-    }
+    "message": "Conference Deleted Successfully"
+}
