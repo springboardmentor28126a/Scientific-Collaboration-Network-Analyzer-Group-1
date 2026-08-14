@@ -22,6 +22,7 @@ from app.models.project import Project
 from app.models.team import Team
 from app.models.project_assignment import ProjectAssignment
 from app.models.institution_collaboration import InstitutionCollaboration
+from app.models.audit import AuditLog
 from app.routers.citation import router as citation_router
 from app.models.reference import Reference
 
@@ -38,6 +39,7 @@ from app.routers.team import router as team_router
 from app.routers.project_assignment import router as project_assignment_router
 from app.routers.institution_collaboration import router as institution_collaboration_router
 from app.routers.reference import router as reference_router
+from app.routers.audit import router as audit_router
 
 
 
@@ -67,6 +69,7 @@ app.include_router(project_assignment_router)
 app.include_router(institution_collaboration_router)
 app.include_router(citation_router)
 app.include_router(reference_router)
+app.include_router(audit_router)
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 
