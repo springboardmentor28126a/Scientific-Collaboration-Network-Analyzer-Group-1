@@ -123,6 +123,17 @@ async def upload_verification_document(
     db.add(document)
     current_user.verification_status = "Pending"
     current_user.is_verified = False
+    db.flush()
+    system_admin = db.query(User).filter(User.role == "System Admin").first()
+    if system_admin and system_admin.id != current_user.id:
+        db.add(Notification(
+            user_id=system_admin.id,
+            title="Verification request requires attention",
+            message=f"{current_user.name} submitted a verification request.",
+            notification_type="verification_requested",
+            resource_type="verification",
+            resource_id=document.id,
+        ))
     db.commit()
     db.refresh(document)
 

@@ -48,16 +48,6 @@ function reportProviderError(error) {
     });
 }
 
-function reportProviderState(siteKey) {
-    console.info("[SCNA CAPTCHA] Provider state", {
-        mode: "recaptcha",
-        siteKeyPresent: Boolean(siteKey),
-        grecaptchaPresent: Boolean(window.grecaptcha),
-        renderAvailable: Boolean(window.grecaptcha && typeof window.grecaptcha.render === "function"),
-        readyAvailable: Boolean(window.grecaptcha && typeof window.grecaptcha.ready === "function"),
-    });
-}
-
 export default function CaptchaWidget({ onChange, resetSignal = 0 }) {
     const configuredMode = (import.meta.env.VITE_CAPTCHA_MODE || "development").toLowerCase();
     const [config, setConfig] = useState(() => configuredMode === "recaptcha"
@@ -91,7 +81,6 @@ export default function CaptchaWidget({ onChange, resetSignal = 0 }) {
         if (!config || config.mode !== "recaptcha" || !siteKey || !containerRef.current) return undefined;
         let active = true;
         setLoading(true);
-        reportProviderState(siteKey);
         loadScript().then((grecaptcha) => {
             if (!grecaptcha || typeof grecaptcha.render !== "function") throw new Error("Google reCAPTCHA render API is unavailable.");
             if (typeof grecaptcha.ready !== "function") throw new Error("Google reCAPTCHA ready API is unavailable.");

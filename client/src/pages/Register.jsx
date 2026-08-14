@@ -23,6 +23,8 @@ import { RiLockPasswordFill } from "react-icons/ri";
 import "./Register.css";
 import CaptchaWidget from "../components/CaptchaWidget";
 
+const countries = ["India", "United States", "United Kingdom", "Canada", "Australia", "Germany", "France", "Japan", "Singapore", "United Arab Emirates", "South Africa", "Brazil", "China", "Other"];
+
 export default function Register() {
 
     const navigate = useNavigate();
@@ -45,7 +47,7 @@ export default function Register() {
 
     research_interest: "",
 
-    country: ""
+    country: "India"
 
 });
 
@@ -292,7 +294,7 @@ export default function Register() {
 
                     <div className="form-group">
 
-                        <label>Full Name</label>
+                        <label>Full Name <span aria-hidden="true">*</span></label>
 
                         <div className="input-wrapper">
 
@@ -320,7 +322,7 @@ export default function Register() {
 
                     <div className="form-group">
 
-                        <label>Email</label>
+                        <label>Email <span aria-hidden="true">*</span></label>
 
                         <div className="input-wrapper">
 
@@ -348,7 +350,7 @@ export default function Register() {
 
                     <div className="form-group">
 
-                        <label>Password</label>
+                        <label>Password <span aria-hidden="true">*</span></label>
 
                         <div className="input-wrapper">
 
@@ -394,7 +396,7 @@ export default function Register() {
 
                     <div className="form-group">
 
-                        <label>Confirm Password</label>
+                        <label>Confirm Password <span aria-hidden="true">*</span></label>
 
                         <div className="input-wrapper">
 
@@ -441,7 +443,7 @@ export default function Register() {
                     {/* ROLE */}
                     <div className="form-group">
 
-                        <label>Role</label>
+                        <label>Role <span aria-hidden="true">*</span></label>
 
                         <div className="input-wrapper role-wrapper">
 
@@ -538,17 +540,17 @@ export default function Register() {
 
 <div className="form-group">
 
-    <label>Country</label>
+    <label>Country <span aria-hidden="true">*</span></label>
 
     <div className="input-wrapper">
 
-        <input
-            type="text"
+        <select
             name="country"
-            placeholder="India"
             value={formData.country}
             onChange={handleChange}
-        />
+        >
+            {countries.map((country) => <option key={country} value={country}>{country}</option>)}
+        </select>
 
     </div>
 
@@ -568,7 +570,7 @@ export default function Register() {
 
                     {/* REGISTER BUTTON */}
                     <div className="form-group">
-                        <label>CAPTCHA</label>
+                        <label>CAPTCHA {captchaState.captcha?.required && <span aria-hidden="true">*</span>}</label>
                         <CaptchaWidget key={captchaReset} resetSignal={captchaReset} onChange={handleCaptchaChange} />
                     </div>
 
@@ -588,14 +590,6 @@ export default function Register() {
     !formData.password ||
 
     !formData.confirmPassword ||
-
-    !formData.institution.trim() ||
-
-    !formData.department.trim() ||
-
-    !formData.research_interest.trim() ||
-
-    !formData.country.trim() ||
 
     Object.keys(errors).some(
         key => errors[key]

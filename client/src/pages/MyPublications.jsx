@@ -13,6 +13,7 @@ function Publications() {
   const canCreatePublication = ["Researcher", "System Admin"].includes(currentUser?.role);
   const [searchParams] = useSearchParams();
   const [publications, setPublications] = useState([]);
+  const [publicationTotal, setPublicationTotal] = useState(0);
   const [searchTitle, setSearchTitle] = useState("");
   const [sortOption, setSortOption] = useState("Title (A-Z)");
   const [publicationPage, setPublicationPage] = useState(1);
@@ -57,27 +58,22 @@ function Publications() {
   });
 
   useEffect(() => {
-    loadPublications();
+    loadPublications(publicationPage);
     loadInstitutions();
     loadConferences();
     loadReviewers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [publicationPage]);
 
   useEffect(() => {
     setPublicationPage(1);
   }, [searchTitle, sortOption]);
 
-    const loadPublications = async () => {
+    const loadPublications = async (page = 1) => {
         try {
-            const response = await API.get("/publications/");
-            const visiblePublications = response.data.filter((publication) => (
-                currentUser?.role === "System Admin" ||
-                (currentUser?.role === "Reviewer"
-                    ? publication.selected_reviewer_id === currentUser?.id
-                    : publication.researcher_id === currentUser?.id)
-            ));
-            setPublications(visiblePublications);
+            const response = await API.get("/publications/", { params: { page, page_size: publicationPageSize } });
+            setPublications(response.data.items || []);
+            setPublicationTotal(response.data.total || 0);
         } catch (error) {
             console.log(error);
         }
@@ -155,19 +151,20 @@ function Publications() {
                 params: { q: searchTitle },
             });
 
-            const visiblePublications = response.data.filter((publication) => (
-                currentUser?.role === "System Admin" ||
-                (currentUser?.role === "Reviewer"
-                    ? publication.selected_reviewer_id === currentUser?.id
-                    : publication.researcher_id === currentUser?.id)
-            ));
-            setPublications(visiblePublications);
+            setPublications(response.data || []);
+            setPublicationTotal(response.data?.length || 0);
         } catch {
             alert("No publications found");
         }
     };
 
     const sortedPublications = [...publications].sort((a, b) => {
+        const isRelated = (publication) => publication.researcher_id === currentUser?.id
+            || publication.selected_reviewer_id === currentUser?.id
+            || publication.reviewed_by === currentUser?.id
+            || publication.authors?.toLowerCase().includes(currentUser?.name?.toLowerCase() || "\u0000");
+        const priorityDifference = Number(isRelated(b)) - Number(isRelated(a));
+        if (priorityDifference) return priorityDifference;
         const yearA = a.publication_year || 0;
         const yearB = b.publication_year || 0;
         const updatedA = a.uploaded_at ? new Date(a.uploaded_at) : new Date(0);
@@ -188,11 +185,8 @@ function Publications() {
                 return a.title?.localeCompare(b.title || "") || 0;
         }
     });
-    const publicationPageCount = Math.max(1, Math.ceil(sortedPublications.length / publicationPageSize));
-    const paginatedPublications = sortedPublications.slice(
-        (publicationPage - 1) * publicationPageSize,
-        publicationPage * publicationPageSize,
-    );
+    const publicationPageCount = Math.max(1, Math.ceil(publicationTotal / publicationPageSize));
+    const paginatedPublications = sortedPublications;
 
     const handleChange = (e) => {
         setForm({
@@ -1239,7 +1233,7 @@ function Publications() {
             >
                 <div style={statsCard}>
                     <h3>Total Publications</h3>
-                    <h1>{publications.length}</h1>
+                            <h1>{publicationTotal}</h1>
                 </div>
 
                 <div style={statsCard}>

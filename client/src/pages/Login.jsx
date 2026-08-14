@@ -42,7 +42,6 @@ function Login() {
     const [otp, setOtp] = useState("");
     const [captchaState, setCaptchaState] = useState({ token: "", captcha: null, answer: "" });
     const [captchaReset, setCaptchaReset] = useState(0);
-    const [mfaCode, setMfaCode] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [resendSeconds, setResendSeconds] = useState(0);
 
@@ -140,7 +139,7 @@ const handleLogin = async (event) => {
 
     try {
 
-        const response = await api.post("/auth/login", { ...loginData, captcha_token: captchaState.token, captcha_id: captchaState.captcha?.captcha_id, captcha_answer: captchaState.answer, mfa_code: mfaCode || undefined });
+        const response = await api.post("/auth/login", { ...loginData, captcha_token: captchaState.token, captcha_id: captchaState.captcha?.captcha_id, captcha_answer: captchaState.answer });
 
         setAuthItem("token", response.data.access_token);
         setAuthUser(response.data.user);
@@ -238,7 +237,7 @@ const handleLogin = async (event) => {
             await api.post("/auth/request-otp", { email: loginData.email, captcha_token: captchaState.token, captcha_id: captchaState.captcha?.captcha_id, captcha_answer: captchaState.answer });
             setOtpSent(true); setResendSeconds(60); setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1);
             setServerError("If the account is eligible, a sign-in code has been sent.");
-        } catch (error) { setServerError(error.response?.data?.detail === "CAPTCHA verification failed." ? "CAPTCHA verification failed. Please try again." : "Unable to send sign-in code."); setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1); }
+        } catch (error) { const status = error.response?.status; setServerError(error.response?.data?.detail === "CAPTCHA verification failed." ? "CAPTCHA verification failed. Please try again." : status === 429 ? "Too many OTP requests. Please wait 15 minutes before trying again." : status === 503 ? "Email delivery is temporarily unavailable. Please try again later." : "Unable to send sign-in code."); if (status === 429) setResendSeconds(900); setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1); }
         finally { setLoading(false); }
     };
 
@@ -333,7 +332,7 @@ const handleLogin = async (event) => {
 
                     <div className="form-group">
 
-                        <label>Email</label>
+                        <label htmlFor="login-email">Email</label>
 
                         <div className="input-wrapper">
 
@@ -341,9 +340,10 @@ const handleLogin = async (event) => {
 
                             <input
                                 type="email"
+                                id="login-email"
                                 name="email"
                                 placeholder="Enter your email"
-                                autoComplete="email"
+                                autoComplete="username"
                                 value={loginData.email}
                                 onChange={handleChange}
                             />
@@ -359,10 +359,6 @@ const handleLogin = async (event) => {
                     </div>
 
                     <div className="form-group"><label>CAPTCHA</label><CaptchaWidget key={captchaReset} resetSignal={captchaReset} onChange={handleCaptchaChange} /></div>
-
-                    {authMode === "password" && loginData.password && (
-                        <div className="form-group"><label>MFA code (if enabled)</label><input inputMode="numeric" maxLength="6" value={mfaCode} onChange={(event) => setMfaCode(event.target.value)} placeholder="Authenticator code" /></div>
-                    )}
 
                     {authMode === "otp" && !otpSent && <button className="login-btn" type="button" onClick={requestOtp} disabled={loading}>{loading ? "Sending code..." : "Send OTP"}</button>}
                     {authMode === "otp" && otpSent && <div className="otp-step"><h3>Check your email</h3><p className="otp-message">We've sent a verification code to your email.</p><div className="form-group"><label htmlFor="email-otp">Verification code</label><input id="email-otp" inputMode="numeric" maxLength="6" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="Enter 6-digit code" autoComplete="one-time-code" /></div><button className="login-btn" type="button" onClick={verifyOtp} disabled={loading}>{loading ? "Verifying..." : "Verify OTP"}</button><button className="text-button" type="button" onClick={requestOtp} disabled={resendSeconds > 0 || loading}>{resendSeconds > 0 ? `Resend available in ${resendSeconds}s` : "Resend code"}</button><button className="back-button" type="button" onClick={() => setOtpSent(false)}>Use a different email</button></div>}

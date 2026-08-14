@@ -5,12 +5,13 @@ import { FaEllipsisV, FaUserCircle } from "react-icons/fa";
 import useDismissibleLayer from "../../hooks/useDismissibleLayer";
 
 const PAGE_SIZE = 8;
-const roles = ["Researcher", "Reviewer", "Student", "Faculty", "Institution Admin"];
+const roles = ["Researcher", "Reviewer", "Institution Admin", "System Admin"];
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
     const [stats, setStats] = useState({});
     const [users, setUsers] = useState([]);
+    const [recipientUsers, setRecipientUsers] = useState([]);
     const [usersOpen, setUsersOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [role, setRole] = useState("");
@@ -23,6 +24,9 @@ export default function AdminDashboard() {
     const [replacementRole, setReplacementRole] = useState("Researcher");
     const [broadcastTitle, setBroadcastTitle] = useState("");
     const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [directRecipientId, setDirectRecipientId] = useState("");
+    const [directTitle, setDirectTitle] = useState("");
+    const [directMessage, setDirectMessage] = useState("");
     const [history, setHistory] = useState([]);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -30,6 +34,12 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         API.get("/admin/dashboard").then(({ data }) => setStats(data)).catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        API.get("/admin/users", { params: { page: 1, page_size: 100, sort_by: "name", sort_order: "asc" } })
+            .then(({ data }) => setRecipientUsers(data.items || []))
+            .catch(console.error);
     }, []);
 
     useEffect(() => {
@@ -113,6 +123,17 @@ export default function AdminDashboard() {
         }
     };
 
+    const sendDirectNotification = async () => {
+        if (!directRecipientId || !directTitle.trim() || !directMessage.trim()) return;
+        try {
+            await API.post("/admin/notify-user", null, { params: { target_user_id: Number(directRecipientId), title: directTitle, message: directMessage } });
+            alert("Notification sent.");
+            setDirectRecipientId(""); setDirectTitle(""); setDirectMessage("");
+        } catch (error) {
+            alert(error.response?.data?.detail || "Unable to send notification.");
+        }
+    };
+
     const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     return (
@@ -175,7 +196,7 @@ export default function AdminDashboard() {
                 <h2>Transfer System Admin Ownership</h2>
                 <p>Select a verified user. The current System Admin will immediately lose admin privileges.</p>
                 <select value={newAdminId} onChange={(event) => setNewAdminId(event.target.value)}><option value="">Select verified user</option>{users.filter((user) => user.role !== "System Admin" && user.is_verified).map((user) => <option key={user.id} value={user.id}>{user.name} ({user.email})</option>)}</select>
-                <select value={replacementRole} onChange={(event) => setReplacementRole(event.target.value)} style={{ marginLeft: "10px" }}>{[...roles, "Student"].map((item) => <option key={item}>{item}</option>)}</select>
+                <select value={replacementRole} onChange={(event) => setReplacementRole(event.target.value)} style={{ marginLeft: "10px" }}>{roles.filter((item) => item !== "System Admin").map((item) => <option key={item}>{item}</option>)}</select>
                 <button type="button" onClick={transferOwnership} disabled={!newAdminId} style={{ marginLeft: "10px" }}>Transfer Ownership</button>
             </section>
             <section className="card-surface" style={{ marginTop: "24px", padding: "22px" }}>
@@ -184,6 +205,17 @@ export default function AdminDashboard() {
                 <input placeholder="Announcement title" value={broadcastTitle} onChange={(event) => setBroadcastTitle(event.target.value)} style={{ marginTop: "12px", width: "100%" }} />
                 <textarea placeholder="Announcement message" value={broadcastMessage} onChange={(event) => setBroadcastMessage(event.target.value)} rows="3" style={{ marginTop: "12px", width: "100%" }} />
                 <button type="button" onClick={sendBroadcast} disabled={!broadcastTitle.trim() || !broadcastMessage.trim()} style={{ marginTop: "12px" }}>Send Broadcast</button>
+            </section>
+            <section className="card-surface" style={{ marginTop: "24px", padding: "22px" }}>
+                <h2>Notify an Individual User</h2>
+                <p>Send a private notification to one selected user.</p>
+                <select value={directRecipientId} onChange={(event) => setDirectRecipientId(event.target.value)} style={{ marginTop: "12px", width: "100%" }}>
+                    <option value="">Select a user</option>
+                    {recipientUsers.filter((user) => user.role !== "System Admin").map((user) => <option key={user.id} value={user.id}>{user.name} ({user.email})</option>)}
+                </select>
+                <input placeholder="Notification title" value={directTitle} onChange={(event) => setDirectTitle(event.target.value)} style={{ marginTop: "12px", width: "100%" }} />
+                <textarea placeholder="Message" value={directMessage} onChange={(event) => setDirectMessage(event.target.value)} rows="3" style={{ marginTop: "12px", width: "100%" }} />
+                <button type="button" onClick={sendDirectNotification} disabled={!directRecipientId || !directTitle.trim() || !directMessage.trim()} style={{ marginTop: "12px" }}>Send Notification</button>
             </section>
         </div>
     );

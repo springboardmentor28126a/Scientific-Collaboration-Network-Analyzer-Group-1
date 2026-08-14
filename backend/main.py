@@ -41,6 +41,7 @@ from backend.models.direct_message import DirectMessage
 from backend.models.friend_request import FriendRequest
 from backend.models.verification_document import VerificationDocument
 from backend.routers import reviewer
+from backend.routers import reports
 from backend.routers import faculty
 from backend.routers import admin
 from backend.routers import ai
@@ -190,6 +191,7 @@ app.include_router(citation.router)
 app.include_router(group_file.router)
 app.include_router(verification.router)
 app.include_router(reviewer.router)
+app.include_router(reports.router)
 app.include_router(faculty.router)
 app.include_router(admin.router)
 app.include_router(ai.router)

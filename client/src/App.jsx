@@ -34,6 +34,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import VerificationRequests from "./pages/VerificationRequests";
 import Notifications from "./pages/Notifications";
 import ResearchAI from "./pages/ResearchAI";
+import Reports from "./pages/Reports";
+import PublicationResearchAI from "./pages/PublicationResearchAI";
+import ResearchTrends from "./pages/ResearchTrends";
 
 
 import Citations from "./pages/Citations";
@@ -88,6 +91,8 @@ function App() {
     />
 
     <Route path="/research-ai" element={<ProtectedRoute><ResearchAI /></ProtectedRoute>} />
+    <Route path="/research-ai/publication/:publicationId" element={<ProtectedRoute><PublicationResearchAI /></ProtectedRoute>} />
+    <Route path="/research-ai/trends" element={<ProtectedRoute><ResearchTrends /></ProtectedRoute>} />
 
     <Route
         path="/researchers"
@@ -169,6 +174,8 @@ function App() {
             </ProtectedRoute>
         }
     />
+
+    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
 
     <Route
         path="/network"
@@ -311,7 +318,7 @@ function App() {
     <Route
         path="/verification-requests"
         element={
-              <ProtectedRoute allowedRoles={["Faculty", "System Admin"]}>
+              <ProtectedRoute allowedRoles={["System Admin"]}>
                 <VerificationRequests />
             </ProtectedRoute>
         }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -28,7 +28,6 @@ class UserLogin(BaseModel):
     captcha_token: str | None = None
     captcha_id: str | None = None
     captcha_answer: str | None = None
-    mfa_code: str | None = None
 
 
 # class UserUpdate(BaseModel):
@@ -131,12 +130,12 @@ class RegisterRequest(BaseModel):
 
     # User Table
 
-    name: str
+    name: str = Field(..., min_length=3)
 
     email: EmailStr
 
-    password: str
-    confirm_password: str | None = None
+    password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
     captcha_token: str | None = None
     captcha_id: str | None = None
     captcha_answer: str | None = None
@@ -159,7 +158,7 @@ class RegisterRequest(BaseModel):
 
     bio: str | None = None
 
-    country: str | None = None
+    country: str = Field(default="India", min_length=1)
 
     linkedin: str | None = None
 

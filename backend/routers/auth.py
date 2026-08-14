@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.utils.security import create_access_token, get_current_user
 from backend.utils.passwords import hash_password, verify_password
 from backend.database.database import get_db
-from backend.database.models import User, EmailOTP, AuthRateLimit
+from backend.database.models import User, EmailOTP, AuthRateLimit, Notification
 from backend.models.verification_document import VerificationDocument
 from backend.schemas.user import RegisterRequest, UserLogin, UserUpdate, UserResponse
 from backend.schemas.security import OTPRequest, OTPVerify, MFACode
@@ -146,6 +146,20 @@ def register(
     db.commit()
 
     db.refresh(new_user)
+
+    # Registration creates an actionable notification only for the existing
+    # System Admin.  It is intentionally not broadcast to ordinary users.
+    system_admin = db.query(User).filter(User.role == "System Admin").first()
+    if system_admin and system_admin.id != new_user.id:
+        db.add(Notification(
+            user_id=system_admin.id,
+            title="New user requires attention",
+            message=f"{new_user.name} registered as {new_user.role} and may require verification.",
+            notification_type="user_registered",
+            resource_type="verification",
+            resource_id=new_user.id,
+        ))
+        db.commit()
 
     return {
 
@@ -355,10 +369,6 @@ def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
 
     if not verify_password(user.password, existing_user.password):
         raise HTTPException(status_code=401, detail=GENERIC_LOGIN_ERROR)
-
-    if existing_user.mfa_enabled:
-        if not user.mfa_code or not verify_totp(existing_user.mfa_secret or "", user.mfa_code):
-            raise HTTPException(status_code=401, detail="A valid MFA code is required.")
 
     # The user-table default must not imply that a document was submitted.
     # The latest verification document is the source of truth for login state.

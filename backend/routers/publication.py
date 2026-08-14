@@ -3,7 +3,7 @@ import shutil
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from sqlalchemy import or_
+from sqlalchemy import case, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -155,10 +155,30 @@ def create_publication(
 
 @router.get("/")
 def get_publications(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(6, ge=1, le=100),
     current_user: User = Depends(require_permission("publication:view")),
     db: Session = Depends(get_db),
 ):
-    return [publication_payload(publication) for publication in publication_query(db).all()]
+    query = publication_query(db)
+    priority = case(
+        (Publication.researcher_id == current_user.id, 0),
+        (Publication.selected_reviewer_id == current_user.id, 0),
+        (Publication.reviewed_by == current_user.id, 0),
+        (Publication.authors.ilike(f"%{current_user.name}%"), 0),
+        else_=1,
+    )
+    total = query.count()
+    publications = query.order_by(priority, Publication.uploaded_at.desc(), Publication.id.desc()).offset(
+        (page - 1) * page_size
+    ).limit(page_size).all()
+    return {
+        "items": [publication_payload(publication) for publication in publications],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "page_count": max(1, (total + page_size - 1) // page_size),
+    }
 
 
 @router.get("/search")

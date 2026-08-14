@@ -47,7 +47,7 @@ function TopNavbar() {
         const routes = {
             publication: `/publication/${notification.resource_id}`,
             conference: `/conference/${notification.resource_id}`,
-            verification: "/verification",
+            verification: user?.role === "System Admin" ? "/verification-requests" : "/verification",
             group_invitation: "/invitations",
             research_group: `/groups/${notification.resource_id}`,
             meeting: "/groups",

@@ -287,6 +287,13 @@ function Sidebar() {
             />
 
             <MenuItem
+                icon={<FaFileAlt />}
+                text="Reports"
+                active={location.pathname === "/reports"}
+                onClick={() => navigate("/reports")}
+            />
+
+            <MenuItem
     icon={<FaPeopleArrows />}
     text="Research Groups"
     active={location.pathname.startsWith("/groups")}
@@ -313,6 +320,7 @@ function Sidebar() {
                 onClick={() => navigate("/institution")}
             />
             <MenuItem icon={<FaShieldAlt />} text="Research AI" active={location.pathname === "/research-ai"} onClick={() => navigate("/research-ai")} />
+            <MenuItem icon={<FaChartBar />} text="Research Intelligence" active={location.pathname === "/research-ai/trends"} onClick={() => navigate("/research-ai/trends")} />
 
             <MenuItem
                 icon={<FaSchool />}

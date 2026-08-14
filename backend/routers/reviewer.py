@@ -12,6 +12,36 @@ from backend.utils.dependencies import require_permission
 router = APIRouter(prefix="/reviewer", tags=["Reviewer"])
 
 
+@router.get("/overview")
+def reviewer_overview(
+    current_user: User = Depends(require_permission("publication:review")),
+    db: Session = Depends(get_db),
+):
+    """Return reviewer-focused aggregates and recent real records."""
+    assigned = Publication.selected_reviewer_id == current_user.id
+    pending_query = db.query(Publication).filter(
+        assigned, Publication.status.in_(["Submitted", "Pending Review"])
+    )
+    completed_query = db.query(Publication).filter(Publication.reviewed_by == current_user.id)
+    recent_pending = pending_query.order_by(Publication.uploaded_at.desc()).limit(8).all()
+    recent_completed = completed_query.order_by(Publication.reviewed_at.desc()).limit(8).all()
+    return {
+        "stats": {
+            "researchers": db.query(User).filter(User.role == "Researcher").count(),
+            "reviewers": db.query(User).filter(User.role == "Reviewer").count(),
+            "publications": db.query(Publication).count(),
+            "pending_reviews": pending_query.count(),
+            "completed_reviews": completed_query.count(),
+            "approved_publications": db.query(Publication).filter(Publication.status == "Published").count(),
+            "pending_publications": db.query(Publication).filter(Publication.status.in_(["Submitted", "Pending Review"])).count(),
+        },
+        "pending_reviews": [publication_payload(item) for item in recent_pending],
+        "recently_reviewed": [publication_payload(item) for item in recent_completed],
+        "recent_publications": [publication_payload(item) for item in db.query(Publication).order_by(Publication.uploaded_at.desc()).limit(8).all()],
+        "notifications": db.query(Notification).filter(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).limit(5).all(),
+    }
+
+
 def assigned_to_reviewer(publication: Publication, current_user: User):
     if current_user.role != "System Admin" and publication.selected_reviewer_id != current_user.id:
         raise HTTPException(status_code=403, detail="This publication is not assigned to you.")

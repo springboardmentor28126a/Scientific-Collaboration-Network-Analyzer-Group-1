@@ -72,6 +72,7 @@ function PublicationDetails() {
                 <p><b>DOI:</b> {publication.doi || "N/A"}</p>
                 <p><b>Keywords:</b> {publication.keywords || "N/A"}</p>
                 <p><b>Status:</b> {publication.status}</p>
+                <button type="button" onClick={() => navigate(`/research-ai/publication/${publication.id}`)} style={{ margin: "12px 0" }}>Analyze with Research AI</button>
                 {publication.selected_reviewer_name && <p><b>Selected Reviewer:</b> {publication.selected_reviewer_name}</p>}
                 {publication.reviewer_name && (
                     <>
