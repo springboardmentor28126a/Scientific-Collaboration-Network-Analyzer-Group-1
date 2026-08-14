@@ -7,15 +7,19 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("researcher");
+  
 
   const handleLogin = async () => {
     try {
       const response = await api.post("/auth/login", {
-        email,
-        password,
-      });
+    email,
+    password,
+    role,
+});
 console.log(response.data);
       localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("role", role);
 
       alert("Login Successful");
 
@@ -104,7 +108,22 @@ console.log(response.data);
             boxSizing: "border-box",
           }}
         />
-
+      <select
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "14px",
+    marginBottom: "25px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    fontSize: "15px",
+    boxSizing: "border-box",
+  }}
+>
+  <option value="researcher">Researcher</option>
+  <option value="client">Client</option>
+</select>
         <button
           onClick={handleLogin}
           style={{

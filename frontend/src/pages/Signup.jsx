@@ -8,6 +8,7 @@ function Signup() {
   const [full_name, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("researcher");
 
   const handleSignup = async () => {
     try {
@@ -15,6 +16,7 @@ function Signup() {
         full_name,
         email,
         password,
+        role,
       });
 
       alert(response.data.message);
@@ -124,7 +126,22 @@ function Signup() {
             boxSizing: "border-box",
           }}
         />
-
+<select
+  value={role}
+  onChange={(e) => setRole(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "14px",
+    marginBottom: "25px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    fontSize: "15px",
+    boxSizing: "border-box",
+  }}
+>
+  <option value="researcher">Researcher</option>
+  <option value="client">Client</option>
+</select>
         <button
           onClick={handleSignup}
           style={{
