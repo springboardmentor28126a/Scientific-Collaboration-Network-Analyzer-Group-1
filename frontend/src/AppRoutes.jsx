@@ -14,6 +14,8 @@ import ProjectAssignments from "./pages/ProjectAssignments";
 import InstitutionCollaborations from "./pages/InstitutionCollaborations";
 import Citations from "./pages/Citations";
 import References from "./pages/References";
+import Reports from "./pages/Reports";
+import Audit from "./pages/Audit";
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -41,6 +43,8 @@ function AppRoutes() {
     element={<ProjectAssignments />}
 />
 <Route path="/references" element={<References />} />
+<Route path="/reports" element={<Reports />} />
+<Route path="/audit" element={<Audit />} />
       </Routes>
     </BrowserRouter>
   );

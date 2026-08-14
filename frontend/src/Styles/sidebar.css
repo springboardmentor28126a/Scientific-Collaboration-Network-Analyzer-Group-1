@@ -1,71 +1,110 @@
-.sidebar{
-    width:220px;
-    padding-top:25px;
-    flex-shrink:0;
-    background:#111111;
-    color:white;
-    min-height:100vh;
-    border-right:1px solid #2a2a2a;
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-right: 1px solid #334155;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 20px 0;
+  box-sizing: border-box;
 }
 
-.menu-title{
-    text-align:center;
-    margin-bottom:40px;
-    font-size:24px;
-    font-weight:700;
-    color:#ff2d2d;
+/* MENU heading */
+.menu-title {
+  text-align: center;
+  margin: 0 0 25px;
+
+  font-size: 22px;
+  font-weight: 700;
+  color: #3b82f6;
+
+  letter-spacing: 1px;
 }
 
-.sidebar a{
+/* Sidebar links */
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 
-display:flex;
+  margin: 3px 10px;
+  padding: 11px 16px;
 
-align-items:center;
+  color: #cbd5e1;
+  text-decoration: none;
 
-gap:15px;
+  border-radius: 8px;
 
-padding:15px 20px;
+  font-size: 14px;
+  font-weight: 500;
 
-margin:10px;
-
-border-radius:12px;
-
-color:#d1d5db;
-
-text-decoration:none;
-
-transition:.3s;
-
+  transition: all 0.2s ease;
 }
 
-.sidebar a:hover{
-
-background:#2b1114;
-
-color:#ff3b3b;
-
+/* Icons */
+.sidebar a svg {
+  min-width: 18px;
+  font-size: 17px;
+  color: #94a3b8;
+  transition: color 0.2s ease;
 }
 
-.logout{
-    margin-top:80px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    color:#f87171;
-    cursor:pointer;
-    padding:14px 15px;
-}
-.sidebar a{
-    color:white;
-    font-size:17px;
-    font-weight:500;
+/* Hover */
+.sidebar a:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #f8fafc;
+  transform: translateX(3px);
 }
 
+.sidebar a:hover svg {
+  color: #3b82f6;
+}
 
-.sidebar a.active{
+/* Active link */
+.sidebar a.active {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
 
-background:#5b0d12;
+  border-left: 3px solid #3b82f6;
+}
 
-color:white;
+.sidebar a.active svg {
+  color: #3b82f6;
+}
 
+/* Section heading */
+.section-title {
+  margin: 20px 18px 6px;
+  padding-bottom: 4px;
+
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  color: #64748b;
+  letter-spacing: 0.6px;
+}
+
+/* Logout */
+.logout {
+  margin-top: auto !important;
+
+  color: #f87171 !important;
+
+  border-top: 1px solid #334155;
+  border-radius: 0 !important;
+
+  padding-top: 18px !important;
+}
+
+.logout svg {
+  color: #ef4444 !important;
+}
+
+.logout:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #fca5a5 !important;
 }

@@ -1,46 +1,70 @@
-.navbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    width:100%;
-    height:75px;
-    padding:0 25px;
-    background:#111;
-    border-bottom:1px solid #2c2c2c;
-    box-sizing:border-box;
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+  height: 64px;
+
+  padding: 0 22px;
+
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+
+  box-sizing: border-box;
 }
 
-.navbar-logo{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:30px;
-    font-weight:700;
-    color:#ff3b3b;
+/* Logo */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 22px;
+  font-weight: 700;
+
+  color: #60a5fa;
 }
 
-.navbar-right{
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    justify-content:flex-end;
-    gap:20px;
+/* Right side */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 20px;
 }
 
+/* Status / User / Date */
 .status,
 .user,
-.date{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    white-space:nowrap;
-    color:white;
+.date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  white-space: nowrap;
 }
 
-.status{
-    color:#22c55e;
+.status {
+  color: #22c55e;
 }
 
-.date{
-    color:#9ca3af;
+.user {
+  color: #e2e8f0;
+}
+
+.date {
+  color: #94a3b8;
+}
+
+/* Notification */
+.notification {
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.notification:hover {
+  color: #60a5fa;
 }
