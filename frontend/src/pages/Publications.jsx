@@ -268,6 +268,8 @@ console.log("Upload Response:", uploadResponse.data);
 
 <br /><br />
 
+<label>Publication Status</label>
+
 <select
   value={formData.publication_status}
   onChange={(e) =>
@@ -277,11 +279,9 @@ console.log("Upload Response:", uploadResponse.data);
     })
   }
 >
-  <option value="">Select Publication Status</option>
   <option value="Draft">Draft</option>
-  <option value="Submitted">Submitted</option>
   <option value="Published">Published</option>
-  <option value="Archived">Archived</option>
+  <option value="Rejected">Rejected</option>
 </select>
 
 <br /><br />
@@ -364,40 +364,37 @@ console.log("Upload Response:", uploadResponse.data);
     </a>
   )}
 </td>
-  <td>
-                        <button
-  onClick={() => {
+  <td>  <button
+    onClick={() => {
+      setEditingId(paper.id);
 
-    setEditingId(paper.id);
+      setFormData({
+        title: paper.title,
+        abstract: paper.abstract,
+        authors: paper.authors,
+        keywords: paper.keywords,
+        publication_year: paper.publication_year,
+        journal: paper.journal,
+        publication_type: paper.publication_type,
+        publication_status: paper.publication_status,
+        pdf_file: paper.pdf_file,
+      });
 
-    setFormData({
-  title: paper.title,
-  abstract: paper.abstract,
-  authors: paper.authors,
-  keywords: paper.keywords,
-  publication_year: paper.publication_year,
-  journal: paper.journal,
-  publication_type: paper.publication_type,
-  publication_status: paper.publication_status,
-  pdf_file: paper.pdf_file,
-});
-
-    setShowForm(true);
-    setSelectedFile(null);
-
-  }}
-  style={{
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    marginRight: "10px",
-    cursor: "pointer",
-  }}
->
-  Edit
-</button>
+      setShowForm(true);
+    }}
+    style={{
+      background: "#2563eb",
+      color: "white",
+      border: "none",
+      padding: "8px 14px",
+      borderRadius: "6px",
+      cursor: "pointer",
+      marginRight: "10px",
+    }}
+  >
+    Edit
+  </button>
+                        
                       <button
                         onClick={() => deletePaper(paper.id)}
                         style={{

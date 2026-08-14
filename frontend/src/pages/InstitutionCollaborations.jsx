@@ -6,7 +6,9 @@ import {
     getCollaborations,
     createCollaboration,
     updateCollaboration,
-    deleteCollaboration
+    deleteCollaboration,
+    acceptCollaboration,
+    rejectCollaboration
 } from "../services/institutionCollaborationService";
 
 function InstitutionCollaborations() {
@@ -262,19 +264,20 @@ filteredCollaborations.map((item)=>(
 
 <td style={tdStyle}>
 
-<button
-    style={editButton}
-    onClick={() => handleEdit(item)}
->
-    Edit
-</button>
+    <button
+        style={editButton}
+        onClick={() => handleEdit(item)}
+    >
+        Edit
+    </button>
 
-<button
-    style={deleteButton}
-    onClick={() => handleDelete(item.id)}
->
-    Delete
-</button>
+    <button
+        style={deleteButton}
+        onClick={() => handleDelete(item.id)}
+    >
+        Delete
+    </button>
+
 </td>
 
 </tr>
@@ -354,20 +357,7 @@ filteredCollaborations.map((item)=>(
                 style={inputStyle}
             />
 
-            <select
-                value={newCollaboration.status}
-                onChange={(e) =>
-                    setNewCollaboration({
-                        ...newCollaboration,
-                        status: e.target.value
-                    })
-                }
-                style={inputStyle}
-            >
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-            </select>
+           
 
             <div
                 style={{
@@ -392,6 +382,7 @@ filteredCollaborations.map((item)=>(
                 >
                     Cancel
                 </button>
+               
             </div>
         </div>
     </div>

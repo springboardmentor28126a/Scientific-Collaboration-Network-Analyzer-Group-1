@@ -2,64 +2,82 @@ import { useEffect, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 
 import DashboardLayout from "../components/DashboardLayout";
-import { getNetwork } from "../services/collaborationService";
+import { getCollaborations } from "../services/institutionCollaborationService";
 
 function CollaborationGraph() {
-
     const [graphData, setGraphData] = useState({
         nodes: [],
         links: []
     });
 
     useEffect(() => {
-        loadNetwork();
+        loadCollaborations();
     }, []);
 
-    const loadNetwork = async () => {
+    const loadCollaborations = async () => {
+        try {
+            const data = await getCollaborations();
 
-        const data = await getNetwork();
+            console.log("COLLABORATION GRAPH DATA:", data);
 
-        const nodes = {};
-        const links = [];
+            const nodes = {};
+            const links = [];
+data
+    .filter((item) => item.status === "Accepted")
+    .forEach((item) => {
 
-        data.forEach((item) => {
+                const sourceId = String(item.institution_a_id);
+                const targetId = String(item.institution_b_id);
 
-            nodes[item.source] = {
-                id: item.source,
-                ...item.source_details
-            };
+                // Create source node
+                nodes[sourceId] = {
+                    id: sourceId,
+                    label: `Institution ${sourceId}`
+                };
 
-            nodes[item.target] = {
-                id: item.target,
-                ...item.target_details
-            };
+                // Create target node
+                nodes[targetId] = {
+                    id: targetId,
+                    label: `Institution ${targetId}`
+                };
 
-            links.push({
-                source: item.source,
-                target: item.target
+                // Create connection
+                links.push({
+                    source: sourceId,
+                    target: targetId,
+                    type: item.collaboration_type,
+                    status: item.status
+                });
             });
 
-        });
+            setGraphData({
+                nodes: Object.values(nodes),
+                links: links
+            });
 
-        setGraphData({
-            nodes: Object.values(nodes),
-            links
-        });
+            console.log("GRAPH NODES:", Object.values(nodes));
+            console.log("GRAPH LINKS:", links);
 
+        } catch (error) {
+            console.error("Collaboration Graph Error:", error);
+        }
     };
 
     return (
-
         <DashboardLayout>
 
             <h1
-                style={{
-                    color: "white",
-                    marginBottom: "20px"
-                }}
-            >
-                Collaboration Network
-            </h1>
+    style={{
+        color: "white",
+        marginBottom: "10px"
+    }}
+>
+    Institution Collaboration Network
+</h1>
+
+<p style={{ color: "#aaa", marginBottom: "20px" }}>
+    Showing active institution collaborations
+</p>
 
             <div
                 style={{
@@ -72,41 +90,64 @@ function CollaborationGraph() {
 
                 <ForceGraph2D
                     graphData={graphData}
-                    nodeLabel={(node) => node.id}
+d3VelocityDecay={0.4}
+d3AlphaDecay={0.015}
+d3Force="charge"
+d3ForceStrength={-600}
+                    nodeLabel={(node) =>
+                        node.label
+                    }
+
                     nodeAutoColorBy="id"
+                    linkColor={() => "#60a5fa"}
+linkWidth={2}
+linkDirectionalArrowLength={4}
+linkDirectionalArrowRelPos={1}
+
                     linkDirectionalParticles={2}
                     linkDirectionalParticleSpeed={0.004}
+
+                    linkLabel={(link) =>
+                        `${link.type} - ${link.status}`
+                    }
+
                     nodeCanvasObject={(node, ctx) => {
 
-                        const label = node.id;
+                        const label = node.label;
 
                         const fontSize = 14;
 
                         ctx.font = `${fontSize}px Sans-Serif`;
 
-                        ctx.fillStyle = node.color;
+                        ctx.fillStyle = node.color || "#3498db";
 
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, 7, 0, 2 * Math.PI);
+
+                        ctx.arc(
+    node.x,
+    node.y,
+    10,
+    0,
+    2 * Math.PI
+);
+
                         ctx.fill();
 
                         ctx.fillStyle = "white";
 
                         ctx.fillText(
                             label,
-                            node.x + 10,
+                            node.x + 12,
                             node.y + 4
                         );
-
                     }}
+
                 />
 
             </div>
 
         </DashboardLayout>
-
     );
-
 }
 
 export default CollaborationGraph;

@@ -195,13 +195,13 @@ const handleDeleteCitation = async (id) => {
 
 <tr key={citation.id}>
 
-    <td>{citation.id}</td>
-    <td>{citation.paper_id}</td>
-    <td>{citation.cited_paper_title}</td>
-    <td>{citation.authors}</td>
-    <td>{citation.publication_year}</td>
-    <td>{citation.doi}</td>
-    <td>{citation.citation_count}</td>
+    <td style={{ color: "white" }}>{citation.id}</td>
+<td style={{ color: "white" }}>{citation.paper_id}</td>
+<td style={{ color: "white" }}>{citation.title}</td>
+<td style={{ color: "white" }}>{citation.authors}</td>
+<td style={{ color: "white" }}>{citation.year}</td>
+<td style={{ color: "white" }}>{citation.doi}</td>
+<td style={{ color: "white" }}>{citation.citation_count}</td>
 
     <td>
 
