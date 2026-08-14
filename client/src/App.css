@@ -594,6 +594,85 @@ textarea::placeholder {
   color: #03111f !important;
 }
 
+.reviewer-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+
+.reviewer-item-actions button {
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.reviewer-reject-button {
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.reviewer-action-message {
+  margin-top: 18px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.reviewer-action-success {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+  color: var(--success);
+}
+
+.reviewer-action-error {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  color: var(--danger);
+}
+
+.captcha-success {
+  margin-top: 8px;
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.alphanumeric-captcha {
+  display: grid;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.captcha-heading {
+  display: grid;
+  gap: 3px;
+}
+
+.captcha-heading strong { color: var(--text); font-size: 13px; }
+.captcha-heading span { color: var(--muted); font-size: 12px; }
+
+.captcha-challenge {
+  width: fit-content;
+  min-width: 180px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 10px;
+  padding: 12px 22px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-alt));
+  color: var(--text);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-align: center;
+  user-select: none;
+}
+
+.captcha-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.captcha-actions button { padding: 9px 13px; }
+.captcha-refresh { border: 1px solid var(--border); background: transparent; color: var(--muted); }
+
 .panel-heading {
   display: flex;
   align-items: center;

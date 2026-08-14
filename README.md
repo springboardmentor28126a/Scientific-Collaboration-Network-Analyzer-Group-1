@@ -937,7 +937,7 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) for th
 
 SCNA supports bcrypt password registration/login, generic authentication errors, rate-limited passwordless email OTP login, and authenticator-app TOTP MFA. OTP and security email delivery use the configured SMTP service.
 
-CAPTCHA has two explicit modes. `CAPTCHA_MODE=development` uses a server-generated, expiring, single-use CAPTCHA challenge at `GET /auth/captcha` for local testing. `CAPTCHA_MODE=recaptcha` renders the Google reCAPTCHA v2 checkbox in the browser and verifies its token server-side using `CAPTCHA_SECRET_KEY`; the secret is never sent to the browser. `CAPTCHA_SITE_KEY` is public/frontend-safe and is supplied as a Vite Docker build argument. `CAPTCHA_REQUIRED=true` blocks registration, password login, and OTP requests until CAPTCHA is valid. Development CAPTCHA must not be treated as production protection.
+CAPTCHA uses a server-generated alphanumeric challenge at `GET /auth/captcha`. The answer is stored only as a hash, expires after five minutes, and is single-use. The frontend verifies the challenge through `POST /auth/captcha/verify`, then sends the short-lived signed verification assertion with registration, password login, or OTP requests. `CAPTCHA_REQUIRED=true` blocks those protected actions until CAPTCHA is valid.
 
 If SMTP is not configured, SCNA returns a safe email-delivery failure and does not authenticate an OTP request without sending the code. Configure `SMTP_*`, `CAPTCHA_*`, and `AI_*` values in the ignored environment file; never place credentials in this repository.
 

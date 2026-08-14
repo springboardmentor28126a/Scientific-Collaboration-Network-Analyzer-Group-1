@@ -5,6 +5,12 @@ class CaptchaRequest(BaseModel):
     captcha_token: str | None = None
     captcha_id: str | None = None
     captcha_answer: str | None = None
+    captcha_verification: str | None = None
+
+
+class CaptchaVerifyRequest(BaseModel):
+    captcha_id: str
+    captcha_answer: str
 
 
 class OTPRequest(CaptchaRequest):

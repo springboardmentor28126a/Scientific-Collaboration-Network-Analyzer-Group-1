@@ -13,8 +13,8 @@ from backend.database.database import get_db
 from backend.database.models import User, EmailOTP, AuthRateLimit, Notification
 from backend.models.verification_document import VerificationDocument
 from backend.schemas.user import RegisterRequest, UserLogin, UserUpdate, UserResponse
-from backend.schemas.security import OTPRequest, OTPVerify, MFACode
-from backend.services.captcha_service import verify_captcha, issue_development_captcha, verify_development_captcha
+from backend.schemas.security import OTPRequest, OTPVerify, MFACode, CaptchaVerifyRequest
+from backend.services.captcha_service import consume_captcha_verification, issue_alphanumeric_captcha, verify_captcha_answer, create_captcha_verification
 from backend.services.email_service import send_otp_email, send_security_notice, email_configured
 from backend.services.mfa_service import generate_secret, generate_recovery_codes, verify_totp
 router = APIRouter(
@@ -33,11 +33,12 @@ VALID_ROLES = {
 GENERIC_LOGIN_ERROR = "Unable to authenticate with those credentials."
 
 
-def _captcha_or_reject(token: str | None, captcha_id: str | None, captcha_answer: str | None, request: Request, db: Session) -> None:
+def _captcha_or_reject(token: str | None, captcha_id: str | None, captcha_answer: str | None, request: Request, db: Session, captcha_verification: str | None = None) -> None:
     if os.getenv("CAPTCHA_REQUIRED", "true").lower() != "true":
         return
-    mode = os.getenv("CAPTCHA_MODE", "development").lower()
-    valid = verify_development_captcha(db, captcha_id, captcha_answer) if mode == "development" else verify_captcha(token, request.client.host if request.client else None)
+    valid = consume_captcha_verification(db, captcha_verification)
+    if not valid:
+        valid = verify_captcha_answer(db, captcha_id, captcha_answer, consume=True)
     if not valid:
         raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
 
@@ -70,7 +71,7 @@ def register(
     db: Session = Depends(get_db)
 ):
 
-    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db)
+    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db, user.captcha_verification)
     password_error = _password_error(user.password)
     if password_error:
         raise HTTPException(status_code=422, detail=password_error)
@@ -185,14 +186,19 @@ def email_status():
 
 
 @router.get("/captcha")
-def captcha(db: Session = Depends(get_db)):
+def captcha(replace_id: str | None = None, db: Session = Depends(get_db)):
     try:
-        if os.getenv("CAPTCHA_MODE", "development").lower() != "development":
-            return {"mode": "recaptcha", "site_key": os.getenv("CAPTCHA_SITE_KEY"), "required": os.getenv("CAPTCHA_REQUIRED", "true").lower() == "true"}
-        return {"mode": "development", "required": os.getenv("CAPTCHA_REQUIRED", "true").lower() == "true", **issue_development_captcha(db)}
+        return issue_alphanumeric_captcha(db, replace_id=replace_id)
     except Exception:
         logger.exception("CAPTCHA challenge endpoint failed")
         raise HTTPException(status_code=503, detail="CAPTCHA service is temporarily unavailable.")
+
+
+@router.post("/captcha/verify")
+def verify_captcha_challenge(payload: CaptchaVerifyRequest, db: Session = Depends(get_db)):
+    if not verify_captcha_answer(db, payload.captcha_id, payload.captcha_answer):
+        raise HTTPException(status_code=400, detail="CAPTCHA verification failed.")
+    return {"captcha_verification": create_captcha_verification(payload.captcha_id), "expires_in": 300}
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -359,7 +365,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
 
-    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db)
+    _captcha_or_reject(user.captcha_token, user.captcha_id, user.captcha_answer, request, db, user.captcha_verification)
     _rate_limit(db, f"login:{request.client.host if request.client else 'unknown'}", 10, 300)
 
     existing_user = db.query(User).filter(User.email == user.email).first()
@@ -436,7 +442,7 @@ def login(user: UserLogin, request: Request, db: Session = Depends(get_db)):
 
 @router.post("/request-otp")
 def request_otp(payload: OTPRequest, request: Request, db: Session = Depends(get_db)):
-    _captcha_or_reject(payload.captcha_token, payload.captcha_id, payload.captcha_answer, request, db)
+    _captcha_or_reject(payload.captcha_token, payload.captcha_id, payload.captcha_answer, request, db, payload.captcha_verification)
     _rate_limit(db, f"otp:{payload.email.lower()}:{request.client.host if request.client else 'unknown'}", 3, 900)
     now = datetime.now(timezone.utc)
     user = db.query(User).filter(User.email == payload.email).first()

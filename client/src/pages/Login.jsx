@@ -40,7 +40,7 @@ function Login() {
     const [serverError, setServerError] = useState("");
     const [authMode, setAuthMode] = useState("password");
     const [otp, setOtp] = useState("");
-    const [captchaState, setCaptchaState] = useState({ token: "", captcha: null, answer: "" });
+    const [captchaState, setCaptchaState] = useState({ captcha_verification: "", captcha: { required: true } });
     const [captchaReset, setCaptchaReset] = useState(0);
     const [otpSent, setOtpSent] = useState(false);
     const [resendSeconds, setResendSeconds] = useState(0);
@@ -130,8 +130,8 @@ const handleLogin = async (event) => {
     event?.preventDefault();
 
     if (!validate()) return;
-    if (captchaState.captcha?.required && !captchaState.token && !captchaState.answer) {
-        setServerError("Please complete the CAPTCHA.");
+    if (captchaState.captcha?.required && !captchaState.captcha_verification) {
+        setServerError("Please complete and verify the CAPTCHA.");
         return;
     }
 
@@ -139,7 +139,7 @@ const handleLogin = async (event) => {
 
     try {
 
-        const response = await api.post("/auth/login", { ...loginData, captcha_token: captchaState.token, captcha_id: captchaState.captcha?.captcha_id, captcha_answer: captchaState.answer });
+        const response = await api.post("/auth/login", { ...loginData, captcha_verification: captchaState.captcha_verification });
 
         setAuthItem("token", response.data.access_token);
         setAuthUser(response.data.user);
@@ -231,13 +231,13 @@ const handleLogin = async (event) => {
 
     const requestOtp = async () => {
         if (!loginData.email.trim()) { setServerError("Enter your email first."); return; }
-        if (captchaState.captcha?.required && !captchaState.token && !captchaState.answer) { setServerError("Please complete the CAPTCHA."); return; }
+        if (captchaState.captcha?.required && !captchaState.captcha_verification) { setServerError("Please complete and verify the CAPTCHA."); return; }
         setLoading(true);
         try {
-            await api.post("/auth/request-otp", { email: loginData.email, captcha_token: captchaState.token, captcha_id: captchaState.captcha?.captcha_id, captcha_answer: captchaState.answer });
-            setOtpSent(true); setResendSeconds(60); setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1);
+            await api.post("/auth/request-otp", { email: loginData.email, captcha_verification: captchaState.captcha_verification });
+            setOtpSent(true); setResendSeconds(60);
             setServerError("If the account is eligible, a sign-in code has been sent.");
-        } catch (error) { const status = error.response?.status; setServerError(error.response?.data?.detail === "CAPTCHA verification failed." ? "CAPTCHA verification failed. Please try again." : status === 429 ? "Too many OTP requests. Please wait 15 minutes before trying again." : status === 503 ? "Email delivery is temporarily unavailable. Please try again later." : "Unable to send sign-in code."); if (status === 429) setResendSeconds(900); setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1); }
+        } catch (error) { const status = error.response?.status; const detail = error.response?.data?.detail; const captchaRejected = detail === "CAPTCHA verification failed."; setServerError(captchaRejected ? "CAPTCHA verification failed. Please try again." : status === 429 ? "Too many OTP requests. Please wait 15 minutes before trying again." : status === 503 ? "Email delivery is temporarily unavailable. Please try again later." : "Unable to send sign-in code."); if (status === 429) setResendSeconds(900); if (captchaRejected) { setCaptchaState({ token: "", captcha: null, answer: "" }); setCaptchaReset((value) => value + 1); } }
         finally { setLoading(false); }
     };
 

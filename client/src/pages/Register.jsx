@@ -56,7 +56,7 @@ export default function Register() {
     const [serverError, setServerError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [captchaState, setCaptchaState] = useState({ token: "", captcha: null, answer: "" });
+    const [captchaState, setCaptchaState] = useState({ captcha_verification: "", captcha: { required: true } });
     const [captchaReset, setCaptchaReset] = useState(0);
     const handleCaptchaChange = useCallback((value) => setCaptchaState(value), []);
 
@@ -152,8 +152,8 @@ export default function Register() {
         event?.preventDefault();
 
         if (!validate()) return;
-        if (captchaState.captcha?.required && !captchaState.token && !captchaState.answer) {
-            setServerError("Please complete the CAPTCHA.");
+        if (captchaState.captcha?.required && !captchaState.captcha_verification) {
+            setServerError("Please complete and verify the CAPTCHA.");
             return;
         }
 
@@ -169,9 +169,7 @@ export default function Register() {
 
     password: formData.password,
     confirm_password: formData.confirmPassword,
-    captcha_token: captchaState.token,
-    captcha_id: captchaState.captcha?.captcha_id,
-    captcha_answer: captchaState.answer,
+    captcha_verification: captchaState.captcha_verification,
 
     role: formData.role,
 

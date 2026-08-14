@@ -28,6 +28,7 @@ class UserLogin(BaseModel):
     captcha_token: str | None = None
     captcha_id: str | None = None
     captcha_answer: str | None = None
+    captcha_verification: str | None = None
 
 
 # class UserUpdate(BaseModel):
@@ -139,6 +140,7 @@ class RegisterRequest(BaseModel):
     captcha_token: str | None = None
     captcha_id: str | None = None
     captcha_answer: str | None = None
+    captcha_verification: str | None = None
 
     role: str
 

@@ -37,6 +37,18 @@ class RequestedScopeTests(unittest.TestCase):
         self.assertNotIn("MFA code", login)
         self.assertIn("/auth/request-otp", login)
 
+    def test_captcha_otp_flow_preserves_verified_token_until_consumed(self):
+        login = (ROOT / "client/src/pages/Login.jsx").read_text(encoding="utf-8")
+        captcha = (ROOT / "client/src/components/CaptchaWidget.jsx").read_text(encoding="utf-8")
+        otp_success_line = next(line for line in login.splitlines() if "setOtpSent(true)" in line)
+        self.assertNotIn("setCaptchaReset", otp_success_line)
+        self.assertIn("const captchaRejected", login)
+        self.assertIn("if (captchaRejected)", login)
+        self.assertIn("/auth/captcha/verify", captcha)
+        self.assertIn("captcha_verification", captcha)
+        self.assertIn("captcha-challenge", captcha)
+        self.assertNotIn("grecaptcha", captcha)
+
     def test_notification_and_publication_scope_contracts(self):
         auth = (ROOT / "backend/routers/auth.py").read_text(encoding="utf-8")
         verification = (ROOT / "backend/routers/verification.py").read_text(encoding="utf-8")
