@@ -5,9 +5,15 @@ export const createPublication = async (payload) => {
   return response.data;
 };
 
-export const fetchMyPublications = async (statusFilter = "", sort = "newest") => {
+export const fetchMyPublications = async (
+  statusFilter = "",
+  sort = "newest"
+) => {
   const response = await api.get("/publications/mine", {
-    params: { status_filter: statusFilter || undefined, sort },
+    params: {
+      status_filter: statusFilter || undefined,
+      sort,
+    },
   });
   return response.data;
 };
@@ -46,15 +52,32 @@ export const uploadPublicationFile = async (id, file) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await api.post(`/publications/${id}/upload`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await api.post(
+    `/publications/${id}/upload`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
   return response.data;
 };
-export const fetchPublishedPublications = async (search = "", publicationType = "", sort = "newest") => {
+
+export const fetchPublishedPublications = async (
+  search = "",
+  publicationType = "",
+  sort = "newest"
+) => {
   const response = await api.get("/publications/published", {
-    params: { search, publication_type: publicationType || undefined, sort },
+    params: {
+      search,
+      publication_type: publicationType || undefined,
+      sort,
+    },
   });
+
   return response.data;
 };
 
@@ -64,25 +87,46 @@ export const downloadPublicationFile = async (id) => {
   });
 
   let filename = "publication_file";
+
   const disposition = response.headers["content-disposition"];
+
   if (disposition) {
     const match = disposition.match(/filename="?([^"]+)"?/);
+
     if (match && match[1]) {
       filename = match[1];
     }
   }
 
-  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const url = window.URL.createObjectURL(
+    new Blob([response.data])
+  );
+
   const link = document.createElement("a");
+
   link.href = url;
   link.setAttribute("download", filename);
+
   document.body.appendChild(link);
   link.click();
   link.remove();
+
   window.URL.revokeObjectURL(url);
 };
 
 export const archivePublication = async (id) => {
-  const response = await api.patch(`/publications/${id}/archive`);
+  const response = await api.patch(
+    `/publications/${id}/archive`
+  );
+
+  return response.data;
+};
+
+// AI publication summary
+export const generatePublicationSummary = async (id) => {
+  const response = await api.post(
+    `/publications/${id}/ai-summary`
+  );
+
   return response.data;
 };
