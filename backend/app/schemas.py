@@ -414,6 +414,7 @@ class ReviewResponse(ReviewBase):
     file_path: Optional[str] = None
     status: str
     created_at: datetime
+    author_ids: List[int] = []
     creator_name: Optional[str] = None
     citation_count: int = 0
     total_citation_count: int = 0

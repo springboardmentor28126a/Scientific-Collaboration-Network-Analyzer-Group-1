@@ -31,8 +31,8 @@ export default function PublicationDetails() {
   const [tab, setTab] = useState('references');
   const [referenceForm, setReferenceForm] = useState(emptyReference);
   const [citationTarget, setCitationTarget] = useState('');
-  const canManage = ['researcher', 'system_admin'].includes(user?.role);
-  const isReviewer = ['reviewer', 'system_admin'].includes(user?.role);
+  const canManage = user && (user.role === 'system_admin' || (publication?.author_ids?.includes(user.id) ?? false));
+  const isReviewer = user && (['reviewer', 'system_admin'].includes(user.role));
 
   const load = async () => {
     try {

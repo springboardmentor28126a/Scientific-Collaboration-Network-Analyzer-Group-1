@@ -13,12 +13,14 @@ from ..schemas import CitationCreate, CitationResponse, CitationDecision, Citati
 router = APIRouter(prefix="/citations", tags=["citations"])
 
 def can_edit_publication(publication, user):
-    return user.role == UserRole.SYSTEM_ADMIN or publication.created_by_id == user.id
+    return user.role == UserRole.SYSTEM_ADMIN or any(author.id == user.id for author in publication.authors)
 
 def citation_data(item):
     return {**{c.name: getattr(item, c.name) for c in Citation.__table__.columns}, "citing_title": item.citing_publication.title if item.citing_publication else None, "cited_title": item.cited_publication.title if item.cited_publication else None}
 
 def reviewer_can_verify(item, user, db):
+    if item.created_by_id == user.id:
+        raise HTTPException(status_code=403, detail="You cannot verify or reject a citation you created")
     if user.role == UserRole.SYSTEM_ADMIN:
         return
     if user.role != UserRole.REVIEWER:
@@ -155,6 +157,8 @@ def verify_reference(reference_id: int, is_verified: bool = True, db: Session = 
     if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
     item = db.get(Reference, reference_id)
     if not item: raise HTTPException(status_code=404, detail="Reference not found")
+    if current_user.role == UserRole.REVIEWER and not db.query(Review).filter(Review.publication_id == item.publication_id, Review.reviewer_id == current_user.id).first():
+        raise HTTPException(status_code=403, detail="This reference is not associated with a publication assigned to you")
     item.is_verified = is_verified
     db.commit(); db.refresh(item); return item
 
@@ -163,5 +167,7 @@ def flag_reference(reference_id: int, is_flagged: bool = True, db: Session = Dep
     if current_user.role not in [UserRole.REVIEWER, UserRole.SYSTEM_ADMIN]: raise HTTPException(status_code=403, detail="Not authorized")
     item = db.get(Reference, reference_id)
     if not item: raise HTTPException(status_code=404, detail="Reference not found")
+    if current_user.role == UserRole.REVIEWER and not db.query(Review).filter(Review.publication_id == item.publication_id, Review.reviewer_id == current_user.id).first():
+        raise HTTPException(status_code=403, detail="This reference is not associated with a publication assigned to you")
     item.is_flagged = is_flagged
     db.commit(); db.refresh(item); return item

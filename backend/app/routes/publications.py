@@ -51,6 +51,8 @@ def normalize_publication_payload(payload: PublicationCreate | dict):
 def serialize_publication(publication: Publication):
     data = {column.name: getattr(publication, column.name) for column in Publication.__table__.columns}
     data["creator_name"] = publication.creator.full_name if getattr(publication, "creator", None) else None
+    # The client uses IDs only to render controls. The backend remains the authority.
+    data["author_ids"] = [author.id for author in publication.authors]
     # A stable application URL, not a filesystem path.
     data["file_path"] = f"/publications/{publication.id}/file" if publication.file_path else None
     data["total_citation_count"] = len(publication.citations_received)
@@ -127,9 +129,8 @@ def get_publication(pub_id: int, db: Session = Depends(get_db), current_user: Us
 
 
 def can_manage_publication(db_pub: Publication, current_user: User) -> bool:
-    # The publisher is the sole editor/deleter. System administration is not a
-    # content ownership override; it keeps the authoring boundary unambiguous.
-    return db_pub.created_by_id == current_user.id or current_user.role == UserRole.SYSTEM_ADMIN
+    """A publication's recorded authors (or a system admin) may manage it."""
+    return current_user.role == UserRole.SYSTEM_ADMIN or any(author.id == current_user.id for author in db_pub.authors)
 
 @router.post("/{pub_id}/upload", response_model=PublicationResponse)
 def upload_publication_file(
