@@ -9,6 +9,20 @@
       <input name="email" type="email" required>
       <label>Password</label>
       <input name="password" type="password" required>
+
+      {% if turnstile_site_key %}
+        <div class="cf-turnstile mt-2 mb-2"
+             data-sitekey="{{ turnstile_site_key }}"
+             data-callback="scnaOnTurnstileSuccess"
+             data-expired-callback="scnaOnTurnstileExpired"
+             data-error-callback="scnaOnTurnstileExpired">
+        </div>
+      {% else %}
+        <p class="small text-muted mt-2 mb-2">
+          CAPTCHA is not configured for this environment.
+        </p>
+      {% endif %}
+
       <button type="submit">Login</button>
       <p class="subtle">New user? <a href="{{ url_for('register_page') }}">Create an account</a>.</p>
     </form>
@@ -16,5 +30,8 @@
 {% endblock content %}
 
 {% block scripts %}
+  {% if turnstile_site_key %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
   <script type="module" src="{{ url_for('static', path='js/auth-page.js') }}"></script>
 {% endblock scripts %}

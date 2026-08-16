@@ -5,165 +5,157 @@
     <section class="page-header">
       <div>
         <p class="eyebrow">Publication Management</p>
-        <h1>Publication repository and citations</h1>
-        <p class="subtle">Manage publication records, uploads, DOI details, citation records, and reference links.</p>
+        <h1>Publication Repository &amp; DOI Records</h1>
+        <p class="subtle">Manage publication records, PDF uploads, DOI details, and citation counts.</p>
       </div>
+      <button type="button" class="btn btn-dark" data-requires="publications:create" data-bs-toggle="modal" data-bs-target="#addPublicationModal">
+        <i class="bi bi-plus-lg me-1"></i>Add Publication
+      </button>
     </section>
 
-    <section class="panel-grid">
-      <div class="panel wide">
-  <div class="panel-heading">
-    <div>
-      <h2>Search Publications</h2>
-      <p>Search and filter publication records.</p>
-    </div>
-  </div>
+    <!-- Publication Statistics Summary -->
+    <section class="metric-grid mb-4">
+      <div class="metric"><span>Total Publications</span><strong id="pubTotal">0</strong></div>
+      <div class="metric"><span>Total Citations</span><strong id="pubTotalCitations">0</strong></div>
+      <div class="metric"><span>Published</span><strong id="pubPublishedCount">0</strong></div>
+      <div class="metric"><span>Draft</span><strong id="pubDraftCount">0</strong></div>
+    </section>
 
-  <div class="form-grid">
-    <input
-      type="text"
-      id="searchTitle"
-      placeholder="Search by title"
-    >
-
-    <select id="filterType">
-      <option value="">All Types</option>
-      <option value="Journal">Journal</option>
-      <option value="Conference">Conference</option>
-      <option value="Book">Book</option>
-      <option value="Patent">Patent</option>
-      <option value="Technical Report">Technical Report</option>
-    </select>
-
-    <select id="filterStatus">
-      
-
-      <option value="">All Status</option>
-      <option value="Draft">Draft</option>
-      <option value="Submitted">Submitted</option>
-      <option value="Published">Published</option>
-      <option value="Archived">Archived</option>
-    </select>
-    <select id="sortBy">
-  <option value="id">Sort By</option>
-  <option value="title">Title (A-Z)</option>
-  <option value="publication_year">Publication Year</option>
-  <option value="citation_count">Citation Count</option>
-</select>
-
-<select id="sortOrder">
-  <option value="asc">Ascending</option>
-  <option value="desc">Descending</option>
-</select>
-
-    <button
-      type="button"
-      id="searchBtn">
-      Search
-    </button>
-    <button type="button" id="clearSearchBtn">Clear</button>
-
-
-  </div>
-  <div id="searchResults" style="margin-top:20px;"></div>
-
-<div style="margin-top:20px; text-align:center;">
-  <button type="button" id="prevPage">Previous</button>
-
-  <span id="pageNumber" style="margin:0 15px;">
-    Page 1
-  </span>
-
-  <button type="button" id="nextPage">Next</button>
-</div>
-</div>
-      <div class="panel wide">
-        <div class="panel-heading">
-          <div>
-            <h2>Publication Repository</h2>
-            <p>Journal papers, conference papers, books, patents, and technical reports.</p>
-          </div>
+    <!-- Search, Filter & Publication List -->
+    <section class="panel wide">
+      <div class="panel-heading">
+        <div>
+          <h2>Publication Directory</h2>
+          <p>Journal papers, conference papers, books, patents, and technical reports.</p>
         </div>
-        <form class="form-grid" id="publicationForm">
-          <input name="researcher_id" type="number" placeholder="Primary researcher ID" required>
-          <input name="title" placeholder="Title" required>
-          <input
-    name="authors"
-    placeholder="Authors (comma separated)"
-    required
->
-<textarea
-    name="abstract"
-    placeholder="Abstract"
-    rows="4">
-</textarea>
-<input
-    name="citation_count"
-    type="number"
-    placeholder="Citation Count"
-    value="0"
-    min="0"
->
-          <select name="publication_type" required>
+      </div>
+
+      <div class="module-toolbar">
+        <div class="input-group module-search">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="search" id="pubSearchTitle" class="form-control" placeholder="Search publications..." autocomplete="off">
+        </div>
+        <div class="module-filters">
+          <select id="pubFilterType" class="form-select">
+            <option value="">All Types</option>
             <option value="Journal">Journal</option>
             <option value="Conference">Conference</option>
             <option value="Book">Book</option>
             <option value="Patent">Patent</option>
             <option value="Technical Report">Technical Report</option>
           </select>
-          <input name="publication_name" placeholder="Journal / conference / book name" required>
-          <input name="publication_year" type="number" placeholder="Year" required>
-          <input name="doi" placeholder="DOI">
-          <select name="status">
+          <select id="pubFilterStatus" class="form-select">
+            <option value="">All Status</option>
             <option value="Draft">Draft</option>
             <option value="Submitted">Submitted</option>
             <option value="Published">Published</option>
             <option value="Archived">Archived</option>
           </select>
-         <input
-    type="file"
-    name="pdf_file"
-    accept=".pdf"
->
-          <button type="submit">Add publication</button>
-        </form>
+          <select id="pubSortBy" class="form-select">
+            <option value="id">Sort: ID</option>
+            <option value="title">Sort: Title (A-Z)</option>
+            <option value="publication_year">Sort: Year</option>
+            <option value="citation_count">Sort: Citations</option>
+          </select>
+          <select id="pubSortOrder" class="form-select">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+          <button type="button" class="btn btn-outline-secondary" id="pubClearBtn">Reset</button>
+        </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Citations</h2>
-            <p>Citation records, DOI management, references, and publication linking.</p>
-          </div>
-        </div>
-        <div class="form-grid" style="margin-bottom:20px;">
-    <input
-        type="text"
-        id="searchCitationText"
-        placeholder="Search citation text"
-    >
+      <div id="publicationList" class="row g-3 my-2">
+        <div class="text-center py-4 text-muted">Loading publications...</div>
+      </div>
 
-    <button type="button" id="searchCitationBtn">
-        Search
-    </button>
-
-    <button type="button" id="clearCitationBtn">
-        Clear
-    </button>
-</div>
-        <form class="form-grid" id="citationForm">
-
-          <input name="publication_id" type="number" placeholder="Publication ID" required>
-          <input name="cited_publication_id" type="number" placeholder="Cited publication ID">
-          <input name="citation_text" placeholder="Citation text" required>
-          <input name="doi" placeholder="DOI">
-          <input name="reference_order" type="number" placeholder="Reference order">
-          <button type="submit">Add citation</button>
-        </form>
-        <div id="citationResults" style="margin-top:20px;"></div>
-      
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pubPrevPage" disabled>Previous</button>
+        <span class="text-muted small" id="pubPageNum">Page 1</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pubNextPage">Next</button>
       </div>
     </section>
+
+    <!-- Add / Edit Publication Modal -->
+    <div class="modal fade" id="addPublicationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Publication</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="addPublicationForm">
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Primary Researcher ID *</label>
+                  <input class="form-control" type="number" name="researcher_id" placeholder="Researcher ID" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Title *</label>
+                  <input class="form-control" name="title" placeholder="Publication title" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Authors *</label>
+                <input class="form-control" name="authors" placeholder="Authors (comma separated)" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Abstract</label>
+                <textarea class="form-control" name="abstract" rows="3" placeholder="Abstract"></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Publication Type *</label>
+                  <select class="form-select" name="publication_type" required>
+                    <option value="Journal">Journal</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Book">Book</option>
+                    <option value="Patent">Patent</option>
+                    <option value="Technical Report">Technical Report</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Year *</label>
+                  <input class="form-control" type="number" name="publication_year" placeholder="e.g. 2026" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Citation Count</label>
+                  <input class="form-control" type="number" name="citation_count" value="0" min="0">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Publication Name *</label>
+                <input class="form-control" name="publication_name" placeholder="Journal / conference / book name" required>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">DOI</label>
+                  <input class="form-control" name="doi" placeholder="e.g. 10.1000/xyz123">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Status</label>
+                  <select class="form-select" name="status">
+                    <option value="Draft">Draft</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="Published">Published</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">PDF Upload</label>
+                <input class="form-control" type="file" name="pdf_file" accept=".pdf">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-dark">Add Publication</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </section>
 {% endblock content %}
 

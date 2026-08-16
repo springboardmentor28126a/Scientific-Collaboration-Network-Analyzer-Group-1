@@ -16,6 +16,7 @@ from app.backend.models.project import ResearchProject, ProjectAssignment
 from app.backend.models.conference import Conference, ConferenceParticipation
 from app.backend.models.citation import Citation
 from app.backend.models.audit import AuditLog
+from app.backend.models.notification import Notification
 
 # Import routers
 from app.backend.routers import user
@@ -29,7 +30,10 @@ from app.backend.routers import citation
 from app.backend.routers import audit
 from app.backend.routers import dashboard
 from app.backend.routers import report
+from app.backend.routers import analytics
 from app.backend.routers import frontend
+from app.backend.routers import notification
+from app.backend.routers import ai_collaboration
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -65,6 +69,10 @@ app.include_router(citation.router)
 app.include_router(audit.router)
 app.include_router(dashboard.router)
 app.include_router(report.router)
+app.include_router(analytics.router)
+
+app.include_router(notification.router)
+app.include_router(ai_collaboration.router)
 
 
 @app.get("/health", tags=["Health"])

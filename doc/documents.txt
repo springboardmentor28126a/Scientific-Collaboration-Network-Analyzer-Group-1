@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 python -m uvicorn app.main:app --reload --app-dir backend
+=======
+
+python -m uvicorn app.main:app --reload
+>>>>>>> sharnitha-v
