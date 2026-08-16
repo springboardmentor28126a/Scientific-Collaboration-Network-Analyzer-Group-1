@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
+=======
+from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import Request, HTTPException
+>>>>>>> origin/P-Lakshmi-Sravani
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -30,7 +35,6 @@ from app.utils.constants import UserRole
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
 @router.post("/register", response_model=UserResponse)
 async def register_user(
     user: UserRegister,
@@ -38,12 +42,16 @@ async def register_user(
     db: Session = Depends(get_db),
 ):
     client_ip = request.client.host if request.client else None
+<<<<<<< HEAD
 
     # Verify Cloudflare Turnstile CAPTCHA
     captcha_valid = await verify_turnstile_token(
         user.captcha_token,
         client_ip,
     )
+=======
+    captcha_valid = await verify_turnstile_token(user.captcha_token, client_ip)
+>>>>>>> origin/P-Lakshmi-Sravani
 
     if not captcha_valid:
         raise HTTPException(

@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Turnstile } from "@marsidev/react-turnstile";
 
+=======
+import { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Turnstile } from "@marsidev/react-turnstile";
+>>>>>>> origin/P-Lakshmi-Sravani
 import { loginUser } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
 import { getDashboardPathForRole } from "../utils/roleRedirect";
@@ -12,21 +19,29 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
 
   const turnstileRef = useRef(null);
 
+=======
+  const turnstileRef = useRef(null);
+>>>>>>> origin/P-Lakshmi-Sravani
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/P-Lakshmi-Sravani
     const captchaToken = turnstileRef.current?.getResponse();
 
     if (!captchaToken) {
       toast.error("Please complete the CAPTCHA.");
       return;
     }
+<<<<<<< HEAD
 
     setLoading(true);
 
@@ -47,6 +62,17 @@ function LoginPage() {
 
       // Fallback for direct token response
       login(data);
+=======
+    setLoading(true);
+
+    try {
+      const data = await loginUser({ username, password, captcha_token: captchaToken, });
+      if (data.mfa_required) {
+    navigate("/verify-otp", { state: { userId: data.user_id } });
+  } else {
+    // Fallback in case backend ever returns a direct token (shouldn't happen with MFA enabled)
+    login(data);
+>>>>>>> origin/P-Lakshmi-Sravani
 
       // Force password change if required
       if (data.must_reset_password) {
@@ -54,6 +80,7 @@ function LoginPage() {
       } else {
         navigate(getDashboardPathForRole(data.role));
       }
+    }
     } catch (err) {
       const detail = err?.response?.data?.detail;
 
@@ -85,6 +112,7 @@ function LoginPage() {
           />
 
           <label>Password</label>
+<<<<<<< HEAD
 
           <input
             type="password"
@@ -95,16 +123,23 @@ function LoginPage() {
             required
           />
 
+=======
+          <input type="password" name="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+>>>>>>> origin/P-Lakshmi-Sravani
           <Turnstile
             ref={turnstileRef}
             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
           />
 
+<<<<<<< HEAD
           <button
             type="submit"
             className="btn-primary btn-block"
             disabled={loading}
           >
+=======
+          <button type="submit" className="btn-primary btn-block" disabled={loading}>
+>>>>>>> origin/P-Lakshmi-Sravani
             {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
