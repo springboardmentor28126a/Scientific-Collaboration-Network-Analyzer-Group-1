@@ -20,6 +20,7 @@ from app.models.collaboration import Collaboration
 from app.models.citation import Citation
 from app.models.notification import Notification
 from app.models.otp_code import OtpCode
+from app.models.message import Message
 config = context.config
 
 if config.config_file_name is not None:
