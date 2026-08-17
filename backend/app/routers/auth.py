@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import secrets
-
+from app.models.researcher import Researcher
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse
@@ -12,6 +12,9 @@ from app.auth.hash import hash_password, verify_password
 from app.auth.jwt_handler import create_access_token
 from app.auth.dependencies import get_current_user
 from app.services.email_service import send_verification_email
+from app.schemas.audit import AuditLogCreate
+from app.services.audit_service import create_audit_log
+from app.models.researcher import Researcher
 
 
 router = APIRouter(
@@ -50,13 +53,30 @@ def register(
         email=user.email,
         password=hash_password(user.password),
         role=user.role,
-
         email_verified=False,
         verification_token=verification_token,
         verification_token_expiry=verification_expiry
     )
 
     db.add(new_user)
+
+    # Create researcher profile automatically
+    if user.role == "researcher":
+
+        existing_researcher = db.query(Researcher).filter(
+            Researcher.email == user.email
+        ).first()
+
+        if not existing_researcher:
+            new_researcher = Researcher(
+                name=user.full_name,
+                email=user.email,
+                university="Not Provided",
+                department="Not Provided"
+            )
+
+            db.add(new_researcher)
+
     db.commit()
     db.refresh(new_user)
 
@@ -72,9 +92,18 @@ def register(
             user.email,
             verification_link
         )
+
     except Exception as e:
-        # If email sending fails, remove the created user
         db.delete(new_user)
+
+        if user.role == "researcher":
+            researcher = db.query(Researcher).filter(
+                Researcher.email == user.email
+            ).first()
+
+            if researcher:
+                db.delete(researcher)
+
         db.commit()
 
         raise HTTPException(
@@ -85,7 +114,6 @@ def register(
     return {
         "message": "Registration successful. Please check your email and verify your account."
     }
-
 
 # =========================
 # LOGIN
@@ -134,6 +162,17 @@ def login(
         "role": db_user.role
     }
 )
+    create_audit_log(
+    db,
+    AuditLogCreate(
+        user_id=db_user.id,
+        action="EMAIL_VERIFIED",
+        module="Security",
+        description="User email verified successfully",
+        entity_type="User",
+        entity_id=db_user.id
+    )
+)
 
     return {
         "access_token": access_token,
@@ -154,38 +193,48 @@ def verify_email(
         User.verification_token == token
     ).first()
 
+    # Token invalid ya already used
     if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or already used verification link"
+        )
+
+    # Already verified
+    if user.email_verified:
+        return RedirectResponse(
+            url="http://localhost:5173/",
+            status_code=303
+        )
+
+    # Expiry missing
+    if not user.verification_token_expiry:
         raise HTTPException(
             status_code=400,
             detail="Invalid verification token"
         )
 
-    if not user.verification_token_expiry:
-        raise HTTPException(
-            status_code=400,
-            detail="Verification token is invalid"
-        )
-
+    # Token expired
     if user.verification_token_expiry < datetime.utcnow():
         raise HTTPException(
             status_code=400,
-            detail="Verification token has expired"
+            detail="Verification link has expired"
         )
 
-    # Mark email as verified
+    # Verify email
     user.email_verified = True
 
-    # Remove token after successful verification
+    # Token ko invalidate karo
     user.verification_token = None
     user.verification_token_expiry = None
 
     db.commit()
 
+    # Frontend login page par redirect
     return RedirectResponse(
-    url="http://localhost:5173/",
-    status_code=303
-)
-
+        url="http://localhost:5173/",
+        status_code=303
+    )
 
 # =========================
 # PROFILE
@@ -205,5 +254,15 @@ def profile(
             status_code=404,
             detail="User not found"
         )
-
+    create_audit_log(
+    db,
+    AuditLogCreate(
+        user_id=db_user.id,
+        action="PROFILE_VIEWED",
+        module="User",
+        description="User profile viewed",
+        entity_type="User",
+        entity_id=db_user.id
+    )
+)
     return user
