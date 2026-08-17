@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+
 import {
   FaHome,
   FaUsers,
@@ -6,85 +7,37 @@ import {
   FaUniversity,
   FaChalkboardTeacher,
   FaProjectDiagram,
-  FaUsersCog,
   FaHandshake,
-  FaLink,
   FaChartBar,
   FaSignOutAlt,
-  FaTasks,
   FaQuoteRight,
   FaClipboardList,
+  FaTasks,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaUserCheck,
 } from "react-icons/fa";
 
 import "../styles/sidebar.css";
 
 function Sidebar() {
-
-  // Get role from JWT token
-  const token = localStorage.getItem("token");
-
-  let userRole = "researcher";
-
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload.role || "researcher";
-    } catch (error) {
-      console.log("Invalid token");
-    }
-  }
+  const userRole = localStorage.getItem("role") || "researcher";
 
   return (
     <div className="sidebar">
 
       <h2 className="menu-title">MENU</h2>
 
-      {/* Common */}
+      {/* ================= COMMON ================= */}
+
       <Link to="/dashboard">
         <FaHome /> Dashboard
       </Link>
 
 
-      {/* ================= RESEARCHER ================= */}
-      {userRole === "researcher" && (
-        <>
-          <Link to="/researchers">
-            <FaUsers /> Researchers
-          </Link>
+      {/* ================= SUPER ADMIN ================= */}
 
-          <Link to="/publications">
-            <FaBook /> Publications
-          </Link>
-
-          <Link to="/conferences">
-            <FaChalkboardTeacher /> Conferences
-          </Link>
-
-          <Link to="/projects">
-            <FaProjectDiagram /> Projects
-          </Link>
-
-          <Link to="/project-assignments">
-            <FaTasks /> Project Assignments
-          </Link>
-
-          <Link to="/citations">
-            <FaQuoteRight /> Citations
-          </Link>
-
-          <Link to="/references">
-            <FaLink /> References
-          </Link>
-
-          <Link to="/institution-collaborations">
-            <FaHandshake /> Institutional Collaborations
-          </Link>
-        </>
-      )}
-
-
-      {/* ================= CLIENT ================= */}
-      {userRole === "client" && (
+      {userRole === "system_admin" && (
         <>
           <Link to="/researchers">
             <FaUsers /> Researchers
@@ -98,47 +51,137 @@ function Sidebar() {
             <FaBook /> Publications
           </Link>
 
-          <Link to="/conferences">
-            <FaChalkboardTeacher /> Conferences
-          </Link>
-
-          <Link to="/projects">
-            <FaProjectDiagram /> Projects
-          </Link>
-
-          <Link to="/teams">
-            <FaUsersCog /> Teams
-          </Link>
-
           <Link to="/citations">
             <FaQuoteRight /> Citations
           </Link>
 
-          <Link to="/references">
-            <FaLink /> References
+          <Link to="/institution-collaborations">
+            <FaHandshake /> Collaborations
+          </Link>
+
+          <Link to="/reports">
+            <FaChartBar /> Research Analytics
           </Link>
 
           <Link to="/audit">
             <FaClipboardList /> Audit & Compliance
           </Link>
-
-          <div style={{ marginTop: "20px" }}>
-            <Link to="/reports">
-              <FaChartBar /> Reports
-            </Link>
-          </div>
         </>
       )}
 
 
-      {/* Collaboration Graph - common */}
-      <Link to="/collaboration-graph">
-        <FaProjectDiagram /> Collaboration Graph
-      </Link>
+      {/* =========================
+    INSTITUTION ADMIN
+========================= */}
+
+{userRole === "institution_admin" && (
+  <>
+    <Link to="/researchers">
+      <FaUsers /> Researchers
+    </Link>
+
+    <Link to="/publications">
+      <FaBook /> Publications
+    </Link>
+
+    <Link to="/citations">
+      <FaQuoteRight /> Citations
+    </Link>
+
+    <Link to="/institution-collaborations">
+      <FaHandshake /> Collaborations
+    </Link>
+
+    <Link to="/conferences">
+      <FaChalkboardTeacher /> Conferences
+    </Link>
+
+    <Link to="/reports">
+      <FaChartBar /> Analytics
+    </Link>
+  </>
+)}
+
+      {/* ================= RESEARCHER ================= */}
+
+      {userRole === "researcher" && (
+        <>
+          <Link to="/publications">
+            <FaBook /> My Publications
+          </Link>
+
+          <Link to="/citations">
+            <FaQuoteRight /> My Citations
+          </Link>
+
+          <Link to="/institution-collaborations">
+            <FaHandshake /> My Collaborators
+          </Link>
+
+          <Link to="/project-assignments">
+            <FaTasks /> Collaboration Requests
+          </Link>
+
+          <Link to="/conferences">
+            <FaChalkboardTeacher /> Conferences
+          </Link>
+
+          <Link to="/reports">
+            <FaChartBar /> Statistics
+          </Link>
+
+          <Link to="/researchers">
+            <FaUsers /> Recommended Researchers
+          </Link>
+        </>
+      )}
 
 
-      {/* Logout */}
-      <Link className="logout" to="/">
+      {/* ================= REVIEWER ================= */}
+
+      {userRole === "reviewer" && (
+        <>
+          <Link to="/publications">
+            <FaBook /> Publication Reviews
+          </Link>
+
+          <Link to="/citations">
+            <FaQuoteRight /> Citation Verifications
+          </Link>
+
+          <Link to="/publications">
+            <FaCheckCircle /> Approved Publications
+          </Link>
+
+          <Link to="/publications">
+            <FaTimesCircle /> Rejected Publications
+          </Link>
+
+          <Link to="/citations">
+            <FaCheckCircle /> Verified Citations
+          </Link>
+
+          <Link to="/citations">
+            <FaTimesCircle /> Rejected Citations
+          </Link>
+
+          <Link to="/reports">
+            <FaUserCheck /> Review Activity
+          </Link>
+        </>
+      )}
+
+
+      {/* ================= LOGOUT ================= */}
+
+      <Link
+        className="logout"
+        to="/"
+        onClick={() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+        }}
+      >
         <FaSignOutAlt /> Logout
       </Link>
 

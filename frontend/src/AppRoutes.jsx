@@ -16,13 +16,38 @@ import Citations from "./pages/Citations";
 import References from "./pages/References";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
+import ResearcherDashboard from "./pages/ResearcherDashboard";
+import InstitutionAdminDashboard from "./pages/InstitutionAdminDashboard";
+import ReviewerDashboard from "./pages/ReviewerDashboard";
+import SystemAdminDashboard from "./pages/SystemAdminDashboard";
+function RoleDashboard() {
+  const role = localStorage.getItem("role");
+
+  switch (role) {
+    case "researcher":
+      return <ResearcherDashboard />;
+
+    case "institution_admin":
+      return <InstitutionAdminDashboard />;
+
+    case "reviewer":
+      return <ReviewerDashboard />;
+
+    case "system_admin":
+      return <SystemAdminDashboard />;
+
+    default:
+      return <Login />;
+  }
+}
+
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<RoleDashboard />} />
         <Route path="/researchers" element={<Researchers />} />
         <Route path="/publications" element={<Publications />} />
         <Route path="/conferences" element={<Conferences />} />

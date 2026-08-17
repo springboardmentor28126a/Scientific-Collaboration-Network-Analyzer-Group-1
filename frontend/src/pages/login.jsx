@@ -20,6 +20,7 @@ function Login() {
 console.log(response.data);
       localStorage.setItem("token", response.data.access_token);
       localStorage.setItem("role", role);
+      localStorage.setItem("email", email);
 
       alert("Login Successful");
 
@@ -122,7 +123,9 @@ console.log(response.data);
   }}
 >
   <option value="researcher">Researcher</option>
-  <option value="client">Client</option>
+<option value="institution_admin">Institution Admin</option>
+<option value="reviewer">Reviewer</option>
+<option value="system_admin">System Administrator</option>
 </select>
         <button
           onClick={handleLogin}

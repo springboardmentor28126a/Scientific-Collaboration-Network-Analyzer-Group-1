@@ -8,6 +8,7 @@ class CitationCreate(BaseModel):
     publication_year: int
     doi: str | None = None
     citation_count: int = 0
+    verification_status: str = "Pending"
 
 
 class CitationUpdate(BaseModel):
@@ -17,6 +18,7 @@ class CitationUpdate(BaseModel):
     publication_year: int
     doi: str | None = None
     citation_count: int
+    verification_status: str | None = None
 
 
 class CitationResponse(BaseModel):
@@ -27,6 +29,7 @@ class CitationResponse(BaseModel):
     publication_year: int
     doi: str | None = None
     citation_count: int
+    verification_status: str
 
     class Config:
         from_attributes = True

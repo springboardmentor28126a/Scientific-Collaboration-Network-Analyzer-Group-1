@@ -140,7 +140,9 @@ function Signup() {
   }}
 >
   <option value="researcher">Researcher</option>
-  <option value="client">Client</option>
+<option value="institution_admin">Institution Admin</option>
+<option value="reviewer">Reviewer</option>
+<option value="system_admin">System Administrator</option>
 </select>
         <button
           onClick={handleSignup}
