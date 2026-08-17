@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../services/api";
-import { FaTrash } from "react-icons/fa";
-import PublicationDetailsModal from "../components/publications/PublicationDetailsModal";
+import { FaExternalLinkAlt, FaQuoteRight, FaTrash } from "react-icons/fa";
 import EditPublicationModal from "../components/publications/EditPublicationModal";
 import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
-import { createCitation } from "../services/citationService";
+import { createCitation, formatCitation } from "../services/citationService";
+import CitationModal from "../components/CitationModal";
 import useDismissibleLayer from "../hooks/useDismissibleLayer";
 import { getAuthUser } from "../utils/authStorage";
 function Publications() {
   const currentUser = getAuthUser();
+  const navigate = useNavigate();
   const canCreatePublication = ["Researcher", "System Admin"].includes(currentUser?.role);
   const [searchParams] = useSearchParams();
   const [publications, setPublications] = useState([]);
@@ -22,7 +23,10 @@ function Publications() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [customType, setCustomType] = useState("");
   const fileInputRef = useRef(null);
-  const [selectedPublication, setSelectedPublication] = useState(null);
+  const [citationTarget, setCitationTarget] = useState(null);
+  const [citationText, setCitationText] = useState("");
+  const [citationStyle, setCitationStyle] = useState("APA");
+  const [citationLoading, setCitationLoading] = useState(false);
   const [editingPublication, setEditingPublication] = useState(null);
   const [deletePublicationData, setDeletePublicationData] = useState(null);
   const [selectedCitations, setSelectedCitations] = useState([]);
@@ -658,27 +662,7 @@ function Publications() {
         boxShadow: "0 18px 60px rgba(0,0,0,0.18)"
 
     };
-    const loadPublication = async (id) => {
-
-        try {
-
-            const response = await API.get(
-
-                `/publications/${id}`
-
-            );
-
-            setSelectedPublication(response.data);
-
-        }
-
-        catch (error) {
-
-            console.log(error);
-
-        }
-
-    };
+    const loadPublication = (id) => navigate('/publication/' + id);
 
     useEffect(() => {
         const publicationId = searchParams.get("publication");
@@ -737,6 +721,29 @@ function Publications() {
         }
 
     };
+  const openCitation = async (publication) => {
+    setCitationTarget(publication);
+    setCitationLoading(true);
+    try {
+      const formatted = await formatCitation(publication.id, "APA");
+      setCitationText(formatted.citation);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setCitationLoading(false);
+    }
+  };
+  const updateCardCitation = async (style) => {
+    setCitationStyle(style);
+    if (!citationTarget) return;
+    setCitationLoading(true);
+    try {
+      const response = await formatCitation(citationTarget.id, style);
+      setCitationText(response.citation);
+    } finally {
+      setCitationLoading(false);
+    }
+  };
     return (
         <div style={{ padding: "30px" }}>
 
@@ -1113,6 +1120,7 @@ function Publications() {
                     <button
                         type="button"
                         onClick={() => setShowReferences(!showReferences)}
+                        className="publication-references-toggle"
                         style={{
                             background: "transparent",
                             border: "none",
@@ -1123,7 +1131,7 @@ function Publications() {
                             padding: "5px 0"
                         }}
                     >
-                        References (Citations) {showReferences ? "−" : "+"}
+                        <FaQuoteRight /> References (Citations) {showReferences ? "−" : "+"}
                     </button>
 
                     {showReferences && (
@@ -1379,6 +1387,15 @@ function Publications() {
             <b>Keywords:</b>{" "}
             {publication.keywords || "N/A"}
         </p>
+        <div className="publication-card-citation">
+            <div className="publication-card-citation-heading">
+                <span><FaQuoteRight /> Citation</span>
+                <small>Use this publication in your research</small>
+            </div>
+            <button type="button" className="publication-card-cite-button" onClick={() => openCitation(publication)}>
+                <FaQuoteRight /> Cite <FaExternalLinkAlt />
+            </button>
+        </div>
 
                         <div
                             style={{
@@ -1452,23 +1469,17 @@ function Publications() {
                 <span>Page {publicationPage} of {publicationPageCount}</span>
                 <button type="button" disabled={publicationPage >= publicationPageCount} onClick={() => setPublicationPage((page) => page + 1)}>Next</button>
             </div>
-            {
-                selectedPublication && (
-
-                    <PublicationDetailsModal
-
-                        publication={selectedPublication}
-
-                        onClose={() =>
-
-                            setSelectedPublication(null)
-
-                        }
-
-                    />
-
-                )
-            }
+            <CitationModal
+                publication={citationTarget}
+                open={Boolean(citationTarget)}
+                onClose={() => setCitationTarget(null)}
+                publicationId={citationTarget?.id}
+                citation={citationText}
+                style={citationStyle}
+                onStyleChange={updateCardCitation}
+                onGenerate={() => updateCardCitation(citationStyle)}
+                loading={citationLoading}
+            />
             {
                 editingPublication && (
 

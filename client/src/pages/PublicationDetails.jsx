@@ -4,6 +4,7 @@ import API from "../services/api";
 import { formatCitation, getCitationStats } from "../services/citationService";
 import CitationModal from "../components/CitationModal";
 import ResearcherInviteButton from "../components/ResearcherInviteButton";
+import { FaBookOpen, FaExternalLinkAlt, FaQuoteRight } from "react-icons/fa";
 
 function PublicationDetails() {
     const { id } = useParams();
@@ -15,6 +16,9 @@ function PublicationDetails() {
     const [citationStats, setCitationStats] = useState(null);
     const [showCitationModal, setShowCitationModal] = useState(false);
     const [citationLoading, setCitationLoading] = useState(false);
+    const [references, setReferences] = useState([]);
+    const [referencesLoading, setReferencesLoading] = useState(true);
+    const [showReferences, setShowReferences] = useState(false);
 
     useEffect(() => {
         loadPublicationDetails();
@@ -31,10 +35,13 @@ function PublicationDetails() {
             ]);
             setCitation(formatted.citation);
             setCitationStats(stats);
+            const referencesResponse = await API.get('/citation/' + id);
+            setReferences(referencesResponse.data || []);
         } catch (error) {
             console.log(error);
         } finally {
             setLoading(false);
+            setReferencesLoading(false);
         }
     };
 
@@ -91,9 +98,19 @@ function PublicationDetails() {
                             <h2>Citation</h2>
                             <p>{citationStats?.times_cited || 0} citations · {citationStats?.reference_count || 0} references</p>
                         </div>
-                        <button type="button" className="citation-open-button" onClick={() => setShowCitationModal(true)}>Citation <span>↗</span></button>
+                        <button type="button" className="citation-open-button" onClick={() => setShowCitationModal(true)}><FaQuoteRight /> Cite <FaExternalLinkAlt /></button>
                     </div>
                     <p className="citation-card-hint">Generate and export this publication in APA, IEEE, MLA, Chicago or BibTeX format.</p>
+                </section>
+                <section className="publication-references-section">
+                    <button type="button" className="references-toggle" onClick={() => setShowReferences(!showReferences)} aria-expanded={showReferences}>
+                        <span><FaBookOpen /> References <small>{references.length}</small></span><span>{showReferences ? "-" : "+"}</span>
+                    </button>
+                    {showReferences && <div className="references-list">
+                        {referencesLoading && <p className="reference-empty">Loading references...</p>}
+                        {!referencesLoading && references.length === 0 && <p className="reference-empty">No references have been added to this publication.</p>}
+                        {!referencesLoading && references.map((reference) => <ReferenceCard key={reference.id} reference={reference} onOpen={(publicationId) => navigate('/publication/' + publicationId)} />)}
+                    </div>}
                 </section>
                 <p><b>PDF:</b> {publication.pdf_file ? <a href={publication.pdf_file} target="_blank" rel="noreferrer">Download PDF</a> : "Not available"}</p>
                 {institution && (
@@ -127,7 +144,7 @@ function PublicationDetails() {
                     )}
                 </Section>
             </div>
-            <CitationModal open={showCitationModal} onClose={() => setShowCitationModal(false)} publicationId={id} citation={citation} style={citationStyle} onStyleChange={updateCitation} onGenerate={() => updateCitation(citationStyle)} loading={citationLoading} />
+            <CitationModal publication={publication} open={showCitationModal} onClose={() => setShowCitationModal(false)} publicationId={id} citation={citation} style={citationStyle} onStyleChange={updateCitation} onGenerate={() => updateCitation(citationStyle)} loading={citationLoading} />
         </div>
     );
 }
@@ -150,6 +167,22 @@ function ResultItem({ label, subtitle, onClick }) {
     );
 }
 
+function ReferenceCard({ reference, onOpen }) {
+    const publication = reference.cited_publication;
+    if (!publication) return null;
+    const details = [publication.authors, publication.publication_year].filter(Boolean).join(" • ");
+    return (
+        <article className="reference-card">
+            <div className="reference-card-icon"><FaQuoteRight /></div>
+            <div className="reference-card-content">
+                <button type="button" className="reference-title" onClick={() => onOpen(publication.id)}>{publication.title}</button>
+                {details && <p>{details}</p>}
+                {(publication.journal || publication.doi) && <small>{[publication.journal, publication.doi && `DOI: ${publication.doi}`].filter(Boolean).join(" • ")}</small>}
+            </div>
+            <button type="button" className="reference-view-button" onClick={() => onOpen(publication.id)}>View <FaExternalLinkAlt /></button>
+        </article>
+    );
+}
 const cardStyle = {
     background: "rgba(255,255,255,0.06)",
     padding: "25px",

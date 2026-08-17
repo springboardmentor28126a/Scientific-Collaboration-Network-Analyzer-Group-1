@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import useDismissibleLayer from "../hooks/useDismissibleLayer";
-import { FaCheck, FaClipboard, FaDownload, FaTimes } from "react-icons/fa";
+import { FaCheck, FaClipboard, FaDownload, FaQuoteRight, FaTimes } from "react-icons/fa";
 
 const STYLES = ["APA", "IEEE", "MLA", "Chicago", "BibTeX"];
 
-function CitationModal({ open, onClose, publicationId, citation, style, onStyleChange, onGenerate, loading }) {
+function CitationModal({ open, onClose, publicationId, publication, citation, style, onStyleChange, onGenerate, loading }) {
     const [copied, setCopied] = useState(false);
     const [hasGenerated, setHasGenerated] = useState(false);
     const modalRef = useDismissibleLayer(onClose, open);
@@ -47,7 +47,12 @@ function CitationModal({ open, onClose, publicationId, citation, style, onStyleC
                 <div><span className="citation-modal-kicker">ACADEMIC TOOLKIT</span><h2 id="citation-modal-title">Generate Citation</h2><p>Generate a citation for this publication in your preferred academic format.</p></div>
                 <button className="citation-close" type="button" onClick={onClose} aria-label="Close citation dialog"><FaTimes /></button>
             </div>
-            {!hasGenerated && <div className="citation-modal-intro">
+            {publication && <div className="citation-selected-publication">
+                <span className="citation-selected-label"><FaQuoteRight /> CITING PUBLICATION</span>
+                <strong>{publication.title}</strong>
+                <span>{[publication.authors, publication.publication_year, publication.journal].filter(Boolean).join(" • ")}</span>
+                {publication.doi && <small>DOI: {publication.doi}</small>}
+            </div>}            {!hasGenerated && <div className="citation-modal-intro">
                 <div className="citation-intro-icon">✦</div>
                 <h3>Ready to create your citation?</h3>
                 <p>Choose your preferred academic format, then generate a polished citation for this publication.</p>

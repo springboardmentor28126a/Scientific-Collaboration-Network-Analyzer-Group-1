@@ -1,11 +1,43 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaQuoteRight } from "react-icons/fa";
+import CitationModal from "../components/CitationModal";
+import { formatCitation } from "../services/citationService";
 import API from "../services/api";
 import Pagination from "../components/Pagination";
 import useDismissibleLayer from "../hooks/useDismissibleLayer";
 
 function SearchPublications() {
+    const navigate = useNavigate();
+    const [citationTarget, setCitationTarget] = useState(null);
+    const [citationText, setCitationText] = useState("");
+    const [citationStyle, setCitationStyle] = useState("APA");
+    const [citationLoading, setCitationLoading] = useState(false);
 
     const [publications, setPublications] = useState([]);
+    const openCitation = async (publication) => {
+        setCitationTarget(publication);
+        setCitationLoading(true);
+        try {
+            const formatted = await formatCitation(publication.id, "APA");
+            setCitationText(formatted.citation);
+        } finally {
+            setCitationLoading(false);
+        }
+    };
+
+    const updateCitation = async (style) => {
+        setCitationStyle(style);
+        if (!citationTarget) return;
+        setCitationLoading(true);
+        try {
+            const formatted = await formatCitation(citationTarget.id, style);
+            setCitationText(formatted.citation);
+        } finally {
+            setCitationLoading(false);
+        }
+    };
+
 
     const [search, setSearch] = useState("");
 
@@ -16,7 +48,6 @@ function SearchPublications() {
 
     const [filterValue, setFilterValue] = useState("");
     const [sortOption, setSortOption] = useState("Title (A-Z)");
-    const [selectedPublication, setSelectedPublication] = useState(null);
     const [page, setPage] = useState(1);
     const pageSize = 6;
 
@@ -461,18 +492,15 @@ function SearchPublications() {
                                 {publication.publication_year}
 
                             </p>
+                            <div className="search-publication-citation">
+                                <span><FaQuoteRight /> Citation</span>
+                                <button type="button" onClick={() => openCitation(publication)}><FaQuoteRight /> Cite</button>
+                            </div>
+
 
                             <button
 
-    onClick={() =>
-
-        setSelectedPublication(
-
-            publication
-
-        )
-
-    }
+    onClick={() => navigate('/publication/' + publication.id)}
 
     style={{
 
@@ -505,153 +533,18 @@ function SearchPublications() {
                 }
 
             </div>
-            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />
-      {
-    selectedPublication && (
-
-        <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                background: "rgba(0,0,0,.5)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 999
-            }}
-            >
-
-            <div
-                style={{
-                    width: "700px",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    borderRadius: "12px",
-                    border: "1px solid var(--border)",
-                    padding: "30px",
-                    maxHeight: "90vh",
-                    overflowY: "auto"
-                }}
-            >
-
-                            <h2 style={{ color: "var(--text)" }}>
-
-                    📄 {selectedPublication.title}
-
-                </h2>
-
-                <hr/>
-
-                <p>
-
-                    <b>👨‍🔬 Authors:</b>
-
-                    {selectedPublication.authors}
-
-                </p>
-
-                <p>
-
-                    <b>📑 Publication Type:</b>
-
-                    {selectedPublication.publication_type}
-
-                </p>
-
-                <p>
-
-                    <b>📚 Journal:</b>
-
-                    {selectedPublication.journal}
-
-                </p>
-
-                <p>
-
-                    <b>📅 Year:</b>
-
-                    {selectedPublication.publication_year}
-
-                </p>
-
-                <p>
-
-                    <b>🏷 Keywords:</b>
-
-                    {selectedPublication.keywords}
-
-                </p>
-
-                <p>
-
-                    <b>📖 DOI:</b>
-
-                    {selectedPublication.doi}
-
-                </p>
-
-                <p>
-
-                    <b>📝 Abstract:</b>
-
-                    <br/>
-
-                    {selectedPublication.abstract}
-
-                </p>
-
-                {
-
-                    selectedPublication.pdf_file && (
-
-                        <a
-
-                            href={selectedPublication.pdf_file}
-
-                            target="_blank"
-
-                            rel="noreferrer"
-
-                        >
-
-                            📄 View PDF
-
-                        </a>
-
-                    )
-
-                }
-
-                <br/><br/>
-
-                <button
-
-                    onClick={()=>
-
-                        setSelectedPublication(null)
-
-                    }
-
-                >
-
-                    Close
-
-                </button>
-
-            </div>
-
-        </div>
-
-    )
-}      
-
-        </div>
-
+            <CitationModal
+                publication={citationTarget}
+                open={Boolean(citationTarget)}
+                onClose={() => setCitationTarget(null)}
+                publicationId={citationTarget?.id}
+                citation={citationText}
+                style={citationStyle}
+                onStyleChange={updateCitation}
+                onGenerate={() => updateCitation(citationStyle)}
+                loading={citationLoading}
+            />            <Pagination page={Math.min(page, pageCount)} pageCount={pageCount} onChange={setPage} />        </div>
     );
-
 }
 
 export default SearchPublications;

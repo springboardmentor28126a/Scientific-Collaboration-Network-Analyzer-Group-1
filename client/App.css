@@ -1,0 +1,5 @@
+
+.citation-selected-publication { display: grid; gap: 5px; margin-top: 20px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--surface-alt)); }
+.citation-selected-label { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.citation-selected-publication strong { color: var(--text); font-size: 16px; line-height: 1.35; }
+.citation-selected-publication span:not(.citation-selected-label), .citation-selected-publication small { color: var(--muted); font-size: 12px; line-height: 1.4; }

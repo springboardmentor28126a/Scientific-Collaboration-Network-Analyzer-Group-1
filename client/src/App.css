@@ -935,3 +935,35 @@ textarea::placeholder {
     transition-duration: .01ms !important;
   }
 }
+
+.publication-references-section { margin-top: 18px; padding: 16px 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-alt); }
+.references-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; padding: 4px 0; border: 0; background: transparent; color: var(--text); box-shadow: none; font-size: 16px; font-weight: 800; }
+.references-toggle span:first-child { display: inline-flex; align-items: center; gap: 9px; }
+.references-toggle svg { color: var(--accent); }
+.references-toggle small { min-width: 24px; padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); font-size: 12px; }
+.references-list { display: grid; gap: 10px; margin-top: 14px; }
+.reference-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.reference-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(2, 8, 23, .08); }
+.reference-card-icon { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.reference-card-content { min-width: 0; flex: 1; }
+.reference-title { display: block; padding: 0; border: 0; background: transparent; color: var(--text); box-shadow: none; font-size: 15px; font-weight: 800; line-height: 1.4; text-align: left; }
+.reference-title:hover { color: var(--accent); }
+.reference-card-content p, .reference-card-content small { display: block; margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.reference-view-button { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 7px 10px; border: 1px solid var(--border); background: transparent; color: var(--text); box-shadow: none; font-size: 12px; }
+.reference-empty { margin: 4px 0; color: var(--muted); font-size: 14px; }
+.publication-card-citation { margin-top: 14px; padding: 12px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.publication-card-citation-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.publication-card-citation-heading span { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-size: 14px; font-weight: 800; }
+.publication-card-citation-heading small { color: var(--muted); font-size: 11px; }
+.publication-card-cite-button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #04111f; font-size: 13px; font-weight: 800; }
+.publication-card-cite-button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.publication-references-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px !important; border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border)) !important; border-radius: 9px; background: color-mix(in srgb, var(--accent) 8%, transparent) !important; color: var(--text) !important; font-size: 14px !important; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.publication-references-toggle:hover { border-color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 16%, transparent) !important; transform: translateY(-1px); }
+.publication-references-toggle svg { color: var(--accent); }
+.citation-selected-publication { display: grid; gap: 5px; margin-top: 20px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--surface-alt)); }
+.citation-selected-label { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.citation-selected-publication strong { color: var(--text); font-size: 16px; line-height: 1.35; }
+.citation-selected-publication span:not(.citation-selected-label), .citation-selected-publication small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.search-publication-citation { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.search-publication-citation span { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-size: 13px; font-weight: 800; }
+.search-publication-citation button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #04111f; font-size: 12px; font-weight: 800; }

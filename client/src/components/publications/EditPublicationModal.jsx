@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+import { FaQuoteRight } from "react-icons/fa";
 
 function EditPublicationModal({
 
@@ -188,7 +189,7 @@ function EditPublicationModal({
                     Status is managed automatically by the review workflow.
                 </p>
                 <label style={{ marginTop: "15px", display: "block" }}>
-                    References (Citations)
+                    <FaQuoteRight /> References (Citations)
                 </label>
                 <div className="citation-selection-notice" role="status">
                     <span className="citation-selection-notice-icon">i</span>
