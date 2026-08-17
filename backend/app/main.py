@@ -40,6 +40,7 @@ from app.routers.project_assignment import router as project_assignment_router
 from app.routers.institution_collaboration import router as institution_collaboration_router
 from app.routers.reference import router as reference_router
 from app.routers.audit import router as audit_router
+from app.routers.dashboard import router as dashboard_router
 
 
 
@@ -50,9 +51,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "http://localhost:5173",
-    "http://localhost:5174",
-],
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,6 +73,7 @@ app.include_router(institution_collaboration_router)
 app.include_router(citation_router)
 app.include_router(reference_router)
 app.include_router(audit_router)
+app.include_router(dashboard_router)
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 
