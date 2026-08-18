@@ -4,12 +4,13 @@ from fastapi import UploadFile
 from app.core.config import settings
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
+from app.models.user import User
 from app.models.publication import Publication
 from app.models.researcher import Researcher
 from app.schemas.publication import PublicationCreate, PublicationUpdate, ReviewDecision
 from app.models.publication import publication_coauthors
 from app.utils.constants import PublicationStatus
+from app.utils.constants import UserRole
 from app.schemas.notification import NotificationCreate
 from app.services.notification_service import create_notification
 
@@ -162,6 +163,17 @@ def submit_publication(db: Session, user_id: int, publication_id: int) -> Public
 
     db.commit()
     db.refresh(publication)
+
+    reviewers = db.query(User).filter(User.role == UserRole.REVIEWER.value).all()
+    for reviewer in reviewers:
+        create_notification(db, NotificationCreate(
+            user_id=reviewer.id,
+            title="New publication submitted for review",
+            message=f'"{publication.title}" by {researcher.first_name} {researcher.last_name} is ready for review.',
+            notification_type="PUBLICATION_SUBMITTED",
+            reference_id=publication.id,
+        ), send_email_too=False)
+
     return publication
 
 
