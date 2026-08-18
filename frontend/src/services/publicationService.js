@@ -15,6 +15,7 @@ export const fetchMyPublications = async (
       sort,
     },
   });
+
   return response.data;
 };
 
