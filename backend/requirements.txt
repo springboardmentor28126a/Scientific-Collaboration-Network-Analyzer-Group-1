@@ -9,6 +9,7 @@ certifi==2026.7.22
 cffi==2.0.0
 charset-normalizer==3.4.9
 click==8.4.2
+cloudinary==1.46.0
 colorama==0.4.6
 cryptography==49.0.0
 distro==1.9.0

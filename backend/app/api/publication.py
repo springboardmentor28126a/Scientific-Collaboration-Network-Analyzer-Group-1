@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from fastapi.responses import FileResponse
 import os
-
+import httpx
+from fastapi.responses import StreamingResponse
 from app.db.database import get_db
 
 from app.models.researcher import Researcher
@@ -87,7 +88,37 @@ def get_my_publications(
 # ---------------------------------------------------------
 
 @router.get("/{publication_id}/download")
-def download_file(
+async def download_file(
+    publication_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    publication = db.query(Publication).filter(Publication.id == publication_id).first()
+    if publication is None:
+        raise HTTPException(status_code=404, detail="Publication not found.")
+    if not publication.file_path:
+        raise HTTPException(status_code=404, detail="No file uploaded for this publication.")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(publication.file_path)
+        if response.status_code != 200:
+            raise HTTPException(status_code=404, detail="File not found on storage.")
+
+    filename = publication.file_original_name or "publication_file"
+
+    return StreamingResponse(
+        iter([response.content]),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ---------------------------------------------------------
+# VIEW PUBLICATION FILE
+# ---------------------------------------------------------
+
+@router.get("/{publication_id}/view")
+async def view_file(
     publication_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -104,23 +135,47 @@ def download_file(
             detail="Publication not found.",
         )
 
-    if (
-        not publication.file_path
-        or not os.path.exists(publication.file_path)
-    ):
+    if not publication.file_path:
         raise HTTPException(
             status_code=404,
             detail="No file uploaded for this publication.",
         )
 
-    filename = os.path.basename(publication.file_path)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            publication.file_path,
+            follow_redirects=True,
+        )
 
-    return FileResponse(
-        publication.file_path,
-        filename=filename,
-        media_type="application/octet-stream",
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=404,
+                detail="File not found on storage.",
+            )
+
+    filename = publication.file_original_name or "publication_file"
+
+    # Determine content type
+    extension = os.path.splitext(filename)[1].lower()
+
+    content_types = {
+        ".pdf": "application/pdf",
+        ".doc": "application/msword",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+
+    media_type = content_types.get(
+        extension,
+        "application/octet-stream"
     )
 
+    return StreamingResponse(
+        iter([response.content]),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"'
+        },
+    )
 
 # ---------------------------------------------------------
 # UPDATE PUBLICATION
@@ -300,15 +355,11 @@ async def generate_ai_summary(
             detail="No file uploaded for this publication.",
         )
 
-    if not os.path.exists(publication.file_path):
-        raise HTTPException(
-            status_code=404,
-            detail="Publication file not found on server.",
-        )
 
     return await summarize_publication(
-        publication.file_path
-    )
+    publication.file_path,
+    publication.file_original_name
+)
 
 
 # ---------------------------------------------------------

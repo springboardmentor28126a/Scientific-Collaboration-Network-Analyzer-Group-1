@@ -1,9 +1,12 @@
 import os
 import uuid
+import cloudinary
+import cloudinary.uploader
 from fastapi import UploadFile
 from app.core.config import settings
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func as sa_func
 from app.models.user import User
 from app.models.publication import Publication
 from app.models.researcher import Researcher
@@ -265,15 +268,18 @@ def decide_review(db: Session, reviewer_user_id: int, publication_id: int, decis
                 reference_id=publication.id,
             ),
         )
-
-    return publication
-    from sqlalchemy.sql import func as sa_func
-
     publication.reviewed_at = sa_func.now()
 
     db.commit()
     db.refresh(publication)
     return publication
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
+
 ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx"}
 MAX_FILE_SIZE_MB = 10
 
@@ -292,8 +298,6 @@ def upload_publication_file(db: Session, user_id: int, publication_id: int, file
     if publication.status not in (PublicationStatus.DRAFT, PublicationStatus.REJECTED):
         raise HTTPException(status_code=400, detail="Files can only be uploaded while a publication is draft or rejected.")
 
-    # ...rest of the function stays exactly the same (file validation, saving, etc.)
-
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Only PDF, DOC, or DOCX files are allowed.")
@@ -304,22 +308,19 @@ def upload_publication_file(db: Session, user_id: int, publication_id: int, file
     if size_mb > MAX_FILE_SIZE_MB:
         raise HTTPException(status_code=400, detail=f"File must be under {MAX_FILE_SIZE_MB}MB.")
 
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    try:
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            resource_type="raw",
+            folder="publications",
+            public_id=f"pub_{publication_id}_{uuid.uuid4().hex}",
+            use_filename=True,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"File upload failed: {str(e)}")
 
-    unique_name = f"{uuid.uuid4().hex}{ext}"
-    disk_path = os.path.join(settings.UPLOAD_DIR, unique_name)
-
-    with open(disk_path, "wb") as f:
-        f.write(file.file.read())
-
-    # Remove old file if replacing
-    if publication.file_path and os.path.exists(publication.file_path):
-        try:
-            os.remove(publication.file_path)
-        except OSError:
-            pass
-
-    publication.file_path = disk_path
+    publication.file_path = upload_result["secure_url"]
+    publication.file_original_name = file.filename
     db.commit()
     db.refresh(publication)
     return publication

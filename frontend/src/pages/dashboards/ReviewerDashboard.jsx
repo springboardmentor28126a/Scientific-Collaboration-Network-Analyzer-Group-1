@@ -124,12 +124,7 @@ function ReviewerDashboard() {
 
       <div className="pub-list">
         {queue.map((pub) => {
-          const fileUrl = pub.file_path
-            ? `http://127.0.0.1:8000/${pub.file_path.replace(
-                /\\/g,
-                "/"
-              )}`
-            : null;
+          const fileUrl = pub.file_path || null;
 
           return (
             <div className="pub-item" key={pub.id}>

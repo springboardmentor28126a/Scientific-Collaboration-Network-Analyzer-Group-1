@@ -55,6 +55,7 @@ class PublicationResponse(BaseModel):
     doi: Optional[str]
     external_link: Optional[str]
     file_path: Optional[str] = None
+    file_original_name: Optional[str] = None
     status: PublicationStatus
     reviewer_id: Optional[int]
     review_comments: Optional[str]
@@ -77,6 +78,7 @@ class PublicationBrowseResponse(BaseModel):
     doi: Optional[str]
     external_link: Optional[str]
     file_path: Optional[str] = None
+    file_original_name: Optional[str] = None
     owner_first_name: str
     owner_last_name: str
     owner_institution_id: int

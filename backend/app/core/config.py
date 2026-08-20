@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads/publications"
 
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
+
     # Email Settings
     MAIL_USERNAME: str
     MAIL_PASSWORD: str

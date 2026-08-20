@@ -131,3 +131,30 @@ export const generatePublicationSummary = async (id) => {
 
   return response.data;
 };
+
+export const viewPublicationFile = async (id) => {
+  const response = await api.get(
+    `/publications/${id}/view`,
+    {
+      responseType: "blob",
+    }
+  );
+
+  const blob = new Blob(
+    [response.data],
+    {
+      type:
+        response.headers["content-type"] ||
+        "application/pdf",
+    }
+  );
+
+  const url = window.URL.createObjectURL(blob);
+
+  window.open(url, "_blank");
+
+  // Give the browser time to open the blob
+  setTimeout(() => {
+    window.URL.revokeObjectURL(url);
+  }, 10000);
+};

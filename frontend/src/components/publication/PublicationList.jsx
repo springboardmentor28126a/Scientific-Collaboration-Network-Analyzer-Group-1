@@ -5,6 +5,7 @@ import {
   uploadPublicationFile,
   archivePublication,
   downloadPublicationFile,
+  viewPublicationFile,
   generatePublicationSummary,
 } from "../../services/publicationService";
 
@@ -157,12 +158,7 @@ function PublicationList({
         const canSubmitOrDelete =
           canModifyContent && pub.is_owner;
 
-        const fileUrl = pub.file_path
-          ? `http://127.0.0.1:8000/${pub.file_path.replace(
-              /\\/g,
-              "/"
-            )}`
-          : null;
+        const fileUrl = pub.file_path || null;
 
 
         return (
@@ -297,14 +293,22 @@ function PublicationList({
 
                 {fileUrl ? (
                   <>
-                    <a
-                      href={fileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="pub-file-link"
-                    >
-                      View file
-                    </a>
+                    <button
+  type="button"
+  className="btn-ghost-outline btn-sm"
+  onClick={async () => {
+    try {
+      await viewPublicationFile(pub.id);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.detail ||
+          "Could not view file."
+      );
+    }
+  }}
+>
+  View file
+</button>
 
 
                     <button

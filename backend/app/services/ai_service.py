@@ -2,6 +2,8 @@ from google import genai
 from fastapi import HTTPException
 from app.core.config import settings
 import os
+import tempfile
+import httpx
 
 
 client = genai.Client(
@@ -9,17 +11,54 @@ client = genai.Client(
 )
 
 
-async def summarize_publication(file_path: str):
-
-    if not os.path.exists(file_path):
+async def summarize_publication(
+    file_path: str,
+    original_filename: str = None
+):
+    if not file_path:
         raise HTTPException(
             status_code=404,
             detail="Publication file not found.",
         )
 
+    temp_file_path = None
+
     try:
+        # Get the original file extension
+        suffix = ""
+
+        if original_filename:
+            suffix = os.path.splitext(
+                original_filename
+            )[1].lower()
+
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=suffix
+        ) as temp_file:
+            temp_file_path = temp_file.name
+
+        # Download file from Cloudinary
+        async with httpx.AsyncClient() as http_client:
+
+            response = await http_client.get(
+                file_path,
+                follow_redirects=True
+            )
+
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Could not retrieve publication file from storage."
+                )
+
+            with open(temp_file_path, "wb") as f:
+                f.write(response.content)
+
+        # Upload temporary file to Gemini
         uploaded_file = client.files.upload(
-            file=file_path
+            file=temp_file_path
         )
 
         prompt = """
@@ -67,3 +106,11 @@ Do not invent information that is not present in the document.
             status_code=500,
             detail=f"AI summarization failed: {str(e)}",
         )
+
+    finally:
+        # Delete temporary file
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except Exception:
+                pass

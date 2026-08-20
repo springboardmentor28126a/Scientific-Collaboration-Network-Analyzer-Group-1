@@ -1,0 +1,33 @@
+                                           Table "public.publications"
+       Column        |           Type           | Collation | Nullable |                 Default                  
+---------------------+--------------------------+-----------+----------+------------------------------------------
+ id                  | integer                  |           | not null | nextval('publications_id_seq'::regclass)
+ owner_researcher_id | integer                  |           | not null | 
+ title               | character varying(500)   |           | not null | 
+ abstract            | text                     |           |          | 
+ authors_text        | character varying(500)   |           |          | 
+ publish_date        | timestamp with time zone |           |          | 
+ doi                 | character varying(255)   |           |          | 
+ external_link       | character varying(500)   |           |          | 
+ file_path           | character varying(500)   |           |          | 
+ status              | character varying(30)    |           | not null | 
+ reviewer_id         | integer                  |           |          | 
+ review_comments     | text                     |           |          | 
+ reviewed_at         | timestamp with time zone |           |          | 
+ created_at          | timestamp with time zone |           | not null | now()
+ updated_at          | timestamp with time zone |           | not null | now()
+ conference_id       | integer                  |           |          | 
+ publication_type    | character varying(30)    |           | not null | 'JOURNAL_PAPER'::character varying
+ file_original_name  | character varying(255)   |           |          | 
+Indexes:
+    "publications_pkey" PRIMARY KEY, btree (id)
+    "ix_publications_id" btree (id)
+Foreign-key constraints:
+    "publications_conference_id_fkey" FOREIGN KEY (conference_id) REFERENCES conferences(id)
+    "publications_owner_researcher_id_fkey" FOREIGN KEY (owner_researcher_id) REFERENCES researchers(id)
+    "publications_reviewer_id_fkey" FOREIGN KEY (reviewer_id) REFERENCES users(id)
+Referenced by:
+    TABLE "citations" CONSTRAINT "citations_publication_id_fkey" FOREIGN KEY (publication_id) REFERENCES publications(id)
+    TABLE "collaborations" CONSTRAINT "collaborations_publication_id_fkey" FOREIGN KEY (publication_id) REFERENCES publications(id)
+    TABLE "publication_coauthors" CONSTRAINT "publication_coauthors_publication_id_fkey" FOREIGN KEY (publication_id) REFERENCES publications(id)
+
