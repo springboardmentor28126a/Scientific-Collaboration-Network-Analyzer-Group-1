@@ -1,11 +1,9 @@
 import sys
 sys.path.append("src")
 
-from database import engine, Base
-import models
-
-print("Creating tables...")
+from database import Base,engine
+import models 
 
 Base.metadata.create_all(bind=engine)
 
-print("Tables created successfully!")
+print("All tables created successfully")

@@ -1,34 +1,82 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-class ResearcherCreate(BaseModel):
-    institution_id : Optional[int] = None
-    department_id : Optional[int] = None
-    full_name : str
-    bio : Optional[str] = None
-    research_interests : Optional[str] = None
-    skills : Optional[str] = None
-    orcid_id :Optional[str] = None
+from pydantic import BaseModel, ConfigDict, Field
+
+
+# =========================================================
+# BASE SCHEMA
+# =========================================================
+
+class ResearcherBase(BaseModel):
+    full_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+    )
+
+    institution_id: Optional[int] = None
+
+    # Department is intentionally stored as plain text.
+    # No department_id and no Department table are required.
+    department: Optional[str] = Field(
+        default=None,
+        max_length=150,
+    )
+
+    bio: Optional[str] = None
+
+    research_interests: Optional[str] = None
+
+    skills: Optional[str] = None
+
+
+# =========================================================
+# CREATE
+# =========================================================
+
+class ResearcherCreate(ResearcherBase):
+    pass
+
+
+# =========================================================
+# UPDATE
+# =========================================================
 
 class ResearcherUpdate(BaseModel):
-    full_name : Optional[str] = None
-    bio : Optional[str] = None
-    research_interests : Optional[str] = None
-    skills : Optional[str] = None
-    institution_id : Optional[int] = None
-    deparment_id : Optional[int] =None
+    full_name: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
 
-class ResearcherOut(BaseModel):
-    id: int
-    user_id: Optional[int] = None
     institution_id: Optional[int] = None
-    department_id: Optional[int] = None
-    full_name: str
-    bio: Optional[str] = None
-    research_interests: Optional[str] = None
-    skills: Optional[str] = None
-    orcid_id: Optional[str] = None
-    created_at: datetime
 
-    model_config = {"from_attributes":True}
+    department: Optional[str] = Field(
+        default=None,
+        max_length=150,
+    )
+
+    bio: Optional[str] = None
+
+    research_interests: Optional[str] = None
+
+    skills: Optional[str] = None
+
+
+# =========================================================
+# OUTPUT
+# =========================================================
+
+class ResearcherOut(ResearcherBase):
+    id: int
+
+    user_id: int
+
+    created_at: Optional[datetime] = None
+
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )

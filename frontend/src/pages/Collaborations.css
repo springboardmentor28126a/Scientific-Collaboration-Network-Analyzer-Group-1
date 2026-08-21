@@ -1,0 +1,1197 @@
+/* =========================================================
+   COLLABORATION MANAGEMENT
+   Project Theme:
+   Deep Charcoal + Maroon / Burgundy
+   ========================================================= */
+
+.collab-page {
+  width: 100%;
+  display: grid;
+  gap: 22px;
+  color: var(--text, #e8e4e4);
+}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.collab-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 255px;
+  padding: 34px 38px;
+  border: 1px solid #3b2028;
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(112, 28, 48, 0.22),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #171416 0%,
+      #120f10 55%,
+      #1a1013 100%
+    );
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.collab-hero-glow {
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  right: -120px;
+  top: -150px;
+  border-radius: 50%;
+  background: rgba(126, 32, 53, 0.14);
+  filter: blur(35px);
+  pointer-events: none;
+}
+
+.collab-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+}
+
+.collab-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #b85b70;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.collab-eyebrow-line {
+  width: 28px;
+  height: 2px;
+  border-radius: 20px;
+  background: #8e2945;
+}
+
+.collab-hero h1 {
+  margin: 14px 0 10px;
+  color: #f5eeee;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.collab-hero h1 span {
+  color: #9f3b57;
+}
+
+.collab-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: #a9a1a3;
+  font-size: 0.96rem;
+  line-height: 1.7;
+}
+
+.collab-hero-stats {
+  display: flex;
+  gap: 36px;
+  margin-top: 28px;
+}
+
+.collab-hero-stats div {
+  display: grid;
+  gap: 3px;
+}
+
+.collab-hero-stats strong {
+  color: #f3eeee;
+  font-size: 1.35rem;
+}
+
+.collab-hero-stats span {
+  color: #81797c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.collab-hero-mark {
+  position: absolute;
+  right: 7%;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 160px;
+  border: 1px solid rgba(135, 40, 63, 0.25);
+  border-radius: 50%;
+  color: rgba(148, 45, 68, 0.24);
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.collab-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.collab-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 86px;
+  padding: 15px;
+  border: 1px solid #30282a;
+  border-radius: 14px;
+  background: #171516;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.collab-summary-card:hover {
+  transform: translateY(-2px);
+  border-color: #512b35;
+  background: #1a1718;
+}
+
+.collab-summary-card--accent {
+  border-color: #512434;
+  background:
+    linear-gradient(
+      135deg,
+      #211317,
+      #171415
+    );
+}
+
+.collab-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #542632;
+  border-radius: 10px;
+  background: #251419;
+  color: #ad465f;
+}
+
+.collab-summary-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #80777a;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.collab-summary-card strong {
+  display: block;
+  color: #eee7e8;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.collab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px;
+  border: 1px solid #30282a;
+  border-radius: 14px;
+  background: #141213;
+}
+
+.collab-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.collab-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #8f8789;
+  font-size: 0.8rem;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.collab-tab:hover {
+  color: #d8d0d2;
+  background: #1b1819;
+}
+
+.collab-tab--active {
+  border-color: #522431;
+  background: #28151a;
+  color: #bd526b;
+}
+
+.collab-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 245px;
+  min-width: 245px;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid #332b2d;
+  border-radius: 9px;
+  background: #191718;
+  color: #71696b;
+}
+
+.collab-search:focus-within {
+  border-color: #703044;
+  box-shadow: 0 0 0 3px rgba(127, 35, 58, 0.12);
+}
+
+.collab-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #e8e1e2;
+  font-size: 0.82rem;
+}
+
+.collab-search input::placeholder {
+  color: #666063;
+}
+
+.collab-search button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #82797b;
+  cursor: pointer;
+}
+
+/* =========================================================
+   ALERT
+   ========================================================= */
+
+.collab-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 15px;
+  border: 1px solid #5c2735;
+  border-radius: 10px;
+  background: #251417;
+  color: #d78b9b;
+  font-size: 0.82rem;
+}
+
+.collab-alert button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #b85a70;
+  cursor: pointer;
+}
+
+/* =========================================================
+   SECTION
+   ========================================================= */
+
+.collab-section {
+  display: grid;
+  gap: 15px;
+}
+
+.collab-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.collab-section-kicker {
+  display: block;
+  margin-bottom: 5px;
+  color: #9f3c57;
+  font-size: 0.67rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.collab-section-heading h2 {
+  margin: 0;
+  color: #e9e3e4;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.collab-section-heading p {
+  margin-top: 5px;
+  color: #7e7678;
+  font-size: 0.83rem;
+}
+
+.collab-count {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px solid #382b2e;
+  border-radius: 7px;
+  background: #191617;
+  color: #8f8588;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.collab-list {
+  display: grid;
+  gap: 13px;
+}
+
+.collab-card {
+  position: relative;
+  padding: 21px;
+  border: 1px solid #30292b;
+  border-radius: 14px;
+  background: #171516;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.015);
+  transition:
+    border-color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.collab-card:hover {
+  transform: translateY(-1px);
+  border-color: #4b3037;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(125, 36, 57, 0.05);
+}
+
+.collab-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.collab-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.collab-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 39px;
+  width: 39px;
+  height: 39px;
+  border: 1px solid #4e2731;
+  border-radius: 10px;
+  background: #251419;
+  color: #ad4a61;
+}
+
+.collab-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.collab-status,
+.collab-type {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 0.61rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.collab-status {
+  border: 1px solid #4d2933;
+  background: #241519;
+  color: #bd6276;
+}
+
+.collab-type {
+  border: 1px solid #302b2c;
+  background: #1c191a;
+  color: #837b7d;
+}
+
+.collab-card h3 {
+  margin: 0;
+  color: #e8e1e3;
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.collab-arrow {
+  flex-shrink: 0;
+  color: #554c4f;
+}
+
+.collab-card-divider {
+  height: 1px;
+  margin: 17px 0;
+  background: #292325;
+}
+
+/* =========================================================
+   MEMBERS
+   ========================================================= */
+
+.collab-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collab-member-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 5px 9px 5px 6px;
+  border: 1px solid #322a2c;
+  border-radius: 9px;
+  background: #1b1819;
+}
+
+.collab-mini-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 29px;
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  background: #321720;
+  border: 1px solid #582936;
+  color: #c26479;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.collab-member-info {
+  display: grid;
+  gap: 2px;
+}
+
+.collab-member-info span {
+  color: #d6cecf;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.collab-member-info small {
+  color: #786f72;
+  font-size: 0.61rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.collab-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #675e61;
+  cursor: pointer;
+}
+
+.collab-remove:hover {
+  background: #32171e;
+  color: #c05a72;
+}
+
+.collab-empty-inline {
+  color: #6f6769;
+  font-size: 0.8rem;
+}
+
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
+
+.collab-description {
+  max-width: 850px;
+  margin: 14px 0 0;
+  color: #8e8588;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+/* =========================================================
+   ACTION PANEL
+   ========================================================= */
+
+.collab-action-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 110px auto auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 17px;
+  padding: 12px;
+  border: 1px solid #30282a;
+  border-radius: 10px;
+  background: #141213;
+}
+
+.collab-action-title {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  color: #9d8d91;
+  font-size: 0.73rem;
+  font-weight: 750;
+}
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.collab-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid #352d2f;
+  border-radius: 8px;
+  outline: none;
+  background: #1b1819;
+  color: #e4ddde;
+  font-family: inherit;
+  font-size: 0.8rem;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.collab-input:hover {
+  border-color: #45373b;
+}
+
+.collab-input:focus {
+  border-color: #733147;
+  background: #1d191a;
+  box-shadow: 0 0 0 3px rgba(125, 35, 58, 0.12);
+}
+
+.collab-input::placeholder {
+  color: #625b5d;
+}
+
+textarea.collab-input {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.collab-input--order {
+  max-width: 110px;
+}
+
+.collab-input--role {
+  min-width: 170px;
+}
+
+.collab-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  color: #91888b;
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.collab-check input {
+  width: 15px;
+  height: 15px;
+  accent-color: #8d2c48;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.collab-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #753047;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    #8d2c48,
+    #70243b
+  );
+  color: #fff4f6;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    0 7px 18px rgba(83, 20, 39, 0.25);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.collab-primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    #a03655,
+    #7e2843
+  );
+  box-shadow:
+    0 10px 22px rgba(96, 23, 43, 0.3);
+}
+
+.collab-primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.collab-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #45242d;
+  border-radius: 7px;
+  background: #241519;
+  color: #ad5268;
+  font-family: inherit;
+  font-size: 0.69rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.collab-delete-btn:hover {
+  border-color: #7a3047;
+  background: #33191f;
+  color: #d26a82;
+}
+
+/* =========================================================
+   CREATE FORM
+   ========================================================= */
+
+.collab-create-form {
+  padding: 22px;
+  border: 1px solid #3b2b2f;
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      #1b1618,
+      #151314
+    );
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.17);
+}
+
+.collab-form-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 21px;
+}
+
+.collab-form-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #542735;
+  border-radius: 10px;
+  background: #28151a;
+  color: #b54c65;
+}
+
+.collab-form-heading h3 {
+  margin: 0;
+  color: #e8e0e2;
+  font-size: 0.96rem;
+}
+
+.collab-form-heading p {
+  margin-top: 4px;
+  color: #766e70;
+  font-size: 0.76rem;
+}
+
+.collab-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.collab-field {
+  display: grid;
+  gap: 7px;
+}
+
+.collab-field--full {
+  grid-column: 1 / -1;
+}
+
+.collab-field label {
+  color: #8e8588;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.collab-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 17px;
+  border-top: 1px solid #2c2527;
+}
+
+/* =========================================================
+   INSTITUTIONAL PARTNERS
+   ========================================================= */
+
+.collab-partner-box {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid #32292c;
+  border-radius: 10px;
+  background: #141213;
+}
+
+.collab-partner {
+  display: grid;
+  gap: 5px;
+}
+
+.collab-partner span {
+  color: #6e6668;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.collab-partner strong {
+  color: #dcd5d6;
+  font-size: 0.84rem;
+}
+
+.collab-partner-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #4a2630;
+  border-radius: 50%;
+  background: #28151a;
+  color: #ae4961;
+}
+
+.collab-date-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+  color: #71696b;
+  font-size: 0.72rem;
+}
+
+.collab-date-row svg {
+  color: #95506a;
+}
+
+.collab-date-row strong {
+  color: #a49a9d;
+}
+
+/* =========================================================
+   DIRECTORY
+   ========================================================= */
+
+.collab-directory {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.collab-person {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #30292b;
+  border-radius: 13px;
+  background: #171516;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.collab-person:hover {
+  transform: translateY(-2px);
+  border-color: #493039;
+}
+
+.collab-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 41px;
+  width: 41px;
+  height: 41px;
+  border: 1px solid #592938;
+  border-radius: 10px;
+  background: #2a151b;
+  color: #c16078;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.collab-person-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.collab-person-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.collab-person h3 {
+  margin: 0;
+  color: #ddd5d7;
+  font-size: 0.86rem;
+}
+
+.collab-person p {
+  margin-top: 4px;
+  color: #71696c;
+  font-size: 0.7rem;
+}
+
+.collab-person-id {
+  color: #554c4f;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.collab-interest {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #2a2426;
+  color: #82797c;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.collab-empty-state {
+  display: grid;
+  justify-items: center;
+  padding: 48px 20px;
+  border: 1px dashed #3a3033;
+  border-radius: 14px;
+  background: #151314;
+  text-align: center;
+}
+
+.collab-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  border: 1px solid #4d2934;
+  border-radius: 12px;
+  background: #25151a;
+  color: #a84b63;
+}
+
+.collab-empty-state h3 {
+  margin: 0;
+  color: #c9c1c3;
+  font-size: 0.9rem;
+}
+
+.collab-empty-state p {
+  max-width: 480px;
+  margin-top: 6px;
+  color: #70686a;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.collab-loading {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 70px 20px;
+  border: 1px solid #30292b;
+  border-radius: 14px;
+  background: #171516;
+}
+
+.collab-spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #35292d;
+  border-top-color: #9b304d;
+  border-radius: 50%;
+  animation: collab-spin 800ms linear infinite;
+}
+
+.collab-loading p {
+  color: #746c6f;
+  font-size: 0.78rem;
+}
+
+@keyframes collab-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1180px) {
+  .collab-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .collab-directory {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .collab-action-panel {
+    grid-template-columns: 1fr 110px auto auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .collab-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collab-tabs {
+    width: 100%;
+  }
+
+  .collab-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .collab-action-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .collab-action-panel .collab-primary-btn {
+    width: 100%;
+  }
+
+  .collab-input--role {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .collab-hero {
+    padding: 27px 23px;
+  }
+
+  .collab-hero-mark {
+    display: none;
+  }
+
+  .collab-hero-stats {
+    gap: 20px;
+  }
+
+  .collab-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .collab-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-field--full {
+    grid-column: auto;
+  }
+
+  .collab-directory {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .collab-partner-box {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-partner-arrow {
+    transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 560px) {
+  .collab-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-toolbar {
+    padding: 6px;
+  }
+
+  .collab-tabs {
+    gap: 2px;
+  }
+
+  .collab-tab {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+  }
+
+  .collab-hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .collab-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .collab-card,
+  .collab-create-form {
+    padding: 16px;
+  }
+
+  .collab-action-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-action-title {
+    display: flex;
+  }
+
+  .collab-input--order {
+    max-width: none;
+  }
+
+  .collab-form-actions {
+    justify-content: stretch;
+  }
+
+  .collab-form-actions .collab-primary-btn {
+    width: 100%;
+  }
+
+  .collab-card-top {
+    gap: 10px;
+  }
+
+  .collab-delete-btn {
+    font-size: 0;
+    padding: 8px;
+  }
+
+  .collab-delete-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+}

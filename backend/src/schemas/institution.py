@@ -20,4 +20,4 @@ class InstituteOut(BaseModel):
     address:Optional[str] = None
     website:Optional[str] = None
 
-    model_config = {"from_attribute" : True}
+    model_config = {"from_attributes": True}

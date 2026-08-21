@@ -3,36 +3,71 @@ from sqlalchemy.orm import relationship
 from database import Base
 import enum
 
-class UserRole(str,enum.Enum):
-    #Inheriting from both `str` and `enum.Enum` means this behaves like a string
-    #AND is restricted to only these 4 exact values
-    researcher="Researcher"
-    institution_admin="InstitutionAdmin"
-    reviewer="Reviewer"
-    system_admin="SystemAdmin"
-    #if anyone tries User(other_role), Python itself raises the ValueError
+
+class UserRole(str, enum.Enum):
+    # Inheriting from both str and enum.Enum means this behaves like a string
+    # AND is restricted to only these 4 exact values
+
+    researcher = "Researcher"
+    institution_admin = "InstitutionAdmin"
+    reviewer = "Reviewer"
+    system_admin = "SystemAdmin"
+
+
 class User(Base):
-    __tablename__="users"
-    #table name in the postgre databse
+    __tablename__ = "users"
 
-    id= Column(Integer, primary_key=True, index=True)
-    # Integer column auto-Increment, the row's unique identifier
+    # Unique user identifier
+    id = Column(Integer, primary_key=True, index=True)
 
-    email= Column(String(150), unique=True, nullable=False, index=True)
-    #Varchar(150),email should be unique, column should not empty
+    # User email
+    email = Column(
+        String(150),
+        unique=True,
+        nullable=False,
+        index=True
+    )
 
-    password_hash = Column(String(255), nullable=False)
-    #Stores the hashed_password
+    # Stores the hashed password
+    password_hash = Column(
+        String(255),
+        nullable=False
+    )
 
-    role=Column(Enum(UserRole), nullable=False)
-    #Creating role of enum and specified type(User,Researcher,reviewer,system_admin)
+    # User role
+    role = Column(
+        Enum(UserRole),
+        nullable=False
+    )
 
-    is_active=Column(Boolean,default=True)
-    
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    # This works even if someone inserts a row using raw SQL, bypassing your Python code entirely
+    # Account status
+    is_active = Column(
+        Boolean,
+        default=True
+    )
 
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    # ↑ onupdate=func.now() → SQLAlchemy sets this automatically whenever you .commit() a change
+    # Account creation timestamp
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
 
-    researcher = relationship("Researcher", back_populates="user", uselist=False)
+    # Automatically updated when the record changes
+    updated_at = Column(
+        DateTime(timezone=True),
+        onupdate=func.now()
+    )
+
+    # One-to-one researcher profile
+    researcher = relationship(
+        "Researcher",
+        back_populates="user",
+        uselist=False
+    )
+
+    # User notifications
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

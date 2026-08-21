@@ -1,31 +1,41 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker,declarative_base
-from dotenv import load_dotenv
 import os
 
-load_dotenv() 
-#This loads the environment variables like database_url,secret_key from the .env file
-#Without this we cannot get the databse url and the secret code
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-#We get the database_url from the .env file
+load_dotenv()
 
-engine= create_engine(DATABASE_URL,echo=True)
-#Creates the connection pool to the Postgres
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("Database_URL")
+DEFAULT_SQLITE_URL = "sqlite:///./app.db"
 
-SessionLocal = sessionmaker(autocommit=False,autoflush=False, bind=engine)
-## ↑ This is a FACTORY, not a session itself.
-# Calling SessionLocal() later creates a new database session bound to our engine.
-# autocommit=False → you must explicitly call db.commit() — nothing saves automatically
-# autoflush=False  → SQLAlchemy won't auto-send pending changes before every query
 
+def _create_engine(database_url: str):
+    connect_args = {"check_same_thread": False} if database_url.startswith("sqlite") else {}
+    echo_sql = os.getenv("SQLALCHEMY_ECHO", "false").lower() == "true"
+    return create_engine(database_url, echo=echo_sql, connect_args=connect_args)
+
+
+engine = _create_engine(DATABASE_URL or DEFAULT_SQLITE_URL)
+
+if DATABASE_URL and not DATABASE_URL.startswith("sqlite"):
+    try:
+        with engine.connect():
+            pass
+    except OperationalError as exc:
+        raise RuntimeError(
+            "PostgreSQL database connection failed. Check DATABASE_URL in Backend/.env. "
+            "For Supabase, use the pooler connection string and add ?sslmode=require."
+        ) from exc
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-# When a class inherits Base, SQLAlchemy registers its table structure into Base.metadata
+
 
 def get_db():
-    db=SessionLocal() #opens a new session
+    db = SessionLocal()
     try:
-        yield db  # handles this session to whoever called get_db()
+        yield db
     finally:
-        db.close()  #ALWAYS close the session, even if the route crashed
-
+        db.close()

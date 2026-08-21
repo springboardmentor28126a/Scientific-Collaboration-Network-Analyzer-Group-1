@@ -1,0 +1,63 @@
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List
+from datetime import date
+
+
+# =========================================================
+# PROJECT MEMBER SCHEMAS
+# =========================================================
+
+class ProjectMemberBase(BaseModel):
+    researcher_id: int
+    role: Optional[str] = "Contributor"
+
+
+class ProjectMemberCreate(ProjectMemberBase):
+    pass
+
+
+class ProjectMemberOut(ProjectMemberBase):
+    id: int
+    project_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =========================================================
+# PROJECT SCHEMAS
+# =========================================================
+
+class ProjectBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    funding_agency: Optional[str] = None
+    budget: Optional[float] = 0.0
+    status: Optional[str] = "Proposed"
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    institution_id: Optional[int] = None
+    visible_to_others: Optional[bool] = False
+
+
+class ProjectCreate(ProjectBase):
+    pass
+
+
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    funding_agency: Optional[str] = None
+    budget: Optional[float] = None
+    status: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    institution_id: Optional[int] = None
+    visible_to_others: Optional[bool] = None
+
+
+class ProjectOut(ProjectBase):
+    id: int
+    created_by: Optional[int] = None
+    members: List[ProjectMemberOut] = []
+
+    model_config = ConfigDict(from_attributes=True)

@@ -13,4 +13,6 @@ class Institution(Base):
 
     departments = relationship("Department", back_populates="institution")
     researchers = relationship("Researcher", back_populates="institution")
+    projects = relationship("Project", back_populates="institution")
+
 

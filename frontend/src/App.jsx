@@ -1,101 +1,158 @@
-import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
-import Navbar from "./components/Navbar";
-import UserRoles from "./components/UserRoles";
-import NetworkGraph from "./components/NetworkGraph";
-import Dashboard from "./components/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-import Researchers from "./pages/Researchers";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Publications from "./pages/Publications";
+import Projects from "./pages/Projects";
+import Conferences from "./pages/Conferences";
+import Collaborations from "./pages/Collaborations";
+import Citations from "./pages/Citations";
+import Reports from "./pages/Reports";
+import Audit from "./pages/Audit";
 import Institutions from "./pages/Institutions";
-import Conference from "./pages/Conference";
-import Citation from "./pages/Citation";
-import Reviewers from "./pages/Reviewers";
-import Admin from "./pages/Admin";
-
-import Login from "./Login";
-import SignIn from "./SignIn";
+import Researchers from "./pages/Researchers";
+import Departments from "./pages/Departments";
 
 
 function App() {
-
   return (
+    <AuthProvider>
+      <BrowserRouter>
 
-    <BrowserRouter>
+        <Routes>
 
-      <Routes>
+          {/* =====================================================
+              PUBLIC ROUTES
+              ===================================================== */}
 
-        {/* First page when website opens */}
-        <Route
-          path="/"
-          element={<SignIn />}
-        />
+          <Route
+            path="/login"
+            element={<Login />}
+          />
 
+          <Route
+            path="/register"
+            element={<Register />}
+          />
 
-        {/* Authentication pages */}
-        <Route
-          path="/signin"
-          element={<SignIn />}
-        />
-
-
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-
-        {/* Dashboard */}
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+          <Route
+            path="/"
+            element={<Login />}
+          />
 
 
-        {/* Existing pages */}
-        <Route
-          path="/researchers"
-          element={<Researchers />}
-        />
+          {/* =====================================================
+              PROTECTED ROUTES
+              ===================================================== */}
 
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/institutions"
-          element={<Institutions />}
-        />
+          <Route
+            path="/publications"
+            element={
+              <ProtectedRoute>
+                <Publications />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/conference"
-          element={<Conference />}
-        />
+          <Route
+            path="/conferences"
+            element={
+              <ProtectedRoute>
+                <Conferences />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/collaborations"
+            element={
+              <ProtectedRoute>
+                <Collaborations />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Citation Management */}
-        <Route
-          path="/citation"
-          element={<Citation />}
-        />
+          <Route
+            path="/citations"
+            element={
+              <ProtectedRoute>
+                <Citations />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/institutions"
+            element={
+              <ProtectedRoute>
+                <Institutions />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/reviewers"
-          element={<Reviewers />}
-        />
+          <Route
+            path="/researchers"
+            element={
+              <ProtectedRoute>
+                <Researchers />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/admin"
-          element={<Admin />}
-        />
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute>
+                <Audit />
+              </ProtectedRoute>
+            }
+          />
 
-      </Routes>
+          <Route
+            path="/departments"
+            element={
+              <ProtectedRoute>
+                <Departments />
+              </ProtectedRoute>
+            }
+          />
 
-    </BrowserRouter>
+        </Routes>
 
+      </BrowserRouter>
+    </AuthProvider>
   );
-
 }
 
 

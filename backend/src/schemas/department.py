@@ -1,19 +1,41 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class DepartmentCreate(BaseModel):
-    institution_id : int
-    name : str
-    description : Optional[str] = None
+
+# =========================================================
+# BASE
+# =========================================================
+
+class DepartmentBase(BaseModel):
+    institution_id: Optional[int] = None
+    name: str
+    description: Optional[str] = None
+
+
+# =========================================================
+# CREATE
+# =========================================================
+
+class DepartmentCreate(DepartmentBase):
+    pass
+
+
+# =========================================================
+# UPDATE
+# =========================================================
 
 class DepartmentUpdate(BaseModel):
+    institution_id: Optional[int] = None
     name: Optional[str] = None
-    description : Optional[str] = None
+    description: Optional[str] = None
 
-class DepartmentOut(BaseModel):
-    id:int
-    institution_id : int
-    name : str
-    description :Optional[str] = None
 
-    model_config = {"from_attributes" : True}
+# =========================================================
+# OUTPUT
+# =========================================================
+
+class DepartmentOut(DepartmentBase):
+    id: int
+
+    class Config:
+        from_attributes = True

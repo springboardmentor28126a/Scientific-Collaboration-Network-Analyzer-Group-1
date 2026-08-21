@@ -1,23 +1,105 @@
-from sqlalchemy import Column, Integer, Text, String, ForeignKey, DateTime, func
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    ForeignKey,
+)
+
 from sqlalchemy.orm import relationship
+
 from database import Base
+
 
 class Researcher(Base):
     __tablename__ = "researchers"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    institution_id = Column(Integer, ForeignKey("institutions.id"))
-    department_id = Column(Integer, ForeignKey("departments.id"))
-    full_name = Column(String(150),nullable=False)
-    bio = Column(Text)
-    research_interests = Column(String(255))
-    skills = Column(String(255))
-    orcid_id = Column(String(50), unique=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
 
-    user = relationship("User", back_populates="researcher")
-    institution = relationship("Institution", back_populates="researchers")
-    department = relationship("Department", back_populates="researchers")
+    # One researcher profile belongs to one logged-in user.
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
 
+    institution_id = Column(
+        Integer,
+        ForeignKey("institutions.id"),
+        nullable=True,
+    )
+
+    # Department is intentionally plain text.
+    department = Column(
+        String(150),
+        nullable=True,
+    )
+
+    full_name = Column(
+        String(255),
+        nullable=False,
+    )
+
+    bio = Column(
+        Text,
+        nullable=True,
+    )
+
+    research_interests = Column(
+        Text,
+        nullable=True,
+    )
+
+    skills = Column(
+        Text,
+        nullable=True,
+    )
+
+    # Kept in the database for compatibility.
+    # It is NOT exposed in the frontend/schema.
+    orcid_id = Column(
+        String(100),
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime,
+        nullable=True,
+    )
+
+    updated_at = Column(
+        DateTime,
+        nullable=True,
+    )
+
+    # =========================================================
+    # USER
+    # =========================================================
+
+    user = relationship(
+        "User",
+        back_populates="researcher",
+    )
+
+    # =========================================================
+    # INSTITUTION
+    # =========================================================
+
+    institution = relationship(
+        "Institution",
+        back_populates="researchers",
+    )
+
+    # =========================================================
+    # PUBLICATION AUTHORS
+    # =========================================================
+
+    publications = relationship(
+        "PublicationAuthor",
+        back_populates="researcher",
+    )

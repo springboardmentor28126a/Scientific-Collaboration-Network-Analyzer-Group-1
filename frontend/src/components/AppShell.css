@@ -1,0 +1,439 @@
+/* =========================================================
+   Research Hub — Professional Dark Sidebar
+   ========================================================= */
+
+.app-shell {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  background: #090808;
+  color: #f2eeee;
+}
+
+/* =========================================================
+   Sidebar
+   ========================================================= */
+
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 248px;
+  display: flex;
+  flex-direction: column;
+
+  background:
+    linear-gradient(
+      180deg,
+      #151010 0%,
+      #100c0c 55%,
+      #0c0909 100%
+    );
+
+  border-right: 1px solid rgba(126, 43, 55, 0.28);
+
+  padding: 24px 16px 18px;
+
+  z-index: 100;
+}
+
+/* =========================================================
+   Brand
+   ========================================================= */
+
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 4px 8px;
+}
+
+.app-logo {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #d99aa2;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(111, 32, 45, 0.45),
+      rgba(57, 18, 25, 0.7)
+    );
+
+  border: 1px solid rgba(160, 61, 76, 0.4);
+  border-radius: 10px;
+
+  box-shadow:
+    0 8px 25px rgba(74, 22, 30, 0.2);
+}
+
+.app-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.app-eyebrow {
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9d898c;
+}
+
+.app-title {
+  font-size: 1.02rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: #f4e9ea;
+}
+
+/* =========================================================
+   Divider
+   ========================================================= */
+
+.app-sidebar-divider {
+  height: 1px;
+  margin: 24px 8px 20px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.app-navigation-label {
+  padding: 0 10px;
+  margin-bottom: 9px;
+
+  color: #746366;
+
+  font-size: 0.62rem;
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   Navigation
+   ========================================================= */
+
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 42px;
+  padding: 0 12px;
+
+  color: #9b898c;
+  text-decoration: none;
+
+  font-size: 0.82rem;
+  font-weight: 550;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.app-nav-link svg {
+  color: #776568;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.app-nav-link:hover {
+  color: #eee1e3;
+  background: rgba(116, 39, 52, 0.13);
+  text-decoration: none;
+}
+
+.app-nav-link:hover svg {
+  color: #bd707b;
+}
+
+.app-nav-link--active {
+  color: #f0dadd !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(112, 35, 48, 0.36),
+      rgba(72, 24, 32, 0.18)
+    ) !important;
+
+  border-color: rgba(143, 52, 66, 0.42) !important;
+
+  box-shadow:
+    inset 3px 0 0 #8f3949;
+}
+
+.app-nav-link--active svg {
+  color: #c77783;
+}
+
+/* =========================================================
+   Sidebar Bottom
+   ========================================================= */
+
+.app-sidebar-bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.app-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 11px;
+
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 9px;
+}
+
+.app-user-avatar {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #742a39,
+      #431722
+    );
+
+  border: 1px solid rgba(190, 94, 108, 0.35);
+
+  color: #f3dfe2;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.app-user-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.app-user-name {
+  color: #ddd0d2;
+  font-size: 0.76rem;
+  font-weight: 650;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-user-role {
+  color: #a86670;
+  font-size: 0.62rem;
+  font-weight: 650;
+}
+
+/* =========================================================
+   Sign Out
+   ========================================================= */
+
+.app-logout {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 9px;
+
+  color: #89777a;
+  background: transparent;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+
+  font-size: 0.76rem;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.app-logout:hover {
+  color: #e5b8bd;
+  background: rgba(117, 38, 51, 0.15);
+  border-color: rgba(143, 52, 66, 0.4);
+}
+
+/* =========================================================
+   Main Area
+   ========================================================= */
+
+.app-main {
+  width: calc(100% - 248px);
+  margin-left: 248px;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(105, 30, 43, 0.07),
+      transparent 30%
+    ),
+    #090808;
+}
+
+.app-content {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+
+  padding: 34px 38px 60px;
+}
+
+/* =========================================================
+   Mobile Header
+   ========================================================= */
+
+.app-mobile-header {
+  display: none;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.35);
+  }
+
+  .app-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .app-mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 16px;
+
+    background: rgba(12, 9, 9, 0.96);
+    border-bottom: 1px solid rgba(126, 43, 55, 0.25);
+
+    z-index: 90;
+  }
+
+  .app-mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    color: #eee1e3;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .app-mobile-logo {
+    width: 31px;
+    height: 31px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #c77783;
+
+    background: rgba(112, 35, 48, 0.2);
+    border: 1px solid rgba(143, 52, 66, 0.35);
+    border-radius: 8px;
+  }
+
+  .app-mobile-toggle {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #c9b7ba;
+    background: #151010;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    cursor: pointer;
+  }
+
+  .app-content {
+    padding: 84px 18px 40px;
+  }
+}
+/* =========================================================
+   APP TOPBAR
+   ========================================================= */
+
+.app-topbar {
+  width: 100%;
+  min-height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  padding: 8px 28px;
+
+  background: rgba(17, 15, 16, 0.72);
+
+  border-bottom: 1px solid rgba(139, 42, 67, 0.18);
+
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}

@@ -1,3 +1,20 @@
+# Environment secrets
+.env
+Backend/.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Node (Frontend)
+node_modules/
+dist/
+build/
+
+# Editor
+.vscode/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

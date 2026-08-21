@@ -1,35 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
+from datetime import datetime
 
+class CitationCreate(BaseModel):
+    citing_publication_id: int
+    cited_publication_id: int
 
-class CitationBase(BaseModel):
-    title: str
-    authors: str
-    publication_year: int
-    journal: Optional[str] = None
-    doi: Optional[str] = None
-    url: Optional[str] = None
-    citation_type: str
-    notes: Optional[str] = None
-
-
-class CitationCreate(CitationBase):
-    pass
-
-
-class CitationUpdate(BaseModel):
-    title: Optional[str] = None
-    authors: Optional[str] = None
-    publication_year: Optional[int] = None
-    journal: Optional[str] = None
-    doi: Optional[str] = None
-    url: Optional[str] = None
-    citation_type: Optional[str] = None
-    notes: Optional[str] = None
-
-
-class CitationResponse(CitationBase):
+class CitationOut(BaseModel):
     id: int
+    citing_publication_id: int
+    cited_publication_id: int
+    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
