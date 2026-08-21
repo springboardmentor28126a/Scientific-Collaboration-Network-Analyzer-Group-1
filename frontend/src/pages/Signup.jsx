@@ -2,24 +2,24 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
-function Login() {
+function Signup() {
   const navigate = useNavigate();
 
+  const [full_name, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     try {
-      const response = await api.post("/auth/login", {
+      const response = await api.post("/auth/register", {
+        full_name,
         email,
         password,
       });
-console.log(response.data);
-      localStorage.setItem("token", response.data.access_token);
 
-      alert("Login Successful");
+      alert(response.data.message);
 
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       if (error.response) {
         alert(error.response.data.detail);
@@ -50,31 +50,51 @@ console.log(response.data);
         }}
       >
         <h1
-  style={{
-    color: "#0931a7",
-    fontSize: "42px",
-    lineHeight: "1.2",
-    marginBottom: "10px",
-    fontWeight: "bold",
-  }}
->
-  Scientific Collaboration
-</h1>
+          style={{
+            color: "#2563eb",
+            fontSize: "42px",
+            lineHeight: "1.2",
+            marginBottom: "10px",
+            fontWeight: "bold",
+          }}
+        >
+          Scientific
+          <br />
+          Collaboration
+        </h1>
 
-<p
-  style={{
-    color: "#000000",
-    marginBottom: "30px",
-    fontSize: "20px",
-  }}
->
-  Network Analyzer
-</p>
+        <p
+          style={{
+            color: "#555",
+            marginBottom: "30px",
+            fontSize: "18px",
+          }}
+        >
+          Network Analyzer
+        </p>
 
-        <h2 style={{ marginBottom: "25px" }}>Login</h2>
+        <h2 style={{ marginBottom: "25px" }}>
+          Create Account
+        </h2>
 
         <input
-          type="Email"
+          type="text"
+          placeholder="Full Name"
+          value={full_name}
+          onChange={(e) => setFullName(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "14px",
+            marginBottom: "15px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "15px",
+            boxSizing: "border-box",
+          }}
+        />
+
+        <input
+          type="email"
           placeholder="Enter Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -83,7 +103,7 @@ console.log(response.data);
             padding: "14px",
             marginBottom: "15px",
             borderRadius: "8px",
-            border: "1px solid #f71414",
+            border: "1px solid #ccc",
             fontSize: "15px",
             boxSizing: "border-box",
           }}
@@ -99,18 +119,18 @@ console.log(response.data);
             padding: "14px",
             marginBottom: "25px",
             borderRadius: "8px",
-            border: "1px solid #f30505",
+            border: "1px solid #ccc",
             fontSize: "15px",
             boxSizing: "border-box",
           }}
         />
 
         <button
-          onClick={handleLogin}
+          onClick={handleSignup}
           style={{
             width: "100%",
             padding: "14px",
-            background: "#010204",
+            background: "#2563eb",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -118,20 +138,20 @@ console.log(response.data);
             cursor: "pointer",
           }}
         >
-          Login
+          Register
         </button>
 
         <p style={{ marginTop: "20px" }}>
-          Don't have an account?{" "}
+          Already have an account?{" "}
           <Link
-            to="/signup"
+            to="/"
             style={{
-              color: "#2556eb",
-              fontWeight: "bold",
+              color: "#2563eb",
               textDecoration: "none",
+              fontWeight: "bold",
             }}
           >
-            Signup
+            Login
           </Link>
         </p>
       </div>
@@ -139,4 +159,4 @@ console.log(response.data);
   );
 }
 
-export default Login;
+export default Signup;

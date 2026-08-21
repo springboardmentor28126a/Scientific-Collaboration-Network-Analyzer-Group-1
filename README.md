@@ -1,1 +1,1 @@
-# Scientific-Collaboration-Network-Analyzer-Group-1
+# SCNA-Team-Project

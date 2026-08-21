@@ -1,0 +1,249 @@
+body{
+    background:#0f0f0f;
+    color:white;
+}
+
+.main{
+    flex:1;
+    width:calc(100vw - 220px);
+    padding:30px;
+    background:#0d0d0d;
+    min-height:100vh;
+    overflow-x:hidden;
+    box-sizing:border-box;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:25px;
+}
+
+.card{
+    background:#171717;
+    padding:28px;
+    border-radius:20px;
+    border:1px solid #2c2c2c;
+    box-shadow:0 0 18px rgba(255,0,0,.12);
+    transition:transform .3s, box-shadow .3s, border .3s;
+    min-height:220px;
+}
+
+.card:hover{
+
+transform:translateY(-10px);
+
+border-color:#ff2d2d;
+
+box-shadow:0 15px 35px rgba(255,0,0,.25);
+
+cursor:pointer;
+
+}
+
+.card h1{
+    font-size:56px;
+    color:#ff2d2d;
+    margin:25px 0 10px;
+    font-weight:700;
+}
+
+.card h2{
+
+font-size:22px;
+
+font-weight:600;
+
+color:white;
+
+}
+
+.card p{
+
+font-size:14px;
+
+color:#9a9a9a;
+
+}
+
+.tableBox{
+    background:#1b1b1b;
+    padding:20px;
+    border-radius:12px;
+    margin-top:25px;
+    box-shadow:0 0 15px rgba(255,0,0,.12);
+}
+
+.tableBox h2{
+    color:#ff2d2d;
+    margin-bottom:15px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+thead{
+    background:#b30000;
+    color:white;
+}
+
+th,td{
+    padding:14px;
+    border-bottom:1px solid #333;
+    text-align:left;
+}
+
+tbody tr{
+    background:#151515;
+}
+
+tbody tr:hover{
+    background:#262626;
+}
+
+a{
+    color:white;
+}
+
+button{
+    background:#c40000;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#ff1f1f;
+}
+
+.activityCard{
+
+background:#202020;
+
+padding:18px;
+
+border-radius:14px;
+
+margin-bottom:18px;
+
+border-left:4px solid #c1121f;
+
+transition:.3s;
+
+}
+
+.activityCard:hover{
+
+transform:translateX(6px);
+
+background:#2a2a2a;
+
+box-shadow:0 0 20px rgba(255,0,0,.25);
+
+}
+
+.activityCard h3{
+
+margin:0;
+
+font-size:18px;
+
+color:white;
+
+}
+
+.activityCard p{
+
+margin:8px 0;
+
+color:#aaaaaa;
+
+}
+
+.activityCard span{
+
+font-size:13px;
+
+color:#ff3b3b;
+
+font-weight:bold;
+
+}
+
+.dashboardGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+    width:100%;
+    margin-top:35px;
+}
+
+@media(max-width:900px){
+
+.dashboardGrid{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+input{
+
+transition:.3s;
+
+}
+
+input:focus{
+
+border:1px solid #ff2d2d;
+
+box-shadow:
+0 0 15px rgba(255,0,0,.3);
+
+}
+
+.dashboardTitle{
+    font-size:42px;
+    font-weight:700;
+    color:#ffffff;
+    line-height:1.2;
+    margin-bottom:12px;
+}
+
+.dashboardSub{
+    font-size:14px;
+    color:#9ca3af;
+}
+
+.chartGrid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+    width:100%;
+    margin-top:35px;
+}
+
+.techBadges{
+    display:flex;
+    gap:12px;
+    margin-top:18px;
+    flex-wrap:wrap;
+}
+
+.techBadges span{
+    background:#1d1d1d;
+    color:white;
+
+    padding:8px 16px;
+
+    border-radius:20px;
+
+    border:1px solid #333;
+
+    font-size:14px;
+}
