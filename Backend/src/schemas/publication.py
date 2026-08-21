@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
+from .researcher import ResearcherOut
 
 class PublicationCreate(BaseModel):
     title: str
@@ -36,6 +37,7 @@ class PublicationAuthorOut(BaseModel):
     researcher_id: int
     author_order: Optional[int] = None
     is_corresponding_author: Optional[bool] = None
+    researcher: Optional[ResearcherOut] = None
 
     model_config = {"from_attributes": True}
 

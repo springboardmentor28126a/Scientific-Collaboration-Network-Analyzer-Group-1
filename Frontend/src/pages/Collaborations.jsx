@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "../components/AppShell";
+import Pagination from "../components/Pagination";
 import { useAuth } from "../hooks/useAuth";
 import {
   getCollaborations,
@@ -13,6 +14,8 @@ import {
   removeProjectMember,
 } from "../api/projects";
 import { getInstitutions, getResearchers } from "../api/researchers";
+import { sendCollaborationRequest } from "../api/collaboration_requests";
+import { exportToCSV, triggerPDFPrint } from "../utils/exportUtils";
 import "./Collaborations.css";
 
 const COLLAB_TYPES = [
@@ -51,6 +54,62 @@ export default function Collaborations() {
   const [collaborationForm, setCollaborationForm] = useState(emptyCollaborationForm);
   const [authorForms, setAuthorForms] = useState({});
   const [assignmentForms, setAssignmentForms] = useState({});
+
+  // Request modal state
+  const [requestModal, setRequestModal] = useState(null); // { type: 'project_invite', targetUserId, relatedId, title }
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestSuccess, setRequestSuccess] = useState("");
+
+  const handleSendCollaborationRequest = async (e) => {
+    e.preventDefault();
+    if (!requestModal) return;
+    setError("");
+    setRequestSuccess("");
+    setSubmittingAction("request");
+
+    try {
+      await sendCollaborationRequest({
+        to_user_id: requestModal.targetUserId,
+        request_type: requestModal.type,
+        related_id: requestModal.relatedId,
+        message: requestMessage,
+      });
+      setRequestSuccess("Collaboration request sent successfully!");
+      setTimeout(() => {
+        setRequestModal(null);
+        setRequestMessage("");
+        setRequestSuccess("");
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to send collaboration request.");
+    } finally {
+      setSubmittingAction("");
+    }
+  };
+
+  // Search & filter states – Co-authors section
+  const [coauthorSearch, setCoauthorSearch] = useState("");
+  const [coauthorStatusFilter, setCoauthorStatusFilter] = useState("");
+
+  // Search & filter states – Projects/Teams section
+  const [projectSearch, setProjectSearch] = useState("");
+  const [projectStatusFilter, setProjectStatusFilter] = useState("");
+
+  // Search & filter states – Institutional Collaborations section
+  const [collabSearch, setCollabSearch] = useState("");
+  const [collabTypeFilter, setCollabTypeFilter] = useState("");
+  const [collabStatusFilter, setCollabStatusFilter] = useState("");
+  const [collabSortBy, setCollabSortBy] = useState("");
+
+  // Separate pagination states for all 3 sections
+  const [coauthorPage, setCoauthorPage] = useState(1);
+  const [coauthorPageSize, setCoauthorPageSize] = useState(5);
+
+  const [projectPage, setProjectPage] = useState(1);
+  const [projectPageSize, setProjectPageSize] = useState(5);
+
+  const [collabPage, setCollabPage] = useState(1);
+  const [collabPageSize, setCollabPageSize] = useState(5);
 
   const loadData = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -140,11 +199,6 @@ export default function Collaborations() {
 
   const getResearcherName = (id) => researcherById.get(id)?.full_name || `Researcher #${id}`;
   const getInstitutionName = (id) => institutionById.get(id)?.name || "Not assigned";
-
-  const getResearcherInstitution = (id) => {
-    const researcher = researcherById.get(id);
-    return researcher ? getInstitutionName(researcher.institution_id) : "Unknown institution";
-  };
 
   const canManagePublication = (publication) => {
     if (user?.role === "SystemAdmin") return true;
@@ -339,20 +393,121 @@ export default function Collaborations() {
     return researchers.filter((researcher) => !assignedIds.has(researcher.id));
   };
 
-  const visiblePublications =
-    activeView === "overview"
-      ? publications.slice(0, 4)
-      : publications;
+  useEffect(() => {
+    setCoauthorPage(1);
+  }, [coauthorSearch, coauthorStatusFilter, activeView]);
 
-  const visibleProjects =
-    activeView === "overview"
-      ? projects.slice(0, 4)
-      : projects;
+  useEffect(() => {
+    setProjectPage(1);
+  }, [projectSearch, projectStatusFilter, activeView]);
 
-  const visibleCollaborations =
-    activeView === "overview"
-      ? collaborations.slice(0, 4)
-      : collaborations;
+  useEffect(() => {
+    setCollabPage(1);
+  }, [collabSearch, collabTypeFilter, collabStatusFilter, collabSortBy, activeView]);
+
+  const filteredCoauthorPublications = useMemo(() => {
+    return publications.filter((pub) => {
+      if (coauthorStatusFilter && pub.status !== coauthorStatusFilter) return false;
+      if (coauthorSearch.trim()) {
+        const q = coauthorSearch.toLowerCase();
+        const titleMatch = pub.title?.toLowerCase().includes(q);
+        const authorMatch = pub.authors?.some((a) =>
+          (a.researcher?.full_name || researcherById.get(a.researcher_id)?.full_name || "").toLowerCase().includes(q)
+        );
+        if (!titleMatch && !authorMatch) return false;
+      }
+      return true;
+    });
+  }, [publications, coauthorSearch, coauthorStatusFilter, researcherById]);
+
+  const paginatedCoauthorPublications = useMemo(() => {
+    const start = (coauthorPage - 1) * coauthorPageSize;
+    return filteredCoauthorPublications.slice(start, start + coauthorPageSize);
+  }, [filteredCoauthorPublications, coauthorPage, coauthorPageSize]);
+
+  const filteredCollabProjects = useMemo(() => {
+    return projects.filter((proj) => {
+      if (projectStatusFilter && proj.status !== projectStatusFilter) return false;
+      if (projectSearch.trim()) {
+        const q = projectSearch.toLowerCase();
+        const titleMatch = proj.title?.toLowerCase().includes(q);
+        const memberMatch = proj.members?.some((m) =>
+          (m.researcher?.full_name || researcherById.get(m.researcher_id)?.full_name || "").toLowerCase().includes(q)
+        );
+        if (!titleMatch && !memberMatch) return false;
+      }
+      return true;
+    });
+  }, [projects, projectSearch, projectStatusFilter, researcherById]);
+
+  const paginatedCollabProjects = useMemo(() => {
+    const start = (projectPage - 1) * projectPageSize;
+    return filteredCollabProjects.slice(start, start + projectPageSize);
+  }, [filteredCollabProjects, projectPage, projectPageSize]);
+
+  const filteredCollaborations = useMemo(() => {
+    let result = collaborations.filter((c) => {
+      if (collabTypeFilter && c.type !== collabTypeFilter) return false;
+      if (collabStatusFilter && c.status !== collabStatusFilter) return false;
+      if (collabSearch.trim()) {
+        const q = collabSearch.toLowerCase();
+        const titleMatch = c.title?.toLowerCase().includes(q);
+        const descMatch = c.description?.toLowerCase().includes(q);
+        const inst1Match = institutionById.get(c.institution_1_id)?.name?.toLowerCase().includes(q);
+        const inst2Match = institutionById.get(c.institution_2_id)?.name?.toLowerCase().includes(q);
+        if (!titleMatch && !descMatch && !inst1Match && !inst2Match) return false;
+      }
+      return true;
+    });
+    if (collabSortBy === "title_asc") result = [...result].sort((a,b) => (a.title||"").localeCompare(b.title||""));
+    if (collabSortBy === "title_desc") result = [...result].sort((a,b) => (b.title||"").localeCompare(a.title||""));
+    if (collabSortBy === "status_asc") result = [...result].sort((a,b) => (a.status||"").localeCompare(b.status||""));
+    return result;
+  }, [collaborations, collabSearch, collabTypeFilter, collabStatusFilter, collabSortBy, institutionById]);
+
+  const paginatedCollaborations = useMemo(() => {
+    const start = (collabPage - 1) * collabPageSize;
+    return filteredCollaborations.slice(start, start + collabPageSize);
+  }, [filteredCollaborations, collabPage, collabPageSize]);
+
+  const handleExportCSV = () => {
+    exportToCSV("collaborations_catalog", collaborations, [
+      { label: "ID", key: "id" },
+      { label: "Title", key: "title" },
+      { label: "Type", key: "type" },
+      { label: "Status", key: "status" },
+      { label: "Institution 1 ID", key: "institution_1_id" },
+      { label: "Institution 2 ID", key: "institution_2_id" },
+      { label: "Start Date", key: "start_date" },
+      { label: "End Date", key: "end_date" },
+    ]);
+  };
+
+  const handleExportPDF = () => {
+    const headers = ["Title", "Type", "Status", "Institution 1", "Institution 2", "Start Date", "End Date"];
+    const rows = collaborations.map((c) => [
+      c.title,
+      c.type || "N/A",
+      c.status,
+      getInstitutionName(c.institution_1_id),
+      getInstitutionName(c.institution_2_id),
+      c.start_date || "N/A",
+      c.end_date || "N/A",
+    ]);
+    triggerPDFPrint(
+      "Institutional Collaborations Report",
+      headers,
+      rows,
+      {
+        subtitle: "All institutional partnerships and collaborative agreements in the network.",
+        stats: [
+          { label: "Total Collaborations", value: collaborations.length },
+          { label: "Active", value: activeCollaborations },
+          { label: "Institutions Linked", value: institutions.length },
+        ],
+      }
+    );
+  };
 
   return (
     <AppShell>
@@ -365,6 +520,14 @@ export default function Collaborations() {
               Coordinate co-author records, research projects, institutional collaborations,
               team management, and project assignments in one workspace.
             </p>
+          </div>
+          <div className="discover-export-btns">
+            <button onClick={handleExportCSV} className="notif-mark-all-btn">
+              📊 Export CSV
+            </button>
+            <button onClick={handleExportPDF} className="notif-mark-all-btn">
+              🖨️ Export PDF
+            </button>
           </div>
         </header>
 
@@ -424,11 +587,34 @@ export default function Collaborations() {
                   </div>
                 </div>
 
+                <div className="filter-bar-container">
+                  <div className="filter-bar-header">
+                    <div className="filter-bar-title"><span>🔍</span> Filter Co-author Publications</div>
+                    <span className="filter-results-counter">Showing {filteredCoauthorPublications.length} of {publications.length}</span>
+                  </div>
+                  <div className="filter-controls-grid">
+                    <div className="filter-search-box">
+                      <span className="filter-search-icon">🔍</span>
+                      <input type="text" placeholder="Search title or author name..." value={coauthorSearch} onChange={(e) => setCoauthorSearch(e.target.value)} className="filter-search-input" />
+                    </div>
+                    <select value={coauthorStatusFilter} onChange={(e) => setCoauthorStatusFilter(e.target.value)} className="filter-select">
+                      <option value="">All Statuses</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Submitted">Submitted</option>
+                      <option value="Published">Published</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+                    {(coauthorSearch || coauthorStatusFilter) && (
+                      <button type="button" onClick={() => { setCoauthorSearch(""); setCoauthorStatusFilter(""); }} className="filter-reset-btn">✕ Reset</button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="collab-list">
-                  {visiblePublications.length === 0 && (
-                    <p className="pub-empty">No publications available for co-author management.</p>
+                  {filteredCoauthorPublications.length === 0 && (
+                    <p className="pub-empty">No publications match your filter criteria.</p>
                   )}
-                  {visiblePublications.map((publication) => {
+                  {paginatedCoauthorPublications.map((publication) => {
                     const editable = canManagePublication(publication);
                     const availableAuthors = getAvailableAuthors(publication);
 
@@ -455,7 +641,7 @@ export default function Collaborations() {
                                 <span key={author.id} className="collab-chip">
                                   <span>
                                     {author.author_order ? `${author.author_order}. ` : ""}
-                                    {getResearcherName(author.researcher_id)}
+                                    {(author.researcher?.full_name ? author.researcher.full_name : getResearcherName(author.researcher_id))}
                                     {author.is_corresponding_author ? " - corresponding" : ""}
                                   </span>
                                   {editable && (
@@ -549,6 +735,15 @@ export default function Collaborations() {
                     );
                   })}
                 </div>
+
+                <Pagination
+                  currentPage={coauthorPage}
+                  totalItems={filteredCoauthorPublications.length}
+                  pageSize={coauthorPageSize}
+                  onPageChange={setCoauthorPage}
+                  onPageSizeChange={setCoauthorPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                />
               </section>
             )}
 
@@ -561,13 +756,37 @@ export default function Collaborations() {
                   </div>
                 </div>
 
+                <div className="filter-bar-container">
+                  <div className="filter-bar-header">
+                    <div className="filter-bar-title"><span>🔍</span> Filter Projects & Teams</div>
+                    <span className="filter-results-counter">Showing {filteredCollabProjects.length} of {projects.length}</span>
+                  </div>
+                  <div className="filter-controls-grid">
+                    <div className="filter-search-box">
+                      <span className="filter-search-icon">🔍</span>
+                      <input type="text" placeholder="Search project title or member name..." value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} className="filter-search-input" />
+                    </div>
+                    <select value={projectStatusFilter} onChange={(e) => setProjectStatusFilter(e.target.value)} className="filter-select">
+                      <option value="">All Statuses</option>
+                      <option value="Proposed">Proposed</option>
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                    {(projectSearch || projectStatusFilter) && (
+                      <button type="button" onClick={() => { setProjectSearch(""); setProjectStatusFilter(""); }} className="filter-reset-btn">✕ Reset</button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="collab-list">
-                  {visibleProjects.length === 0 && (
-                    <p className="pub-empty">No research projects available for assignment.</p>
+                  {filteredCollabProjects.length === 0 && (
+                    <p className="pub-empty">No projects match your filter criteria.</p>
                   )}
-                  {visibleProjects.map((project) => {
+                  {paginatedCollabProjects.map((project) => {
                     const editable = canManageProject(project);
                     const availableMembers = getAvailableProjectMembers(project);
+                    const isMember = project.members?.some((m) => m.researcher_id === currentUserResearcherId);
 
                     return (
                       <article key={project.id} className="collab-record">
@@ -581,6 +800,23 @@ export default function Collaborations() {
                             </div>
                             <h3>{project.title}</h3>
                           </div>
+                          {!isMember && project.created_by && project.created_by !== user?.id && (
+                            <button
+                              type="button"
+                              className="collab-button collab-button--soft"
+                              onClick={() => {
+                                setRequestModal({
+                                  type: "project_invite",
+                                  targetUserId: project.created_by,
+                                  relatedId: project.id,
+                                  title: project.title,
+                                });
+                                setRequestMessage(`Hi, I'd like to collaborate on your project "${project.title}".`);
+                              }}
+                            >
+                              📩 Request to Join
+                            </button>
+                          )}
                         </div>
 
                         {project.description && (
@@ -592,7 +828,7 @@ export default function Collaborations() {
                             project.members.map((member) => (
                               <span key={member.id} className="collab-chip">
                                 <span>
-                                  {getResearcherName(member.researcher_id)}
+                                  {(member.researcher?.full_name ? member.researcher.full_name : getResearcherName(member.researcher_id))}
                                   <small>{member.role}</small>
                                 </span>
                                 {editable && (
@@ -669,6 +905,15 @@ export default function Collaborations() {
                     );
                   })}
                 </div>
+
+                <Pagination
+                  currentPage={projectPage}
+                  totalItems={filteredCollabProjects.length}
+                  pageSize={projectPageSize}
+                  onPageChange={setProjectPage}
+                  onPageSizeChange={setProjectPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                />
               </section>
             )}
 
@@ -781,11 +1026,42 @@ export default function Collaborations() {
                   </button>
                 </form>
 
+                {/* Search & Filter Controls for Institutional Collaborations */}
+                <div className="filter-bar-container">
+                  <div className="filter-bar-header">
+                    <div className="filter-bar-title"><span>🔍</span> Filter Institutional Collaborations</div>
+                    <span className="filter-results-counter">Showing {filteredCollaborations.length} of {collaborations.length}</span>
+                  </div>
+                  <div className="filter-controls-grid">
+                    <div className="filter-search-box">
+                      <span className="filter-search-icon">🔍</span>
+                      <input type="text" placeholder="Search title, description, institution name..." value={collabSearch} onChange={(e) => setCollabSearch(e.target.value)} className="filter-search-input" />
+                    </div>
+                    <select value={collabTypeFilter} onChange={(e) => setCollabTypeFilter(e.target.value)} className="filter-select">
+                      <option value="">All Types</option>
+                      {COLLAB_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select value={collabStatusFilter} onChange={(e) => setCollabStatusFilter(e.target.value)} className="filter-select">
+                      <option value="">All Statuses</option>
+                      {COLLAB_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <select value={collabSortBy} onChange={(e) => setCollabSortBy(e.target.value)} className="filter-select">
+                      <option value="">Sort By (Default)</option>
+                      <option value="title_asc">Title (A - Z)</option>
+                      <option value="title_desc">Title (Z - A)</option>
+                      <option value="status_asc">Status</option>
+                    </select>
+                    {(collabSearch || collabTypeFilter || collabStatusFilter || collabSortBy) && (
+                      <button type="button" onClick={() => { setCollabSearch(""); setCollabTypeFilter(""); setCollabStatusFilter(""); setCollabSortBy(""); }} className="filter-reset-btn">✕ Reset Filters</button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="collab-list">
-                  {visibleCollaborations.length === 0 && (
-                    <p className="pub-empty">No institutional collaborations recorded yet.</p>
+                  {filteredCollaborations.length === 0 && (
+                    <p className="pub-empty">No institutional collaborations match your filter.</p>
                   )}
-                  {visibleCollaborations.map((collaboration) => (
+                  {paginatedCollaborations.map((collaboration) => (
                     <article key={collaboration.id} className="collab-record">
                       <div className="collab-record-header">
                         <div>
@@ -800,61 +1076,101 @@ export default function Collaborations() {
                         <button
                           type="button"
                           onClick={() => handleDeleteCollaboration(collaboration.id)}
-                          className="collab-danger-button"
+                          className="collab-chip-remove"
+                          title="Delete collaboration record"
+                          style={{ padding: "4px 8px", fontSize: "0.85rem" }}
                         >
                           Delete
                         </button>
                       </div>
-                      <div className="collab-partners">
-                        <strong>{getInstitutionName(collaboration.institution_1_id)}</strong>
-                        <span>to</span>
-                        <strong>{getInstitutionName(collaboration.institution_2_id)}</strong>
-                      </div>
+
                       {collaboration.description && (
                         <p className="collab-description">{collaboration.description}</p>
                       )}
+
+                      <p className="collab-meta">
+                        Partners: <strong>{getInstitutionName(collaboration.institution_1_id)}</strong> ↔{" "}
+                        <strong>{getInstitutionName(collaboration.institution_2_id)}</strong>
+                      </p>
+
                       {(collaboration.start_date || collaboration.end_date) && (
-                        <p className="collab-meta">
-                          Duration: {collaboration.start_date || "Open"} to{" "}
-                          {collaboration.end_date || "Open"}
+                        <p className="collab-meta" style={{ marginTop: "-8px" }}>
+                          Timeline: {collaboration.start_date || "?"} to {collaboration.end_date || "?"}
                         </p>
                       )}
                     </article>
                   ))}
                 </div>
-              </section>
-            )}
 
-            {(activeView === "overview" || activeView === "projects") && (
-              <section className="collab-section" aria-labelledby="researchers-heading">
-                <div className="collab-section-header">
-                  <div>
-                    <p className="pub-section-label">Team management</p>
-                    <h2 id="researchers-heading">Researcher directory</h2>
-                  </div>
-                </div>
-                <div className="collab-directory">
-                  {researchers.length === 0 && (
-                    <p className="pub-empty">No researchers are registered yet.</p>
-                  )}
-                  {researchers.map((researcher) => (
-                    <article key={researcher.id} className="collab-person">
-                      <div className="collab-avatar">{researcher.full_name?.[0] || "R"}</div>
-                      <div>
-                        <h3>{researcher.full_name}</h3>
-                        <p>{getResearcherInstitution(researcher.id)}</p>
-                        {(researcher.research_interests || researcher.skills) && (
-                          <span>
-                            {researcher.research_interests || researcher.skills}
-                          </span>
-                        )}
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                <Pagination
+                  currentPage={collabPage}
+                  totalItems={filteredCollaborations.length}
+                  pageSize={collabPageSize}
+                  onPageChange={setCollabPage}
+                  onPageSizeChange={setCollabPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                />
               </section>
             )}
           </>
+        )}
+
+        {/* Send Collaboration Request Modal */}
+        {requestModal && (
+          <div className="collab-modal-overlay" onClick={() => setRequestModal(null)}>
+            <div className="collab-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="collab-modal-header">
+                <h3>Send Collaboration Request</h3>
+                <button
+                  type="button"
+                  className="collab-modal-close"
+                  onClick={() => setRequestModal(null)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSendCollaborationRequest} className="collab-modal-form">
+                <p className="collab-modal-target">
+                  Target: <strong>{requestModal.title}</strong>
+                </p>
+
+                {requestSuccess ? (
+                  <p className="collab-modal-success">{requestSuccess}</p>
+                ) : (
+                  <>
+                    <label className="collab-modal-label">
+                      <span>Message / Introduction:</span>
+                      <textarea
+                        rows="4"
+                        value={requestMessage}
+                        onChange={(e) => setRequestMessage(e.target.value)}
+                        placeholder="Write a short message explaining why you'd like to collaborate..."
+                        className="collab-textarea"
+                      />
+                    </label>
+
+                    <div className="collab-modal-actions">
+                      <button
+                        type="button"
+                        onClick={() => setRequestModal(null)}
+                        className="collab-button collab-button--soft"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="collab-button"
+                        disabled={submittingAction === "request"}
+                      >
+                        {submittingAction === "request" ? "Sending..." : "Send Request"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+          </div>
         )}
       </main>
     </AppShell>

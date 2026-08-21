@@ -36,3 +36,6 @@ class User(Base):
     # ↑ onupdate=func.now() → SQLAlchemy sets this automatically whenever you .commit() a change
 
     researcher = relationship("Researcher", back_populates="user", uselist=False)
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    sent_requests = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.from_user_id", back_populates="from_user", cascade="all, delete-orphan")
+    received_requests = relationship("CollaborationRequest", foreign_keys="CollaborationRequest.to_user_id", back_populates="to_user", cascade="all, delete-orphan")

@@ -18,6 +18,10 @@ def create_collaboration(data: CollaborationCreate, db: Session = Depends(get_db
 def list_collaborations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return collaboration.get_all_collaborations(db)
 
+@router.get("/network-graph")
+def get_network_graph(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return collaboration.get_network_graph(db)
+
 @router.get("/{collaboration_id}", response_model=CollaborationOut)
 def get_collaboration(collaboration_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return collaboration.get_collaboration_by_id(db, collaboration_id)

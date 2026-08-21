@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date
 
+from .researcher import ResearcherOut
+
 class ProjectMemberBase(BaseModel):
     researcher_id: int
     role: Optional[str] = "Contributor"
@@ -12,6 +14,7 @@ class ProjectMemberCreate(ProjectMemberBase):
 class ProjectMemberOut(ProjectMemberBase):
     id: int
     project_id: int
+    researcher: Optional[ResearcherOut] = None
 
     model_config = {"from_attributes": True}
 
@@ -24,7 +27,7 @@ class ProjectBase(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     institution_id: Optional[int] = None
-    visible_to_others: Optional[bool] = False
+    visible_to_others: Optional[bool] = True
 
 class ProjectCreate(ProjectBase):
     pass
@@ -43,6 +46,7 @@ class ProjectUpdate(BaseModel):
 class ProjectOut(ProjectBase):
     id: int
     created_by: Optional[int] = None
+    creator: Optional[ResearcherOut] = None
     members: List[ProjectMemberOut] = []
 
     model_config = {"from_attributes": True}

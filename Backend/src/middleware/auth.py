@@ -69,3 +69,49 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         # ↑ Edge case: token is technically valid, but that user was deleted since — reject anyway
     return user
     # ↑ This returned User object becomes `current_user` in any route using Depends(get_current_user)
+
+def get_user_role_str(user: User) -> str:
+    if hasattr(user.role, "value"):
+        return user.role.value
+    return str(user.role)
+
+def require_roles(*allowed_roles: str):
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        user_role = get_user_role_str(current_user)
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: Action requires one of {list(allowed_roles)} roles."
+            )
+        return current_user
+    return role_checker
+
+def check_researcher_write_permission(db: Session, target_researcher_id: int, current_user: User):
+    from models.researcher import Researcher
+    from models.institution import Institution
+
+    role_str = get_user_role_str(current_user)
+    if role_str == "SystemAdmin":
+        return True
+
+    target_res = db.query(Researcher).filter(Researcher.id == target_researcher_id).first()
+    if not target_res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Researcher profile not found")
+
+    if target_res.user_id == current_user.id:
+        return True
+
+    if role_str == "InstitutionAdmin":
+        admin_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
+        admin_inst_id = admin_res.institution_id if admin_res else None
+        if not admin_inst_id:
+            first_inst = db.query(Institution).first()
+            admin_inst_id = first_inst.id if first_inst else None
+
+        if target_res.institution_id and target_res.institution_id == admin_inst_id:
+            return True
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Permission denied: You cannot alter or delete another user's registration profile."
+    )

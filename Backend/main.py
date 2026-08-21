@@ -1,24 +1,33 @@
-import sys
 import os
-sys.path.append("src")
+import sys
+from contextlib import asynccontextmanager
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, "src"))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
-from routes import users, researcher, institution, department, publication, project, conference, collaboration, citation, audit, report, dashboard
+from fastapi import WebSocket, WebSocketDisconnect
+from routes import users, researcher, institution, department, publication, project, conference, collaboration, citation, audit, report, dashboard, notification, collaboration_request, search, ai
+from websocket_manager import manager
 import models
-from database import Base, engine
+from database import init_db
 
-load_dotenv()
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-app = FastAPI(title="Scientific Collaboration Network Analyzer")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
 
-Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Scientific Collaboration Network Analyzer", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,8 +56,22 @@ app.include_router(citation.router)
 app.include_router(audit.router)
 app.include_router(report.router)
 app.include_router(dashboard.router)
+app.include_router(notification.router)
+app.include_router(collaboration_request.router)
+app.include_router(search.router)
+app.include_router(ai.router)
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
 
 
 @app.get("/")

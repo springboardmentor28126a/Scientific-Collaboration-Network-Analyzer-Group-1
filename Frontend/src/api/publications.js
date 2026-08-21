@@ -35,3 +35,13 @@ export const getAuthors = (publicationId) =>
 
 export const removeAuthor = (publicationId, researcherId) =>
   axiosClient.delete(`/publications/${publicationId}/authors/${researcherId}`);
+
+export const lookupDoi = (doi) =>
+  axiosClient.get(`/publications/doi-lookup/${encodeURIComponent(doi)}`);
+
+export const exportCitation = (id, format = "bibtex") =>
+  axiosClient.get(`/publications/${id}/export-citation`, {
+    params: { format },
+    responseType: "text",
+  });
+

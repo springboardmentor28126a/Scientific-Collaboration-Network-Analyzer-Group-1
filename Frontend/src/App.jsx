@@ -12,6 +12,11 @@ import Citations from "./pages/Citations";
 import Reports from "./pages/Reports";
 import Audit from "./pages/Audit";
 import Institutions from "./pages/Institutions";
+import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
+import Discover from "./pages/Discover";
+import NetworkGraph from "./pages/NetworkGraph";
+import AIAssistant from "./pages/AIAssistant";
 
 function App(){
   return(
@@ -29,6 +34,38 @@ function App(){
           }
         />
         <Route path="/" element={<Login/>}/>
+        <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Discover />
+              </ProtectedRoute>
+            }
+          />
+        <Route
+            path="/network"
+            element={
+              <ProtectedRoute>
+                <NetworkGraph />
+              </ProtectedRoute>
+            }
+          />
+        <Route
+            path="/assistant"
+            element={
+              <ProtectedRoute>
+                <AIAssistant />
+              </ProtectedRoute>
+            }
+          />
+        <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
         <Route
             path="/publications"
             element={
@@ -74,6 +111,14 @@ function App(){
             element={
               <ProtectedRoute>
                 <Institutions />
+              </ProtectedRoute>
+            }
+          />
+        <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
               </ProtectedRoute>
             }
           />

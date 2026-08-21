@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   getPublications,
   createPublication,
@@ -6,10 +6,15 @@ import {
   updatePublicationStatus,
   deletePublication,
   uploadPublicationFile,
+  lookupDoi,
+  exportCitation,
 } from "../api/publications";
 import { getResearchers, getInstitutions } from "../api/researchers";
+import { sendCollaborationRequest } from "../api/collaboration_requests";
 import AppShell from "../components/AppShell";
+import Pagination from "../components/Pagination";
 import { useAuth } from "../hooks/useAuth";
+import { exportToCSV, triggerPDFPrint } from "../utils/exportUtils";
 import "./Publications.css";
 
 const STATUSES = ["Draft", "Submitted", "Published", "Archived"];
@@ -29,9 +34,49 @@ export default function Publications() {
   const [researchers, setResearchers] = useState([]);
   const [institutions, setInstitutions] = useState([]);
   const [filterStatus, setFilterStatus] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterVisibility, setFilterVisibility] = useState("");
+  const [sortBy, setSortBy] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // all, mine, institutional
+
+  // Request modal state
+  const [requestModal, setRequestModal] = useState(null); // { type, targetUserId, relatedId, title, selectableTargets }
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestSuccess, setRequestSuccess] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+
+  const handleSendCollaborationRequest = async (e) => {
+    e.preventDefault();
+    if (!requestModal) return;
+    setError("");
+    setRequestSuccess("");
+    setSendingRequest(true);
+
+    try {
+      await sendCollaborationRequest({
+        to_user_id: requestModal.targetUserId,
+        request_type: requestModal.type,
+        related_id: requestModal.relatedId,
+        message: requestMessage,
+      });
+      setRequestSuccess("Co-authorship proposal sent successfully!");
+      setTimeout(() => {
+        setRequestModal(null);
+        setRequestMessage("");
+        setRequestSuccess("");
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to send proposal.");
+    } finally {
+      setSendingRequest(false);
+    }
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   const [form, setForm] = useState({
     title: "",
@@ -55,6 +100,47 @@ export default function Publications() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadFiles, setUploadFiles] = useState({});
   const [uploadingPubId, setUploadingPubId] = useState(null);
+  const [fetchingDoi, setFetchingDoi] = useState(false);
+
+  const handleDoiLookup = async () => {
+    if (!form.doi.trim()) {
+      alert("Please enter a DOI string first.");
+      return;
+    }
+    setFetchingDoi(true);
+    setError("");
+    try {
+      const res = await lookupDoi(form.doi.trim());
+      const data = res.data;
+      setForm((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        abstract: data.abstract || prev.abstract,
+        type: data.type === "Conference Paper" ? "ConferencePaper" : (data.type === "Technical Report" ? "Report" : (TYPES.includes(data.type) ? data.type : "Journal")),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not fetch DOI metadata from CrossRef.");
+    } finally {
+      setFetchingDoi(false);
+    }
+  };
+
+  const handleExportSingleCitation = async (pub, format) => {
+    try {
+      const res = await exportCitation(pub.id, format);
+      const ext = format === "bibtex" ? "bib" : (format === "ris" ? "ris" : "txt");
+      const blob = new Blob([res.data], { type: "text/plain;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `citation_${pub.id}_${format}.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch {
+      alert(`Failed to export citation in ${format.toUpperCase()} format.`);
+    }
+  };
 
   const statusCounts = STATUSES.map((status) => ({
     status,
@@ -173,7 +259,7 @@ export default function Publications() {
       setEditingPubId(null);
       await refreshPublications(filterStatus);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to save publication updates.");
+      setError(err.response?.data?.detail || "Failed to save publication updates.");
     }
   };
 
@@ -184,7 +270,7 @@ export default function Publications() {
       });
       await refreshPublications(filterStatus);
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to toggle publication visibility.");
+      setError(err.response?.data?.detail || "Failed to toggle publication visibility.");
     }
   };
 
@@ -247,7 +333,9 @@ export default function Publications() {
 
   const getAuthorNames = (pub) => {
     if (!pub.authors || pub.authors.length === 0) return "No authors listed";
-    return pub.authors.map((a) => getResearcherName(a.researcher_id)).join(", ");
+    return pub.authors
+      .map((a) => (a.researcher?.full_name ? a.researcher.full_name : getResearcherName(a.researcher_id)))
+      .join(", ");
   };
 
   const currentUserResearcher = researchers.find((r) => r.user_id === user?.id);
@@ -267,29 +355,123 @@ export default function Publications() {
     return isCoAuthor;
   };
 
-  const filteredPublications = publications.filter((pub) => {
-    if (activeTab === "mine") {
-      const isUploader = pub.uploaded_by === user?.id;
-      const isCoAuthor = pub.authors?.some((a) => a.researcher_id === currentUserResearcherId);
-      return isUploader || isCoAuthor;
+  const filteredPublications = useMemo(() => {
+    let result = publications.filter((pub) => {
+      if (activeTab === "mine") {
+        const isUploader = pub.uploaded_by === user?.id;
+        const isCoAuthor = pub.authors?.some((a) => a.researcher_id === currentUserResearcherId);
+        if (!isUploader && !isCoAuthor) return false;
+      }
+      if (activeTab === "institutional") {
+        const uploaderRes = researchers.find((r) => r.user_id === pub.uploaded_by);
+        if (uploaderRes?.institution_id !== currentUserInstitutionId) return false;
+      }
+      if (filterType && pub.type !== filterType) {
+        return false;
+      }
+      if (filterVisibility === "public" && !pub.visible_to_others) {
+        return false;
+      }
+      if (filterVisibility === "private" && pub.visible_to_others) {
+        return false;
+      }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase().trim();
+        const titleMatch = pub.title?.toLowerCase().includes(q);
+        const abstractMatch = pub.abstract?.toLowerCase().includes(q);
+        const doiMatch = pub.doi?.toLowerCase().includes(q);
+        const typeMatch = pub.type?.toLowerCase().includes(q);
+        const authorMatch = pub.authors?.some((a) =>
+          (a.researcher?.full_name || getResearcherName(a.researcher_id))
+            .toLowerCase()
+            .includes(q)
+        );
+        if (!titleMatch && !abstractMatch && !doiMatch && !typeMatch && !authorMatch) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (sortBy) {
+      result = [...result].sort((a, b) => {
+        if (sortBy === "title_asc") return (a.title || "").localeCompare(b.title || "");
+        if (sortBy === "title_desc") return (b.title || "").localeCompare(a.title || "");
+        if (sortBy === "type_asc") return (a.type || "").localeCompare(b.type || "");
+        if (sortBy === "status_asc") return (a.status || "").localeCompare(b.status || "");
+        return 0;
+      });
     }
-    if (activeTab === "institutional") {
-      const uploaderRes = researchers.find((r) => r.user_id === pub.uploaded_by);
-      return uploaderRes?.institution_id === currentUserInstitutionId;
-    }
-    return true;
-  });
+
+    return result;
+  }, [publications, activeTab, user?.id, currentUserResearcherId, currentUserInstitutionId, researchers, filterType, filterVisibility, searchTerm, sortBy]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, activeTab, searchTerm, filterType, filterVisibility, sortBy]);
+
+  const paginatedPublications = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPublications.slice(start, start + pageSize);
+  }, [filteredPublications, currentPage, pageSize]);
+
+  const handleExportCSV = () => {
+    exportToCSV("publications_catalog", publications, [
+      { label: "ID", key: "id" },
+      { label: "Title", key: "title" },
+      { label: "Type", key: "type" },
+      { label: "Status", key: "status" },
+      { label: "DOI", key: "doi" },
+      { label: "Abstract", key: "abstract" },
+      { label: "Publication Date", key: "publication_date" },
+    ]);
+  };
+
+  const handleExportPDF = () => {
+    const headers = ["Title", "Type", "Status", "DOI", "Publication Date"];
+    const rows = publications.map((p) => [
+      p.title,
+      p.type || "N/A",
+      p.status,
+      p.doi || "N/A",
+      p.publication_date || "N/A",
+    ]);
+    const typesCount = [...new Set(publications.map((p) => p.type).filter(Boolean))].length;
+    const publishedCount = publications.filter((p) => p.status === "Published").length;
+    triggerPDFPrint(
+      "Publications Catalog Report",
+      headers,
+      rows,
+      {
+        subtitle: "Complete record of all tracked publications across the research network.",
+        stats: [
+          { label: "Total Publications", value: publications.length },
+          { label: "Published", value: publishedCount },
+          { label: "Publication Types", value: typesCount },
+        ],
+      }
+    );
+  };
 
   return (
     <AppShell>
-      <main className="publications-page">
+      <div className="publications-container">
         <header className="publications-header">
           <div>
-            <p className="dashboard-badge">Publication repository</p>
+            <span className="dashboard-badge">Resource Library</span>
             <h1 className="publications-title">Publication Management</h1>
             <p className="publications-subtitle">
               Track journal papers, conference papers, books, patents, technical reports, DOI records, and publication status history.
             </p>
+          </div>
+
+          <div className="discover-export-btns">
+            <button onClick={handleExportCSV} className="notif-mark-all-btn">
+              📊 Export CSV
+            </button>
+            <button onClick={handleExportPDF} className="notif-mark-all-btn">
+              🖨️ Export PDF
+            </button>
           </div>
         </header>
 
@@ -363,13 +545,24 @@ export default function Publications() {
               ))}
             </select>
           </div>
-          <input
-            name="doi"
-            placeholder="DOI (optional)"
-            value={form.doi}
-            onChange={handleFormChange}
-            className="pub-input"
-          />
+          <div className="pub-row">
+            <input
+              name="doi"
+              placeholder="DOI (e.g. 10.1038/s41586-020-2649-2)"
+              value={form.doi}
+              onChange={handleFormChange}
+              className="pub-input"
+            />
+            <button
+              type="button"
+              onClick={handleDoiLookup}
+              disabled={fetchingDoi}
+              className="pub-button"
+              style={{ width: "auto", whiteSpace: "nowrap", background: "var(--accent-secondary, #10b981)", minWidth: "160px" }}
+            >
+              {fetchingDoi ? "Fetching..." : "⚡ Auto-Fill via DOI"}
+            </button>
+          </div>
           <textarea
             name="abstract"
             placeholder="Abstract"
@@ -395,209 +588,407 @@ export default function Publications() {
           </button>
         </form>
 
-        <div className="pub-filter">
-          <label>
-            <span>Status Filter</span>
+        {/* Search & Filter Controls */}
+        <div className="filter-bar-container">
+          <div className="filter-bar-header">
+            <div className="filter-bar-title">
+              <span>🔍</span> Filter & Search Publications
+            </div>
+            <span className="filter-results-counter">
+              Showing {filteredPublications.length} of {publications.length} records
+            </span>
+          </div>
+
+          <div className="filter-controls-grid">
+            <div className="filter-search-box">
+              <span className="filter-search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search title, abstract, DOI, type, author..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="filter-search-input"
+              />
+            </div>
+
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className={`pub-status-control pub-status-control--${statusClass(filterStatus)}`}
+              className="filter-select"
             >
-              <option value="">All publications</option>
+              <option value="">All Statuses</option>
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
-          </label>
+
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Types</option>
+              {TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterVisibility}
+              onChange={(e) => setFilterVisibility(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Visibilities</option>
+              <option value="public">Public Records</option>
+              <option value="private">Private Records</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">Sort By (Default)</option>
+              <option value="title_asc">Title (A - Z)</option>
+              <option value="title_desc">Title (Z - A)</option>
+              <option value="type_asc">Format Type</option>
+              <option value="status_asc">Status</option>
+            </select>
+
+            {(searchTerm || filterStatus || filterType || filterVisibility || sortBy) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterStatus("");
+                  setFilterType("");
+                  setFilterVisibility("");
+                  setSortBy("");
+                }}
+                className="filter-reset-btn"
+              >
+                ✕ Reset Filters
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <p className="pub-loading">Loading publications...</p>
         ) : (
-          <div className="publication-list">
-            {filteredPublications.length === 0 && (
+          <div className="publication-list-container">
+            {filteredPublications.length === 0 ? (
               <p className="pub-empty">No publications found in this tab.</p>
-            )}
-            {filteredPublications.map((pub) => {
-              const editable = canManagePublication(pub);
-              const isEditing = editingPubId === pub.id;
+            ) : (
+              <>
+                <div className="publication-list">
+                  {paginatedPublications.map((pub) => {
+                    const editable = canManagePublication(pub);
+                    const isEditing = editingPubId === pub.id;
 
-              return (
-                <div key={pub.id} className="publication-card">
-                  {isEditing ? (
-                    /* Inline Edit Mode */
-                    <div className="pub-edit-form">
-                      <h3 style={{ marginBottom: "14px" }}>Edit Publication Details</h3>
-                      <div className="pub-edit-fields">
-                        <input
-                          name="title"
-                          value={editForm.title}
-                          onChange={handleEditFormChange}
-                          required
-                          className="pub-input"
-                          placeholder="Title"
-                        />
-                        <div className="pub-row">
-                          <select
-                            name="type"
-                            value={editForm.type}
-                            onChange={handleEditFormChange}
-                            className="pub-input"
-                          >
-                            {TYPES.map((t) => (
-                              <option key={t} value={t}>{t}</option>
-                            ))}
-                          </select>
-                          <select
-                            name="status"
-                            value={editForm.status}
-                            onChange={handleEditFormChange}
-                            className="pub-input"
-                          >
-                            {STATUSES.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <input
-                          name="doi"
-                          value={editForm.doi}
-                          onChange={handleEditFormChange}
-                          className="pub-input"
-                          placeholder="DOI (optional)"
-                        />
-                        <textarea
-                          name="abstract"
-                          value={editForm.abstract}
-                          onChange={handleEditFormChange}
-                          className="pub-input"
-                          placeholder="Abstract"
-                          rows={3}
-                        />
-                        <label className="pub-checkbox-container">
-                          <input
-                            type="checkbox"
-                            name="visible_to_others"
-                            checked={editForm.visible_to_others}
-                            onChange={handleEditFormChange}
-                          />
-                          <span>Visible to others (Public Record)</span>
-                        </label>
-                      </div>
+                    return (
+                      <div key={pub.id} className="publication-card">
+                        {isEditing ? (
+                          /* Inline Edit Mode */
+                          <div className="pub-edit-form">
+                            <h3 style={{ marginBottom: "14px" }}>Edit Publication Details</h3>
+                            <div className="pub-edit-fields">
+                              <input
+                                name="title"
+                                value={editForm.title}
+                                onChange={handleEditFormChange}
+                                required
+                                className="pub-input"
+                                placeholder="Title"
+                              />
+                              <div className="pub-row">
+                                <select
+                                  name="type"
+                                  value={editForm.type}
+                                  onChange={handleEditFormChange}
+                                  className="pub-input"
+                                >
+                                  {TYPES.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  name="status"
+                                  value={editForm.status}
+                                  onChange={handleEditFormChange}
+                                  className="pub-input"
+                                >
+                                  {STATUSES.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <input
+                                name="doi"
+                                value={editForm.doi}
+                                onChange={handleEditFormChange}
+                                className="pub-input"
+                                placeholder="DOI (optional)"
+                              />
+                              <textarea
+                                name="abstract"
+                                value={editForm.abstract}
+                                onChange={handleEditFormChange}
+                                className="pub-input"
+                                placeholder="Abstract"
+                                rows={3}
+                              />
+                              <label className="pub-checkbox-container">
+                                <input
+                                  type="checkbox"
+                                  name="visible_to_others"
+                                  checked={editForm.visible_to_others}
+                                  onChange={handleEditFormChange}
+                                />
+                                <span>Visible to others (Public Record)</span>
+                              </label>
+                            </div>
 
-                      <div className="proj-edit-actions">
-                        <button
-                          onClick={() => handleSaveEdit(pub.id)}
-                          className="proj-action-btn proj-save-btn"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="proj-action-btn proj-cancel-btn"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Display Mode */
-                    <>
-                      <div className="pub-card-header">
-                        <div>
-                          <div className="pub-badge-row">
-                            <span className={`pub-badge ${pub.visible_to_others ? "pub-badge--public" : "pub-badge--private"}`}>
-                              {pub.visible_to_others ? "🌐 Public" : "🔒 Private"}
-                            </span>
-                            <span className={`pub-badge pub-badge--${pub.status?.toLowerCase()}`}>
-                              {pub.status}
-                            </span>
+                            <div className="proj-edit-actions">
+                              <button
+                                onClick={() => handleSaveEdit(pub.id)}
+                                className="proj-action-btn proj-save-btn"
+                              >
+                                Save Changes
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="proj-action-btn proj-cancel-btn"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                          <h3 style={{ marginTop: "8px" }}>{pub.title}</h3>
-                        </div>
-                      </div>
+                        ) : (
+                          /* Display Mode */
+                          <>
+                            <div className="pub-card-header">
+                              <div>
+                                <div className="pub-badge-row">
+                                  <span className={`pub-badge ${pub.visible_to_others ? "pub-badge--public" : "pub-badge--private"}`}>
+                                    {pub.visible_to_others ? "🌐 Public" : "🔒 Private"}
+                                  </span>
+                                  <span className={`pub-badge pub-badge--${pub.status?.toLowerCase()}`}>
+                                    {pub.status}
+                                  </span>
+                                </div>
+                                <h3 style={{ marginTop: "8px" }}>{pub.title}</h3>
+                              </div>
+                            </div>
 
-                      <p className="pub-meta">
-                        Type: <strong>{pub.type}</strong> {pub.doi && <>| DOI: <strong>{pub.doi}</strong></>}
-                      </p>
-                      
-                      <p className="pub-meta" style={{ marginTop: "-8px", color: "var(--text)" }}>
-                        Authors: <strong>{getAuthorNames(pub)}</strong>
-                      </p>
+                            <p className="pub-meta">
+                              Type: <strong>{pub.type}</strong> {pub.doi && <>| DOI: <strong>{pub.doi}</strong></>}
+                            </p>
+                            
+                            <p className="pub-meta" style={{ marginTop: "-8px", color: "var(--text)" }}>
+                              Authors: <strong>{getAuthorNames(pub)}</strong>
+                            </p>
 
-                      {pub.abstract && <p className="pub-abstract">{pub.abstract}</p>}
+                            {pub.abstract && <p className="pub-abstract">{pub.abstract}</p>}
 
-                      <div className="pub-file-panel">
-                        <div>
-                          <span className="pub-file-label">Attached file</span>
-                          {pub.file_url ? (
-                            <a href={getFileHref(pub.file_url)} target="_blank" rel="noopener noreferrer">
-                              Open document
-                            </a>
-                          ) : (
-                            <strong>No file uploaded</strong>
-                          )}
-                        </div>
+                            <div className="pub-file-panel">
+                              <div>
+                                <span className="pub-file-label">Attached file</span>
+                                {pub.file_url ? (
+                                  <a href={getFileHref(pub.file_url)} target="_blank" rel="noopener noreferrer">
+                                    Open document
+                                  </a>
+                                ) : (
+                                  <strong>No file uploaded</strong>
+                                )}
+                              </div>
 
-                        {editable && (
-                          <form onSubmit={(e) => handleFileUpload(e, pub.id)} className="pub-upload-form">
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-                              onChange={(e) => handleUploadFileChange(pub.id, e.target.files?.[0] || null)}
-                              className="pub-file-input"
-                            />
-                            <button
-                              type="submit"
-                              disabled={uploadingPubId === pub.id}
-                              className="pub-upload-btn"
-                            >
-                              {uploadingPubId === pub.id ? "Uploading..." : pub.file_url ? "Replace File" : "Upload File"}
-                            </button>
-                          </form>
+                              {editable && (
+                                <form onSubmit={(e) => handleFileUpload(e, pub.id)} className="pub-upload-form">
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                                    onChange={(e) => handleUploadFileChange(pub.id, e.target.files?.[0] || null)}
+                                    className="pub-file-input"
+                                  />
+                                  <button
+                                    type="submit"
+                                    disabled={uploadingPubId === pub.id}
+                                    className="pub-upload-btn"
+                                  >
+                                    {uploadingPubId === pub.id ? "Uploading..." : pub.file_url ? "Replace File" : "Upload File"}
+                                  </button>
+                                </form>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pub-actions">
+                              {!editable && pub.uploaded_by && pub.uploaded_by !== user?.id && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRequestModal({
+                                      type: "coauthor_invite",
+                                      targetUserId: pub.uploaded_by,
+                                      relatedId: pub.id,
+                                      title: pub.title,
+                                    });
+                                    setRequestMessage(`Hi, I'd like to collaborate as a co-author on your publication "${pub.title}".`);
+                                  }}
+                                  className="pub-edit-btn"
+                                  style={{ borderColor: "var(--accent-border)", color: "var(--accent)", background: "var(--accent-bg)" }}
+                                >
+                                  🤝 Propose Co-Authorship
+                                </button>
+                              )}
+                              {editable && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const targets = researchers.filter(r => r.user_id && r.user_id !== user?.id);
+                                      if (targets.length === 0) {
+                                        alert("No other registered researchers found.");
+                                        return;
+                                      }
+                                      setRequestModal({
+                                        type: "coauthor_invite",
+                                        targetUserId: targets[0].user_id,
+                                        relatedId: pub.id,
+                                        title: pub.title,
+                                        selectableTargets: targets,
+                                      });
+                                      setRequestMessage(`Hi! I'd like to invite you as a co-author on our publication "${pub.title}".`);
+                                    }}
+                                    className="pub-edit-btn"
+                                    style={{ borderColor: "var(--accent-border)", color: "var(--accent)" }}
+                                  >
+                                    📩 Invite Co-Author
+                                  </button>
+                                  <select
+                                    value={pub.status}
+                                    onChange={(e) => handleStatusChange(pub.id, e.target.value)}
+                                    className={`pub-status-select pub-status-control pub-status-control--${statusClass(pub.status)}`}
+                                  >
+                                    {STATUSES.map((s) => (
+                                      <option key={s} value={s}>{s}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        handleExportSingleCitation(pub, e.target.value);
+                                        e.target.value = "";
+                                      }
+                                    }}
+                                    className="pub-edit-btn"
+                                    style={{ background: "var(--bg-tertiary)", cursor: "pointer", color: "var(--text-primary)" }}
+                                  >
+                                    <option value="">📥 Export Citation...</option>
+                                    <option value="bibtex">BibTeX (.bib)</option>
+                                    <option value="ris">RIS (.ris)</option>
+                                    <option value="apa">APA Reference</option>
+                                    <option value="ieee">IEEE Reference</option>
+                                  </select>
+                                  <button
+                                    onClick={() => handleStartEdit(pub)}
+                                    className="pub-edit-btn"
+                                  >
+                                    ✏️ Edit Details
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleVisibility(pub)}
+                                    className="pub-edit-btn"
+                                  >
+                                    {pub.visible_to_others ? "🔒 Make Private" : "🌐 Make Public"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(pub.id)}
+                                    className="pub-delete-btn"
+                                  >
+                                    🗑️ Delete
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-
-                      {/* Actions */}
-                      {editable && (
-                        <div className="pub-actions">
-                          <select
-                            value={pub.status}
-                            onChange={(e) => handleStatusChange(pub.id, e.target.value)}
-                            className={`pub-status-select pub-status-control pub-status-control--${statusClass(pub.status)}`}
-                          >
-                            {STATUSES.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => handleStartEdit(pub)}
-                            className="pub-edit-btn"
-                          >
-                            ✏️ Edit Details
-                          </button>
-                          <button
-                            onClick={() => handleToggleVisibility(pub)}
-                            className="pub-edit-btn"
-                          >
-                            {pub.visible_to_others ? "🔒 Make Private" : "🌐 Make Public"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(pub.id)}
-                            className="pub-delete-btn"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
+                    );
+                  })}
                 </div>
-              );
-            })}
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredPublications.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                />
+              </>
+            )}
           </div>
         )}
-      </main>
+
+        {requestModal && (
+          <div className="collab-modal-overlay" onClick={() => setRequestModal(null)}>
+            <div className="collab-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="collab-modal-header">
+                <h3>Propose Co-Authorship</h3>
+                <button type="button" onClick={() => setRequestModal(null)} className="collab-modal-close">✕</button>
+              </div>
+              {requestSuccess ? (
+                <div className="collab-modal-success">{requestSuccess}</div>
+              ) : (
+                <form onSubmit={handleSendCollaborationRequest} className="collab-modal-form">
+                  <p className="collab-modal-target">Publication: <strong>{requestModal.title}</strong></p>
+
+                  {requestModal.selectableTargets && (
+                    <label className="collab-modal-label">
+                      <span>Select Recipient Researcher:</span>
+                      <select
+                        value={requestModal.targetUserId}
+                        onChange={(e) => setRequestModal({ ...requestModal, targetUserId: parseInt(e.target.value) })}
+                        className="pub-input"
+                        required
+                      >
+                        {requestModal.selectableTargets.map((r) => (
+                          <option key={r.id} value={r.user_id}>
+                            {r.full_name} ({r.user?.email || `Researcher #${r.id}`})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
+                  <label className="collab-modal-label">
+                    <span>Proposal Message:</span>
+                    <textarea
+                      rows={4}
+                      value={requestMessage}
+                      onChange={(e) => setRequestMessage(e.target.value)}
+                      placeholder="Write a brief proposal message..."
+                      className="collab-textarea"
+                      required
+                    />
+                  </label>
+                  {error && <p className="pub-error">{error}</p>}
+                  <div className="collab-modal-actions">
+                    <button type="button" onClick={() => setRequestModal(null)} className="pub-edit-btn">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={sendingRequest} className="pub-button" style={{ width: "auto" }}>
+                      {sendingRequest ? "Sending..." : "Send Proposal"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </AppShell>
   );
 }

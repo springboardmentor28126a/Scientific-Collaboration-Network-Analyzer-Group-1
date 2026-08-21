@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import AppShell from "../components/AppShell";
+import Pagination from "../components/Pagination";
 import { useAuth } from "../hooks/useAuth";
 import { getProjects, createProject, updateProject, deleteProject, assignProjectMember, removeProjectMember } from "../api/projects";
 import { getResearchers, getInstitutions } from "../api/researchers";
+import { sendCollaborationRequest } from "../api/collaboration_requests";
+import { exportToCSV, triggerPDFPrint } from "../utils/exportUtils";
 import "./Projects.css";
 
 export default function Projects() {
@@ -13,6 +16,48 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // all, mine, institutional
+
+  // Request modal state
+  const [requestModal, setRequestModal] = useState(null); // { type, targetUserId, relatedId, title }
+  const [requestMessage, setRequestMessage] = useState("");
+  const [requestSuccess, setRequestSuccess] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterInstitution, setFilterInstitution] = useState("");
+  const [filterVisibility, setFilterVisibility] = useState("");
+  const [sortBy, setSortBy] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const handleSendCollaborationRequest = async (e) => {
+    e.preventDefault();
+    if (!requestModal) return;
+    setError("");
+    setRequestSuccess("");
+    setSendingRequest(true);
+
+    try {
+      await sendCollaborationRequest({
+        to_user_id: requestModal.targetUserId,
+        request_type: requestModal.type,
+        related_id: requestModal.relatedId,
+        message: requestMessage,
+      });
+      setRequestSuccess("Collaboration request sent successfully!");
+      setTimeout(() => {
+        setRequestModal(null);
+        setRequestMessage("");
+        setRequestSuccess("");
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to send collaboration request.");
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   const [form, setForm] = useState({
     title: "",
@@ -40,6 +85,7 @@ export default function Projects() {
   });
 
   const [assignForms, setAssignForms] = useState({}); // { [projectId]: { researcher_id: "", role: "Contributor" } }
+  const [assignErrors, setAssignErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   const loadData = async (showLoading = true) => {
@@ -174,7 +220,7 @@ export default function Projects() {
       setEditingProjectId(null);
       await loadData();
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to save project updates.");
+      setError(err.response?.data?.detail || "Failed to save project updates.");
     }
   };
 
@@ -185,7 +231,7 @@ export default function Projects() {
       });
       await loadData();
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to update project visibility.");
+      setError(err.response?.data?.detail || "Failed to update project visibility.");
     }
   };
 
@@ -213,7 +259,7 @@ export default function Projects() {
     e.preventDefault();
     const assignForm = assignForms[projId];
     if (!assignForm?.researcher_id) {
-      alert("Please select a researcher to assign.");
+      setAssignErrors({ ...assignErrors, [projId]: "Please select a researcher to assign." });
       return;
     }
     try {
@@ -225,9 +271,11 @@ export default function Projects() {
         ...assignForms,
         [projId]: { researcher_id: "", role: "Contributor" },
       });
+      setAssignErrors({ ...assignErrors, [projId]: null });
       await loadData();
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to assign member");
+      const msg = err.response?.data?.detail || "Failed to assign member";
+      setAssignErrors({ ...assignErrors, [projId]: msg });
     }
   };
 
@@ -237,7 +285,7 @@ export default function Projects() {
       await removeProjectMember(projId, researcherId);
       await loadData();
     } catch {
-      alert("Failed to remove member");
+      setAssignErrors({ ...assignErrors, [projId]: "Failed to remove member" });
     }
   };
 
@@ -251,32 +299,124 @@ export default function Projects() {
     return res ? res.full_name : `Researcher #${id}`;
   };
 
+  const getCreatorName = (proj) => {
+    if (proj.creator?.full_name) return proj.creator.full_name;
+    const creatorRes = researchers.find((r) => r.user_id === proj.created_by);
+    if (creatorRes) return creatorRes.full_name;
+    return proj.created_by ? `User #${proj.created_by}` : "Unknown";
+  };
+
   const currentUserResearcher = researchers.find((r) => r.user_id === user?.id);
   const currentUserResearcherId = currentUserResearcher?.id;
   const currentUserInstitutionId = currentUserResearcher?.institution_id || (user?.role === "InstitutionAdmin" ? institutions[0]?.id : null);
 
   const canManageProject = (proj) => {
+    // Only SystemAdmin or the project creator may manage members
     if (user?.role === "SystemAdmin") return true;
     if (proj.created_by === user?.id) return true;
-    if (user?.role === "InstitutionAdmin" && proj.institution_id === currentUserInstitutionId) return true;
-    
-    const isLead = proj.members?.some(
-      (m) => m.researcher_id === currentUserResearcherId && m.role === "Lead Investigator"
-    );
-    return isLead;
+    return false;
   };
 
-  const filteredProjects = projects.filter((proj) => {
-    if (activeTab === "mine") {
-      const isCreator = proj.created_by === user?.id;
-      const isMember = proj.members?.some((m) => m.researcher_id === currentUserResearcherId);
-      return isCreator || isMember;
+  const filteredProjects = useMemo(() => {
+    let result = projects.filter((proj) => {
+      if (activeTab === "mine") {
+        const isCreator = proj.created_by === user?.id;
+        const isMember = proj.members?.some((m) => m.researcher_id === currentUserResearcherId);
+        if (!isCreator && !isMember) return false;
+      }
+      if (activeTab === "institutional") {
+        if (proj.institution_id !== currentUserInstitutionId) return false;
+      }
+      if (filterStatus && proj.status !== filterStatus) {
+        return false;
+      }
+      if (filterInstitution && String(proj.institution_id) !== String(filterInstitution)) {
+        return false;
+      }
+      if (filterVisibility === "public" && !proj.visible_to_others) {
+        return false;
+      }
+      if (filterVisibility === "private" && proj.visible_to_others) {
+        return false;
+      }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase().trim();
+        const titleMatch = proj.title?.toLowerCase().includes(q);
+        const descMatch = proj.description?.toLowerCase().includes(q);
+        const agencyMatch = proj.funding_agency?.toLowerCase().includes(q);
+        const creatorMatch = getCreatorName(proj).toLowerCase().includes(q);
+        const memberMatch = proj.members?.some((m) =>
+          (m.researcher?.full_name || getResearcherName(m.researcher_id))
+            .toLowerCase()
+            .includes(q)
+        );
+        if (!titleMatch && !descMatch && !agencyMatch && !creatorMatch && !memberMatch) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (sortBy) {
+      result = [...result].sort((a, b) => {
+        if (sortBy === "title_asc") return (a.title || "").localeCompare(b.title || "");
+        if (sortBy === "title_desc") return (b.title || "").localeCompare(a.title || "");
+        if (sortBy === "budget_desc") return (b.budget || 0) - (a.budget || 0);
+        if (sortBy === "budget_asc") return (a.budget || 0) - (b.budget || 0);
+        if (sortBy === "status_asc") return (a.status || "").localeCompare(b.status || "");
+        return 0;
+      });
     }
-    if (activeTab === "institutional") {
-      return proj.institution_id === currentUserInstitutionId;
-    }
-    return true;
-  });
+
+    return result;
+  }, [projects, activeTab, user?.id, currentUserResearcherId, currentUserInstitutionId, filterStatus, filterInstitution, filterVisibility, searchTerm, sortBy]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, filterStatus, filterInstitution, filterVisibility, searchTerm, sortBy]);
+
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProjects.slice(start, start + pageSize);
+  }, [filteredProjects, currentPage, pageSize]);
+
+  const handleExportCSV = () => {
+    exportToCSV("projects_catalog", projects, [
+      { label: "ID", key: "id" },
+      { label: "Title", key: "title" },
+      { label: "Status", key: "status" },
+      { label: "Funding Agency", key: "funding_agency" },
+      { label: "Budget", key: "budget" },
+      { label: "Start Date", key: "start_date" },
+      { label: "End Date", key: "end_date" },
+    ]);
+  };
+
+  const handleExportPDF = () => {
+    const headers = ["Title", "Status", "Agency", "Budget ($)", "Timeline"];
+    const rows = projects.map((p) => [
+      p.title,
+      p.status,
+      p.funding_agency || "N/A",
+      p.budget ? `$${p.budget.toLocaleString()}` : "$0",
+      `${p.start_date || "?"} — ${p.end_date || "?"}`,
+    ]);
+    const activeCount = projects.filter((p) => p.status === "Active").length;
+    const totalBudget = projects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
+    triggerPDFPrint(
+      "Research Projects Report",
+      headers,
+      rows,
+      {
+        subtitle: "Summary of all research projects, funding sources, budgets, and timelines.",
+        stats: [
+          { label: "Total Projects", value: projects.length },
+          { label: "Active", value: activeCount },
+          { label: "Total Budget", value: `$${totalBudget.toLocaleString()}` },
+        ],
+      }
+    );
+  };
 
   return (
     <AppShell>
@@ -288,6 +428,15 @@ export default function Projects() {
             <p className="projects-subtitle">
               Manage research proposals, track active grant budgets, and assign investigators and contributors to project teams.
             </p>
+          </div>
+
+          <div className="discover-export-btns">
+            <button onClick={handleExportCSV} className="notif-mark-all-btn">
+              📊 Export CSV
+            </button>
+            <button onClick={handleExportPDF} className="notif-mark-all-btn">
+              🖨️ Export PDF
+            </button>
           </div>
         </header>
 
@@ -408,236 +557,401 @@ export default function Projects() {
           </button>
         </form>
 
+        {/* Search & Filter Controls */}
+        <div className="filter-bar-container">
+          <div className="filter-bar-header">
+            <div className="filter-bar-title">
+              <span>🔍</span> Filter & Search Research Projects
+            </div>
+            <span className="filter-results-counter">
+              Showing {filteredProjects.length} of {projects.length} projects
+            </span>
+          </div>
+
+          <div className="filter-controls-grid">
+            <div className="filter-search-box">
+              <span className="filter-search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search title, description, agency, creator, members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="filter-search-input"
+              />
+            </div>
+
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Statuses</option>
+              <option value="Proposed">Proposed</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+
+            <select
+              value={filterInstitution}
+              onChange={(e) => setFilterInstitution(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Institutions</option>
+              {institutions.map((inst) => (
+                <option key={inst.id} value={inst.id}>{inst.name}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterVisibility}
+              onChange={(e) => setFilterVisibility(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Visibilities</option>
+              <option value="public">Public Projects</option>
+              <option value="private">Private Projects</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">Sort By (Default)</option>
+              <option value="title_asc">Title (A - Z)</option>
+              <option value="title_desc">Title (Z - A)</option>
+              <option value="budget_desc">Budget (High to Low)</option>
+              <option value="budget_asc">Budget (Low to High)</option>
+              <option value="status_asc">Status</option>
+            </select>
+
+            {(searchTerm || filterStatus || filterInstitution || filterVisibility || sortBy) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterStatus("");
+                  setFilterInstitution("");
+                  setFilterVisibility("");
+                  setSortBy("");
+                }}
+                className="filter-reset-btn"
+              >
+                ✕ Reset Filters
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Project List */}
         {loading ? (
           <p className="pub-loading">Loading projects...</p>
         ) : (
-          <div className="project-list">
-            {filteredProjects.length === 0 && (
+          <div className="project-list-container">
+            {filteredProjects.length === 0 ? (
               <p className="pub-empty">No projects found in this tab.</p>
-            )}
-            {filteredProjects.map((proj) => {
-              const editable = canManageProject(proj);
-              const isEditing = editingProjectId === proj.id;
+            ) : (
+              <>
+                <div className="project-list">
+                  {paginatedProjects.map((proj) => {
+                    const editable = canManageProject(proj);
+                    const isEditing = editingProjectId === proj.id;
 
-              return (
-                <div key={proj.id} className="project-card">
-                  {isEditing ? (
-                    /* Inline Edit Mode */
-                    <div className="proj-edit-form">
-                      <h3 style={{ marginBottom: "14px" }}>Edit Project Details</h3>
-                      <div className="proj-edit-fields">
-                        <input
-                          name="title"
-                          value={editForm.title}
-                          onChange={handleEditFormChange}
-                          required
-                          className="proj-input"
-                          placeholder="Title"
-                        />
-                        <textarea
-                          name="description"
-                          value={editForm.description}
-                          onChange={handleEditFormChange}
-                          className="proj-input"
-                          placeholder="Description"
-                          rows={3}
-                        />
-                        <div className="proj-row">
-                          <input
-                            name="funding_agency"
-                            value={editForm.funding_agency}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                            placeholder="Funding Agency"
-                          />
-                          <input
-                            name="budget"
-                            type="number"
-                            value={editForm.budget}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                            placeholder="Budget"
-                          />
-                        </div>
-                        <div className="proj-row">
-                          <input
-                            name="start_date"
-                            type="date"
-                            value={editForm.start_date}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                          />
-                          <input
-                            name="end_date"
-                            type="date"
-                            value={editForm.end_date}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                          />
-                        </div>
-                        <div className="proj-row">
-                          <select
-                            name="status"
-                            value={editForm.status}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                          >
-                            <option value="Proposed">Proposed</option>
-                            <option value="Active">Active</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Suspended">Suspended</option>
-                          </select>
-                          <select
-                            name="institution_id"
-                            value={editForm.institution_id}
-                            onChange={handleEditFormChange}
-                            className="proj-input"
-                          >
-                            <option value="">Select Institution (Optional)</option>
-                            {institutions.map((inst) => (
-                              <option key={inst.id} value={inst.id}>{inst.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <label className="proj-checkbox-container">
-                          <input
-                            type="checkbox"
-                            name="visible_to_others"
-                            checked={editForm.visible_to_others}
-                            onChange={handleEditFormChange}
-                          />
-                          <span>Visible to others (Public Project)</span>
-                        </label>
-                      </div>
+                    return (
+                      <div key={proj.id} className="project-card">
+                        {isEditing ? (
+                          /* Inline Edit Mode */
+                          <div className="proj-edit-form">
+                            <h3 style={{ marginBottom: "14px" }}>Edit Project Details</h3>
+                            <div className="proj-edit-fields">
+                              <input
+                                name="title"
+                                value={editForm.title}
+                                onChange={handleEditFormChange}
+                                required
+                                className="proj-input"
+                                placeholder="Title"
+                              />
+                              <textarea
+                                name="description"
+                                value={editForm.description}
+                                onChange={handleEditFormChange}
+                                className="proj-input"
+                                placeholder="Description"
+                                rows={3}
+                              />
+                              <div className="proj-row">
+                                <input
+                                  name="funding_agency"
+                                  value={editForm.funding_agency}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                  placeholder="Funding Agency"
+                                />
+                                <input
+                                  name="budget"
+                                  type="number"
+                                  value={editForm.budget}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                  placeholder="Budget"
+                                />
+                              </div>
+                              <div className="proj-row">
+                                <input
+                                  name="start_date"
+                                  type="date"
+                                  value={editForm.start_date}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                />
+                                <input
+                                  name="end_date"
+                                  type="date"
+                                  value={editForm.end_date}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                />
+                              </div>
+                              <div className="proj-row">
+                                <select
+                                  name="status"
+                                  value={editForm.status}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                >
+                                  <option value="Proposed">Proposed</option>
+                                  <option value="Active">Active</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Suspended">Suspended</option>
+                                </select>
+                                <select
+                                  name="institution_id"
+                                  value={editForm.institution_id}
+                                  onChange={handleEditFormChange}
+                                  className="proj-input"
+                                >
+                                  <option value="">Select Institution (Optional)</option>
+                                  {institutions.map((inst) => (
+                                    <option key={inst.id} value={inst.id}>{inst.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              
+                              <label className="proj-checkbox-container">
+                                <input
+                                  type="checkbox"
+                                  name="visible_to_others"
+                                  checked={editForm.visible_to_others}
+                                  onChange={handleEditFormChange}
+                                />
+                                <span>Visible to others (Public Project)</span>
+                              </label>
+                            </div>
 
-                      <div className="proj-edit-actions">
-                        <button
-                          onClick={() => handleSaveEdit(proj.id)}
-                          className="proj-action-btn proj-save-btn"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="proj-action-btn proj-cancel-btn"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Regular Display Mode */
-                    <>
-                      <div className="project-card-header">
-                        <div>
-                          <div className="proj-badge-row">
-                            <span className={`proj-badge ${proj.visible_to_others ? "proj-badge--public" : "proj-badge--private"}`}>
-                              {proj.visible_to_others ? "🌐 Public" : "🔒 Private"}
-                            </span>
-                            <span className="proj-badge proj-badge--status">
-                              {proj.status}
-                            </span>
+                            <div className="proj-edit-actions">
+                              <button
+                                onClick={() => handleSaveEdit(proj.id)}
+                                className="proj-action-btn proj-save-btn"
+                              >
+                                Save Changes
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="proj-action-btn proj-cancel-btn"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                          <h3 style={{ marginTop: "8px" }}>{proj.title}</h3>
-                        </div>
-                      </div>
+                        ) : (
+                          /* Regular Display Mode */
+                          <>
+                            <div className="project-card-header">
+                              <div>
+                                <div className="proj-badge-row">
+                                  <span className={`proj-badge ${proj.visible_to_others ? "proj-badge--public" : "proj-badge--private"}`}>
+                                    {proj.visible_to_others ? "🌐 Public" : "🔒 Private"}
+                                  </span>
+                                  <span className="proj-badge proj-badge--status">
+                                    {proj.status}
+                                  </span>
+                                </div>
+                                <h3 style={{ marginTop: "8px" }}>{proj.title}</h3>
+                                <p className="proj-creator" style={{ margin: "6px 0 0 0", fontSize: "0.9rem", color: "#9aa0b4" }}>
+                                  Created by: <strong>{getCreatorName(proj)}</strong>
+                                </p>
+                              </div>
+                            </div>
 
-                      <p className="proj-meta">
-                        Funding: <strong>{proj.funding_agency || "None"}</strong> | Budget: <strong>${proj.budget?.toLocaleString()}</strong> | Institution: <strong>{getInstitutionName(proj.institution_id)}</strong>
-                      </p>
-                      
-                      {proj.description && <p className="proj-description">{proj.description}</p>}
-                      
-                      {(proj.start_date || proj.end_date) && (
-                        <p className="proj-meta" style={{ marginTop: "-10px" }}>
-                          Timeline: {proj.start_date || "?"} to {proj.end_date || "?"}
-                        </p>
-                      )}
-
-                      {/* Team Members Section */}
-                      <div className="proj-members-section">
-                        <h4>Project Team</h4>
-                        <div className="proj-members-list">
-                          {proj.members.length === 0 ? (
-                            <p className="pub-empty" style={{ fontSize: "0.85rem", margin: "0", textAlign: "left", padding: "0" }}>
-                              No team members assigned yet.
+                            <p className="proj-meta">
+                              Funding: <strong>{proj.funding_agency || "None"}</strong> | Budget: <strong>${proj.budget?.toLocaleString()}</strong> | Institution: <strong>{getInstitutionName(proj.institution_id)}</strong>
                             </p>
-                          ) : (
-                            proj.members.map((member) => (
-                              <span key={member.id} className="proj-member-tag">
-                                {getResearcherName(member.researcher_id)} ({member.role})
-                                {editable && (
-                                  <button
-                                    onClick={() => handleRemoveMember(proj.id, member.researcher_id)}
-                                    className="proj-remove-member-btn"
-                                    title="Remove member"
-                                  >
-                                    ×
-                                  </button>
-                                )}
-                              </span>
-                            ))
-                          )}
-                        </div>
+                            
+                            {proj.description && <p className="proj-description">{proj.description}</p>}
+                            
+                            {(proj.start_date || proj.end_date) && (
+                              <p className="proj-meta" style={{ marginTop: "-10px" }}>
+                                Timeline: {proj.start_date || "?"} to {proj.end_date || "?"}
+                              </p>
+                            )}
 
-                        {/* Assign Member Inline Form (only visible if editable) */}
-                        {editable && (
-                          <form onSubmit={(e) => handleAssignMember(e, proj.id)} className="proj-assign-form">
-                            <select
-                              value={assignForms[proj.id]?.researcher_id || ""}
-                              onChange={(e) => handleAssignChange(proj.id, "researcher_id", e.target.value)}
-                              className="proj-assign-input"
-                              required
-                            >
-                              <option value="">Assign Researcher...</option>
-                              {researchers.map((r) => (
-                                <option key={r.id} value={r.id}>{r.full_name}</option>
-                              ))}
-                            </select>
-                            <select
-                              value={assignForms[proj.id]?.role || "Contributor"}
-                              onChange={(e) => handleAssignChange(proj.id, "role", e.target.value)}
-                              className="proj-assign-input"
-                            >
-                              <option value="Lead Investigator">Lead Investigator</option>
-                              <option value="Researcher">Researcher</option>
-                              <option value="Contributor">Contributor</option>
-                            </select>
-                            <button type="submit" className="proj-assign-btn">Assign</button>
-                          </form>
+                            {/* Team Members Section */}
+                            <div className="proj-members-section">
+                              <h4>Project Team</h4>
+                              <div className="proj-members-list">
+                                  {proj.members.length === 0 ? (
+                                  <p className="pub-empty" style={{ fontSize: "0.85rem", margin: "0", textAlign: "left", padding: "0" }}>
+                                    No team members assigned yet.
+                                  </p>
+                                ) : (
+                                  proj.members.map((member) => (
+                                    <span key={member.id} className="proj-member-tag">
+                                      {(member.researcher?.full_name ? member.researcher.full_name : getResearcherName(member.researcher_id))} ({member.role})
+                                      {editable && (
+                                        <button
+                                          onClick={() => handleRemoveMember(proj.id, member.researcher_id)}
+                                          className="proj-remove-member-btn"
+                                          title="Remove member"
+                                        >
+                                          ×
+                                        </button>
+                                      )}
+                                    </span>
+                                  ))
+                                )}
+                              </div>
+
+                              {/* Assign Member Inline Form (only visible if editable) */}
+                              {editable && (
+                                <>
+                                <form onSubmit={(e) => handleAssignMember(e, proj.id)} className="proj-assign-form">
+                                  <select
+                                    value={assignForms[proj.id]?.researcher_id || ""}
+                                    onChange={(e) => handleAssignChange(proj.id, "researcher_id", e.target.value)}
+                                    className="proj-assign-input"
+                                    required
+                                  >
+                                    <option value="">Assign Researcher...</option>
+                                    {researchers.map((r) => (
+                                      <option key={r.id} value={r.id}>{r.full_name}</option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={assignForms[proj.id]?.role || "Contributor"}
+                                    onChange={(e) => handleAssignChange(proj.id, "role", e.target.value)}
+                                    className="proj-assign-input"
+                                  >
+                                    <option value="Lead Investigator">Lead Investigator</option>
+                                    <option value="Researcher">Researcher</option>
+                                    <option value="Contributor">Contributor</option>
+                                  </select>
+                                  <button type="submit" className="proj-assign-btn">Assign</button>
+                                </form>
+                                {assignErrors[proj.id] && <p className="pub-error" style={{ marginTop: 8 }}>{assignErrors[proj.id]}</p>}
+                                </>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="proj-card-actions">
+                              {!editable && !proj.members?.some(m => m.researcher_id === currentUserResearcherId) && proj.created_by && proj.created_by !== user?.id && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRequestModal({
+                                      type: "project_invite",
+                                      targetUserId: proj.created_by,
+                                      relatedId: proj.id,
+                                      title: proj.title,
+                                    });
+                                    setRequestMessage(`Hi, I'd like to collaborate on your research project "${proj.title}".`);
+                                  }}
+                                  className="proj-action-btn proj-edit-btn"
+                                  style={{ borderColor: "var(--accent-border)", color: "var(--accent)", background: "var(--accent-bg)" }}
+                                >
+                                  📩 Request to Join / Collaborate
+                                </button>
+                              )}
+                              {editable && (
+                                <>
+                                  <button
+                                    onClick={() => handleStartEdit(proj)}
+                                    className="proj-action-btn proj-edit-btn"
+                                  >
+                                    ✏️ Edit Project
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleVisibility(proj)}
+                                    className="proj-action-btn proj-edit-btn"
+                                  >
+                                    {proj.visible_to_others ? "🔒 Make Private" : "🌐 Make Public"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(proj.id)}
+                                    className="proj-action-btn proj-delete-btn"
+                                  >
+                                    🗑️ Delete Project
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-
-                      {/* Action Buttons */}
-                      {editable && (
-                        <div className="proj-card-actions">
-                          <button
-                            onClick={() => handleStartEdit(proj)}
-                            className="proj-action-btn proj-edit-btn"
-                          >
-                            ✏️ Edit Project
-                          </button>
-                          <button
-                            onClick={() => handleToggleVisibility(proj)}
-                            className="proj-action-btn proj-edit-btn"
-                          >
-                            {proj.visible_to_others ? "🔒 Make Private" : "🌐 Make Public"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(proj.id)}
-                            className="proj-action-btn proj-delete-btn"
-                          >
-                            🗑️ Delete Project
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
+                    );
+                  })}
                 </div>
-              );
-            })}
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredProjects.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  pageSizeOptions={[5, 10, 20]}
+                />
+              </>
+            )}
+          </div>
+        )}
+
+        {requestModal && (
+          <div className="collab-modal-overlay" onClick={() => setRequestModal(null)}>
+            <div className="collab-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="collab-modal-header">
+                <h3>Propose Project Collaboration</h3>
+                <button type="button" onClick={() => setRequestModal(null)} className="collab-modal-close">✕</button>
+              </div>
+              {requestSuccess ? (
+                <div className="collab-modal-success">{requestSuccess}</div>
+              ) : (
+                <form onSubmit={handleSendCollaborationRequest} className="collab-modal-form">
+                  <p className="collab-modal-target">Project: <strong>{requestModal.title}</strong></p>
+                  <label className="collab-modal-label">
+                    <span>Proposal / Message to Project Lead:</span>
+                    <textarea
+                      rows={4}
+                      value={requestMessage}
+                      onChange={(e) => setRequestMessage(e.target.value)}
+                      placeholder="Specify your background, research interests, or how you'd like to contribute..."
+                      className="collab-textarea"
+                      required
+                    />
+                  </label>
+                  {error && <p className="pub-error">{error}</p>}
+                  <div className="collab-modal-actions">
+                    <button type="button" onClick={() => setRequestModal(null)} className="proj-action-btn proj-cancel-btn">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={sendingRequest} className="collab-button">
+                      {sendingRequest ? "Sending..." : "Send Proposal"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </main>

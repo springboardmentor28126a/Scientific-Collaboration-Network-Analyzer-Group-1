@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCurrentUser, loginUser } from "../api/auth";
+import { getCurrentUser, loginUser, verifyLoginOtp } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/auth.css";
 
 export default function Login() {
     const [form, setForm] = useState({ email: "", password: "" });
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
     const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const { setUser } = useAuth();
     const navigate = useNavigate();
@@ -18,9 +21,17 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setMessage("");
         setLoading(true);
         try {
-            const response = await loginUser(form.email, form.password);
+            if (!otpSent) {
+                const response = await loginUser(form.email, form.password);
+                setOtpSent(true);
+                setMessage(response.data.message || "OTP sent to your email.");
+                return;
+            }
+
+            const response = await verifyLoginOtp(form.email, otp);
             localStorage.setItem("token", response.data.access_token);
             const profile = await getCurrentUser();
             setUser(profile.data);
@@ -101,10 +112,29 @@ export default function Login() {
                                 className="auth-input"
                             />
                         </label>
+                        {otpSent && (
+                            <label className="auth-field">
+                                <span>Login OTP</span>
+                                <input
+                                    id="login-otp"
+                                    type="text"
+                                    name="otp"
+                                    placeholder="Enter the 6-digit OTP"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    required
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    autoComplete="one-time-code"
+                                    className="auth-input"
+                                />
+                            </label>
+                        )}
+                        {message && <p className="auth-success" role="status">{message}</p>}
                         {error && <p className="auth-error" role="alert">{error}</p>}
                         <div className="auth-actions">
                             <button id="login-submit" type="submit" disabled={loading} className="auth-button">
-                                {loading ? "Authenticating..." : "Sign in to workspace"}
+                                {loading ? "Authenticating..." : otpSent ? "Verify OTP" : "Send login OTP"}
                             </button>
                             <p className="auth-footer">
                                 Don't have an account? <Link to="/register">Create one &rarr;</Link>

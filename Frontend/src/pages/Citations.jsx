@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import AppShell from "../components/AppShell";
-import { getPublications } from "../api/publications";
+import { getPublications, exportCitation } from "../api/publications";
 import { addCitation, removeCitation, getCitationsMade, getCitationsReceived } from "../api/citations";
+import { exportToCSV, triggerPDFPrint } from "../utils/exportUtils";
 import "./Citations.css";
 
 export default function Citations() {
@@ -17,6 +18,21 @@ export default function Citations() {
     cited_publication_id: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Sidebar search & filter (visible to all roles)
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [sidebarFilterStatus, setSidebarFilterStatus] = useState("");
+
+  const filteredPublications = useMemo(() => {
+    return publications.filter((pub) => {
+      if (sidebarFilterStatus && pub.status !== sidebarFilterStatus) return false;
+      if (sidebarSearch.trim()) {
+        const q = sidebarSearch.toLowerCase();
+        return pub.title?.toLowerCase().includes(q) || pub.type?.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [publications, sidebarSearch, sidebarFilterStatus]);
 
   const loadPublications = async () => {
     setLoading(true);
@@ -116,16 +132,101 @@ export default function Citations() {
     return pub ? pub.title : `Publication #${id}`;
   };
 
+  const handleExportCSV = () => {
+    if (!selectedPub) { alert("Please select a publication first."); return; }
+    const allCitations = [
+      ...citationsMade.map((c) => ({
+        direction: "Cites",
+        source: selectedPub.title,
+        target: getPublicationTitle(c.cited_publication_id),
+      })),
+      ...citationsReceived.map((c) => ({
+        direction: "Cited By",
+        source: getPublicationTitle(c.citing_publication_id),
+        target: selectedPub.title,
+      })),
+    ];
+    exportToCSV(`citations_${selectedPub.id}`, allCitations, [
+      { label: "Direction", key: "direction" },
+      { label: "Source Publication", key: "source" },
+      { label: "Target Publication", key: "target" },
+    ]);
+  };
+
+  const handleExportPDF = () => {
+    if (!selectedPub) { alert("Please select a publication first."); return; }
+    const headers = ["Direction", "Source", "Target"];
+    const rows = [
+      ...citationsMade.map((c) => ["Cites", selectedPub.title, getPublicationTitle(c.cited_publication_id)]),
+      ...citationsReceived.map((c) => ["Cited By", getPublicationTitle(c.citing_publication_id), selectedPub.title]),
+    ];
+    triggerPDFPrint(
+      `Citation Network — ${selectedPub.title}`,
+      headers,
+      rows,
+      {
+        subtitle: `Citation connections for publication: "${selectedPub.title}"`,
+        stats: [
+          { label: "References Made", value: citationsMade.length },
+          { label: "Citations Received", value: citationsReceived.length },
+          { label: "Total Connections", value: citationsMade.length + citationsReceived.length },
+        ],
+      }
+    );
+  };
+
+  const handleExportFormattedCitation = async (format) => {
+    if (!selectedPub) { alert("Please select a publication first."); return; }
+    try {
+      const res = await exportCitation(selectedPub.id, format);
+      const ext = format === "bibtex" ? "bib" : (format === "ris" ? "ris" : "txt");
+      const blob = new Blob([res.data], { type: "text/plain;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `citation_${selectedPub.id}_${format}.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch {
+      alert(`Failed to export citation in ${format.toUpperCase()} format.`);
+    }
+  };
+
   return (
     <AppShell>
       <main className="cite-page">
         <header className="cite-header">
           <div>
             <p className="dashboard-badge">Impact Analysis</p>
-            <h1 className="cite-title">Citation & Reference Module</h1>
+            <h1 className="cite-title">Citation &amp; Reference Module</h1>
             <p className="cite-subtitle">
-              Manage citations between scientific publications, analyze DOI cross-references, and track research impact.
+              Manage citations between scientific publications, analyze DOI cross-references, and export formatted references.
             </p>
+          </div>
+          <div className="discover-export-btns" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleExportFormattedCitation(e.target.value);
+                  e.target.value = "";
+                }
+              }}
+              className="notif-mark-all-btn"
+              style={{ background: "var(--accent-bg)", color: "var(--accent)", border: "1px solid var(--accent-border)", cursor: "pointer" }}
+            >
+              <option value="">📥 Export Reference...</option>
+              <option value="bibtex">BibTeX (.bib)</option>
+              <option value="ris">RIS (.ris)</option>
+              <option value="apa">APA Citation</option>
+              <option value="ieee">IEEE Citation</option>
+            </select>
+            <button onClick={handleExportCSV} className="notif-mark-all-btn">
+              📊 Export CSV
+            </button>
+            <button onClick={handleExportPDF} className="notif-mark-all-btn">
+              🖨️ Export PDF
+            </button>
           </div>
         </header>
 
@@ -139,9 +240,59 @@ export default function Citations() {
               <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "14px" }}>
                 Click a paper to explore its reference network.
               </p>
-              <div style={{ maxHeight: "500px", overflowY: "auto" }}>
-                {publications.length === 0 && <p className="pub-empty">No publications added yet.</p>}
-                {publications.map((pub) => (
+              {/* Sidebar search controls - visible to all roles */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+                <input
+                  type="text"
+                  placeholder="🔍 Search title or type..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border)",
+                    background: "var(--input-bg, var(--bg-tertiary))",
+                    color: "var(--text-primary)",
+                    fontSize: "0.85rem",
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <select
+                  value={sidebarFilterStatus}
+                  onChange={(e) => setSidebarFilterStatus(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border)",
+                    background: "var(--input-bg, var(--bg-tertiary))",
+                    color: "var(--text-primary)",
+                    fontSize: "0.85rem",
+                    width: "100%",
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Published">Published</option>
+                  <option value="Archived">Archived</option>
+                </select>
+                {(sidebarSearch || sidebarFilterStatus) && (
+                  <button
+                    type="button"
+                    onClick={() => { setSidebarSearch(""); setSidebarFilterStatus(""); }}
+                    style={{ fontSize: "0.78rem", color: "var(--accent)", background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}
+                  >
+                    ✕ Reset filter
+                  </button>
+                )}
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  {filteredPublications.length} of {publications.length} publications
+                </span>
+              </div>
+              <div style={{ maxHeight: "420px", overflowY: "auto" }}>
+                {filteredPublications.length === 0 && <p className="pub-empty">No publications match your filter.</p>}
+                {filteredPublications.map((pub) => (
                   <div
                     key={pub.id}
                     className={`cite-pub-item ${selectedPub?.id === pub.id ? "cite-pub-item--selected" : ""}`}

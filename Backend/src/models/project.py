@@ -15,7 +15,7 @@ class Project(Base):
     end_date = Column(Date, nullable=True)
     institution_id = Column(Integer, ForeignKey("institutions.id"), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    visible_to_others = Column(Boolean, default=False)
+    visible_to_others = Column(Boolean, default=True)
 
     institution = relationship("Institution", back_populates="projects")
     members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")

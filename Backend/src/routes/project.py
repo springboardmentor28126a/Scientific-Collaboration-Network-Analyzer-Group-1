@@ -11,46 +11,40 @@ from models.institution import Institution
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
+from middleware.auth import get_user_role_str
+
 def check_project_write_permission(db: Session, proj, current_user: User):
-    # SystemAdmin has full access
-    if current_user.role == "SystemAdmin":
+    role_str = get_user_role_str(current_user)
+    if role_str == "SystemAdmin":
         return True
-        
-    # Creator has full access
+
     if proj.created_by == current_user.id:
         return True
-        
-    # InstitutionAdmin has full access to projects within their institution
-    if current_user.role == "InstitutionAdmin":
+
+    if role_str == "InstitutionAdmin":
         admin_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
         admin_inst_id = admin_res.institution_id if admin_res else None
         if not admin_inst_id:
             first_inst = db.query(Institution).first()
             admin_inst_id = first_inst.id if first_inst else None
-        if proj.institution_id == admin_inst_id:
+        if admin_inst_id and proj.institution_id == admin_inst_id:
             return True
-            
-    # Lead Investigator of the project has full access
-    user_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
-    if user_res:
-        lead_member = db.query(ProjectMember).filter(
-            ProjectMember.project_id == proj.id,
-            ProjectMember.researcher_id == user_res.id,
-            ProjectMember.role == "Lead Investigator"
-        ).first()
-        if lead_member:
-            return True
-            
-    raise HTTPException(status_code=403, detail="You do not have permission to modify this project.")
+
+    raise HTTPException(
+        status_code=403,
+        detail="Permission denied: Users can only view projects or request to join. Only the project creator or SystemAdmin may modify this project."
+    )
+
 
 @router.post("/", response_model=ProjectOut)
 def create_project(data: ProjectCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    role_str = get_user_role_str(current_user)
     # Automatically associate project with creator's institution if not specified
     if not data.institution_id:
         user_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
         if user_res and user_res.institution_id:
             data.institution_id = user_res.institution_id
-        elif current_user.role == "InstitutionAdmin":
+        elif role_str == "InstitutionAdmin":
             first_inst = db.query(Institution).first()
             data.institution_id = first_inst.id if first_inst else None
 
@@ -69,12 +63,13 @@ def create_project(data: ProjectCreate, db: Session = Depends(get_db), current_u
 
 @router.get("/", response_model=list[ProjectOut])
 def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    role_str = get_user_role_str(current_user)
     # 1. SystemAdmin sees all projects
-    if current_user.role == "SystemAdmin":
+    if role_str == "SystemAdmin":
         return project.get_all_projects(db)
         
     # 2. InstitutionAdmin sees projects in their institution, public ones, and their created ones
-    if current_user.role == "InstitutionAdmin":
+    if role_str == "InstitutionAdmin":
         admin_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
         admin_inst_id = admin_res.institution_id if admin_res else None
         if not admin_inst_id:
@@ -106,15 +101,16 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
 @router.get("/{project_id}", response_model=ProjectOut)
 def get_project(project_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     proj = project.get_project_by_id(db, project_id)
+    role_str = get_user_role_str(current_user)
     
     # Check view permissions:
-    if current_user.role == "SystemAdmin":
+    if role_str == "SystemAdmin":
         return proj
         
     if proj.visible_to_others or proj.created_by == current_user.id:
         return proj
         
-    if current_user.role == "InstitutionAdmin":
+    if role_str == "InstitutionAdmin":
         admin_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
         admin_inst_id = admin_res.institution_id if admin_res else None
         if not admin_inst_id:
@@ -122,6 +118,7 @@ def get_project(project_id: int, db: Session = Depends(get_db), current_user: Us
             admin_inst_id = first_inst.id if first_inst else None
         if proj.institution_id == admin_inst_id:
             return proj
+
             
     user_res = db.query(Researcher).filter(Researcher.user_id == current_user.id).first()
     if user_res:

@@ -15,6 +15,9 @@ class UserCreate(BaseModel):
     role: UserRole
     #Must be one of the 4 valid enum values
 
+    full_name: Optional[str] = None
+    #Optional full name of the researcher or admin
+
 class UserLogin(BaseModel):
     email:EmailStr
     password: str
@@ -40,4 +43,18 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token : str
     token_type : str = "bearer"
-    # ↑ default value "bearer" — matches OAuth2 spec exactly, so Swagger's Authorize button works automatically
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp: str
+
+class AuthMessage(BaseModel):
+    message: str
+    otp_required: bool = True

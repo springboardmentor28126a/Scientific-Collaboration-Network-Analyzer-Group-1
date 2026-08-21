@@ -23,6 +23,7 @@ class ResearchReportOut(BaseModel):
     total_researchers: int
     department_counts: Dict[str, int]
     skills_summary: List[str]
+    label_override: Optional[str] = None
 
 class CollaborationReportOut(BaseModel):
     total_collaborations: int

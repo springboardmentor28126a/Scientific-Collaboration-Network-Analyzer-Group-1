@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../api/auth";
+import { registerUser, resendVerification, verifyEmail } from "../api/auth";
 import "../styles/auth.css";
 
 const ROLES = [
@@ -11,8 +11,11 @@ const ROLES = [
 ];
 
 export default function Register() {
-  const [form, setForm] = useState({ email: "", password: "", role: "Researcher" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "Researcher" });
+  const [otp, setOtp] = useState("");
+  const [verificationPending, setVerificationPending] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -23,9 +26,17 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
     try {
-      await registerUser(form);
+      if (!verificationPending) {
+        await registerUser(form);
+        setVerificationPending(true);
+        setMessage("Account created. Enter the OTP sent to your email.");
+        return;
+      }
+
+      await verifyEmail(form.email, otp);
       navigate("/login");
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -38,6 +49,21 @@ export default function Register() {
       } else {
         setError("Registration failed. Please check your details.");
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError("");
+    setMessage("");
+    setLoading(true);
+    try {
+      const response = await resendVerification(form.email);
+      setMessage(response.data.message || "Verification OTP resent.");
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : "Could not resend OTP.");
     } finally {
       setLoading(false);
     }
@@ -78,6 +104,20 @@ export default function Register() {
             <p className="auth-subtitle">Set up access and start collaborating across institutions.</p>
           </div>
           <form onSubmit={handleSubmit} className="auth-form">
+            <label className="auth-field">
+              <span>Full Name</span>
+              <input
+                id="register-fullname"
+                type="text"
+                name="full_name"
+                placeholder="Dr. Alex Morgan"
+                value={form.full_name}
+                onChange={handleChange}
+                required
+                autoComplete="name"
+                className="auth-input"
+              />
+            </label>
             <label className="auth-field">
               <span>Email address</span>
               <input
@@ -126,11 +166,35 @@ export default function Register() {
                 {ROLES.find(r => r.value === form.role)?.desc}
               </div>
             )}
+            {verificationPending && (
+              <label className="auth-field">
+                <span>Email OTP</span>
+                <input
+                  id="register-otp"
+                  type="text"
+                  name="otp"
+                  placeholder="Enter the 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                  inputMode="numeric"
+                  maxLength={6}
+                  autoComplete="one-time-code"
+                  className="auth-input"
+                />
+              </label>
+            )}
+            {message && <p className="auth-success" role="status">{message}</p>}
             {error && <p className="auth-error" role="alert">{error}</p>}
             <div className="auth-actions">
               <button id="register-submit" type="submit" disabled={loading} className="auth-button">
-                {loading ? "Creating account..." : "Create account →"}
+                {loading ? "Please wait..." : verificationPending ? "Verify email" : "Create account"}
               </button>
+              {verificationPending && (
+                <button type="button" disabled={loading} className="auth-button auth-button-secondary" onClick={handleResend}>
+                  Resend OTP
+                </button>
+              )}
               <p className="auth-footer">
                 Already have an account? <Link to="/login">Sign in</Link>
               </p>

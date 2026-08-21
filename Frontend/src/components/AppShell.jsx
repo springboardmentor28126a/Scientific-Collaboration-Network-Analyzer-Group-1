@@ -1,17 +1,24 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getNotifications, getUnreadCount, markRead, markAllRead } from "../api/notifications";
+import GlobalSearchModal from "./GlobalSearchModal";
+import FloatingAssistant from "./FloatingAssistant";
 import "./AppShell.css";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: "⬡" },
+  { to: "/discover", label: "Discover", icon: "🌐" },
+  { to: "/network", label: "Network Graph", icon: "🕸️" },
   { to: "/publications", label: "Publications", icon: "📄" },
   { to: "/projects", label: "Projects", icon: "🔬" },
   { to: "/conferences", label: "Conferences", icon: "🎙" },
   { to: "/collaborations", label: "Collaborations", icon: "🤝" },
   { to: "/citations", label: "Citations", icon: "🔗" },
   { to: "/institutions", label: "Institutions", icon: "🏛" },
+  { to: "/notifications", label: "Notifications", icon: "🔔" },
   { to: "/reports", label: "Reports", icon: "📊" },
+  { to: "/profile", label: "My Profile", icon: "👤" },
 ];
 
 const getRoleColor = (role) => {
@@ -22,16 +29,128 @@ const getRoleColor = (role) => {
 
 export default function AppShell({ children }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const dropdownRef = useRef(null);
+
+  const fetchNotifSummary = async () => {
+    if (!user) return;
+    try {
+      const [countRes, notifRes] = await Promise.all([
+        getUnreadCount(),
+        getNotifications(),
+      ]);
+      setUnreadCount(countRes.data.count);
+      setNotifications(notifRes.data.slice(0, 5));
+    } catch {
+      // Ignore background fetch error
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifSummary();
+    const interval = setInterval(fetchNotifSummary, 15000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Real-Time WebSocket Connection
+  useEffect(() => {
+    if (!user?.id) return;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/${user.id}`;
+    let ws;
+
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === "notification") {
+            fetchNotifSummary();
+            setToastMessage(payload.data.title || "New notification received");
+            setTimeout(() => setToastMessage(""), 4500);
+          }
+        } catch {
+          // Ignore
+        }
+      };
+    } catch {
+      // Ignore WS setup fail
+    }
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, [user?.id]);
+
+  // Keyboard shortcut Ctrl+K or Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchModalOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setNotifDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMarkRead = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await markRead(id);
+      fetchNotifSummary();
+    } catch {
+      // Ignore
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllRead();
+      fetchNotifSummary();
+    } catch {
+      // Ignore
+    }
+  };
 
   const auditItems = (user?.role === "SystemAdmin" || user?.role === "InstitutionAdmin")
     ? [{ to: "/audit", label: "Audit Log", icon: "🛡" }]
     : [];
 
   const allNavItems = [...NAV_ITEMS, ...auditItems];
+  const showFloatingAssistant = location.pathname !== "/assistant";
 
   return (
     <div className="app-shell">
+      {/* Toast Notification Popup */}
+      {toastMessage && (
+        <div className="app-toast-banner" onClick={() => navigate("/notifications")}>
+          <span>🔔</span>
+          <p>{toastMessage}</p>
+          <span className="app-toast-arrow">View →</span>
+        </div>
+      )}
+
+      {/* Global Search Modal */}
+      <GlobalSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
+
       {/* Top Header */}
       <header className="app-header">
         <div className="app-brand">
@@ -67,7 +186,82 @@ export default function AppShell({ children }) {
         </div>
 
         <div className="app-header-right">
-          <div className="app-user-chip">
+          {/* Header Global Search Trigger */}
+          <button
+            className="app-search-trigger"
+            onClick={() => setSearchModalOpen(true)}
+            aria-label="Global Search"
+          >
+            <span>🔍 Search network...</span>
+            <span className="app-search-kbd">Ctrl+K</span>
+          </button>
+
+          {/* Notification Bell Dropdown */}
+          <div className="app-notif-wrapper" ref={dropdownRef}>
+            <button
+              className="app-notif-btn"
+              onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+              aria-label="Notifications"
+            >
+              🔔
+              {unreadCount > 0 && (
+                <span className="app-notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
+              )}
+            </button>
+
+            {notifDropdownOpen && (
+              <div className="app-notif-dropdown">
+                <div className="app-notif-dropdown-header">
+                  <strong>Notifications</strong>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="app-notif-mark-all">
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                <div className="app-notif-dropdown-list">
+                  {notifications.length === 0 ? (
+                    <p className="app-notif-empty">No notifications yet.</p>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`app-notif-item ${!n.is_read ? "app-notif-item--unread" : ""}`}
+                      >
+                        <div className="app-notif-item-content">
+                          <span className="app-notif-item-title">{n.title}</span>
+                          {n.message && <p className="app-notif-item-msg">{n.message}</p>}
+                          <span className="app-notif-item-time">
+                            {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        {!n.is_read && (
+                          <button
+                            onClick={(e) => handleMarkRead(n.id, e)}
+                            className="app-notif-item-read-btn"
+                            title="Mark as read"
+                          >
+                            ✓
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <Link
+                  to="/notifications"
+                  className="app-notif-dropdown-footer"
+                  onClick={() => setNotifDropdownOpen(false)}
+                >
+                  View all notifications →
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="app-user-chip" onClick={() => navigate("/profile")} style={{ cursor: "pointer" }} title="View Profile">
             <div className="app-user-avatar" style={{ background: getRoleColor(user?.role) }}>
               {user?.email?.[0]?.toUpperCase() ?? "U"}
             </div>
@@ -121,6 +315,8 @@ export default function AppShell({ children }) {
       <main className="app-content">
         {children}
       </main>
+
+      {showFloatingAssistant && <FloatingAssistant />}
     </div>
   );
 }

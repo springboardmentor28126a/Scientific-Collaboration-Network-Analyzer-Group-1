@@ -30,6 +30,14 @@
   overflow-x: auto;
 }
 
+.audit-controls-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .audit-table {
   width: 100%;
   border-collapse: collapse;

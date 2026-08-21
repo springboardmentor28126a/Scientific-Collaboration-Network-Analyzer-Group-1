@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from models.project import Project, ProjectMember
+from models.researcher import Researcher
 from schemas.project import ProjectCreate, ProjectUpdate, ProjectMemberCreate
 
 def create_project(db: Session, data: ProjectCreate, created_by: int) -> Project:
@@ -11,12 +12,22 @@ def create_project(db: Session, data: ProjectCreate, created_by: int) -> Project
     return new_project
 
 def get_all_projects(db: Session):
-    return db.query(Project).all()
+    # Eager-load members and their researcher to ensure relationships are available
+    projects = db.query(Project).options(joinedload(Project.members).joinedload(ProjectMember.researcher)).all()
+    # Attach creator researcher object (if any) for each project so Pydantic can include nested creator
+    for proj in projects:
+        if proj.created_by:
+            creator = db.query(Researcher).filter(Researcher.user_id == proj.created_by).first()
+            setattr(proj, "creator", creator)
+    return projects
 
 def get_project_by_id(db: Session, project_id: int) -> Project:
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).options(joinedload(Project.members).joinedload(ProjectMember.researcher)).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    if project.created_by:
+        creator = db.query(Researcher).filter(Researcher.user_id == project.created_by).first()
+        setattr(project, "creator", creator)
     return project
 
 def update_project(db: Session, project_id: int, updates: ProjectUpdate) -> Project:
