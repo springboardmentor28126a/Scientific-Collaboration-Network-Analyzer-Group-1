@@ -59,6 +59,7 @@ reports.
 28. [Running the Project](#running-the-project)
 29. [Future Improvements](#future-improvements)
 30. [Conclusion](#conclusion)
+31. [Contributors](#contributors)
 
 ------------------------------------------------------------------------
 
@@ -2080,12 +2081,10 @@ GitHub work was one of the most practical challenges during the project.
 The repository history contains multiple development branches including:
 
 -   `master`
--   `sharnitha`
--   `sharnitha_7`
--   `sharnitha-v`
+-   `likhitha`
 
 The repository configuration also contains both an `origin` remote and a
-`destination` remote.
+`personal` remote.
 
 ### Challenges faced
 
@@ -2632,6 +2631,17 @@ The project also provided practical experience in:
 SCNA therefore represents both a working research management platform
 and a practical software engineering project built around real-world
 data relationships, access control, maintainability and collaboration.
+
+------------------------------------------------------------------------
+
+# Contributors
+
+This project is contributed to by:
+
+- **Likhitha** ([Likhitha-chittiboina](https://github.com/Likhitha-chittiboina))
+
+------------------------------------------------------------------------
+
 # AI Collaboration Recommender — Implementation Report
 
 **Feature:** AI Collaboration Recommender (Feature 1)
