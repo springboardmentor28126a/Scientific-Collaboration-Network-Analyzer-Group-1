@@ -2638,7 +2638,7 @@ data relationships, access control, maintainability and collaboration.
 
 This project is contributed to by:
 
-- **Likhitha** ([Likhitha-chittiboina](https://github.com/Likhitha-chittiboina))
+- **Likhitha Chittiboina** ([Likhitha-chittiboina](https://github.com/Likhitha-chittiboina))
 
 ------------------------------------------------------------------------
 
