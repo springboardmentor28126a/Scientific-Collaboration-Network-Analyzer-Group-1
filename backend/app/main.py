@@ -14,9 +14,7 @@ from app.api.citation import router as citation_router
 from app.api.report import router as report_router
 from app.api.analytics import router as analytics_router
 from app.api.notification import router as notification_router
-from app.models.message import Message
-from app.api.messages import router as messages_router
-
+from app.api.message import router as message_router
 app = FastAPI(
     title="Scientific Collaboration Network Analyzer API",
     description="Backend API for managing researchers, publications, collaborations, conferences, and institutions.",
@@ -43,8 +41,8 @@ app.include_router(collaboration_router)
 app.include_router(citation_router)
 app.include_router(report_router)
 app.include_router(analytics_router)
+app.include_router(message_router)
 app.include_router(notification_router)
-app.include_router(messages_router)
 @app.get("/")
 def root():
     return {

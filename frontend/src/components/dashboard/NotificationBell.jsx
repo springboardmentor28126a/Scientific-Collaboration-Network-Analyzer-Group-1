@@ -3,7 +3,7 @@ import {
   fetchNotifications,
   fetchUnreadCount,
   markNotificationRead,
-} from "../../services/notificationsService";
+} from "../../services/notificationService";
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr)) / 1000;

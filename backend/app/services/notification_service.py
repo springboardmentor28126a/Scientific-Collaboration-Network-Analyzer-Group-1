@@ -14,6 +14,7 @@ from app.services.email_service import send_email
 def create_notification(
     db: Session,
     payload: NotificationCreate,
+    send_email_too: bool = True,
 ):
     notification = Notification(
         user_id=payload.user_id,
@@ -27,10 +28,9 @@ def create_notification(
     db.commit()
     db.refresh(notification)
 
-    # Send Email Notification
     user = db.query(User).filter(User.id == payload.user_id).first()
 
-    if user and user.email:
+    if send_email_too and user and user.email and settings.MAIL_USERNAME and settings.MAIL_SERVER:
         try:
             asyncio.run(
                 send_email(

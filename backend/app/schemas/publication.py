@@ -15,9 +15,7 @@ class PublicationCreate(BaseModel):
     publish_date: Optional[datetime] = None
     doi: Optional[str] = None
     external_link: Optional[str] = None
-    conference_id: Optional[int] = None
     coauthor_researcher_ids: Optional[List[int]] = []
-    
 
 
 class PublicationUpdate(BaseModel):
@@ -29,7 +27,6 @@ class PublicationUpdate(BaseModel):
     publish_date: Optional[datetime] = None
     doi: Optional[str] = None
     external_link: Optional[str] = None
-    conference_id: Optional[int] = None
     coauthor_researcher_ids: Optional[List[int]] = None
 
 
@@ -49,7 +46,6 @@ class CoauthorBrief(BaseModel):
 class PublicationResponse(BaseModel):
     id: int
     owner_researcher_id: int
-    conference_id: Optional[int]
     title: str
     publication_type: PublicationType
     conference_id: Optional[int] = None
@@ -59,6 +55,7 @@ class PublicationResponse(BaseModel):
     doi: Optional[str]
     external_link: Optional[str]
     file_path: Optional[str] = None
+    file_original_name: Optional[str] = None
     status: PublicationStatus
     reviewer_id: Optional[int]
     review_comments: Optional[str]
@@ -81,6 +78,7 @@ class PublicationBrowseResponse(BaseModel):
     doi: Optional[str]
     external_link: Optional[str]
     file_path: Optional[str] = None
+    file_original_name: Optional[str] = None
     owner_first_name: str
     owner_last_name: str
     owner_institution_id: int

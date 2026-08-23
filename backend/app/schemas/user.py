@@ -18,6 +18,7 @@ class UserRegister(BaseModel):
     department_id: int
     first_name: str
     last_name: str
+    captcha_token: str
 
 
 # --------------------------------------

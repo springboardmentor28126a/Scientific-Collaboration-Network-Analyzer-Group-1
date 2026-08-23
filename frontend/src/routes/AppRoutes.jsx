@@ -21,9 +21,8 @@ import ConferencesPage from "../pages/ConferencesPage";
 import CollaborationsPage from "../pages/CollaborationsPage";
 import AnalyticsDashboardPage from "../pages/AnalyticsDashboardPage";
 import ReportsPage from "../pages/ReportsPage";
-import NotificationsPage from "../pages/NotificationsPage";
 
-
+import OtpVerificationPage from "../pages/OtpVerificationPage";
 function AppRoutes() {
   return (
     <BrowserRouter>
@@ -32,7 +31,7 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
+        <Route path="/verify-otp" element={<OtpVerificationPage />} />
         {/* Any authenticated user */}
         <Route
           path="/change-password"

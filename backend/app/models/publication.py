@@ -27,7 +27,7 @@ class Publication(Base):
     doi = Column(String(255), nullable=True)
     external_link = Column(String(500), nullable=True)
     file_path = Column(String(500), nullable=True)
-
+    file_original_name = Column(String(255), nullable=True)
     status = Column(String(30), nullable=False, default="DRAFT")
 
     reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)

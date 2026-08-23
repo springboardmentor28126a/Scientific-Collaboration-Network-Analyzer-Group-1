@@ -75,9 +75,7 @@ function BrowsePublicationsPage() {
       ) : (
         <div className="pub-list">
           {publications.map((pub) => {
-            const fileUrl = pub.file_path
-              ? `http://127.0.0.1:8000/${pub.file_path.replace(/\\/g, "/")}`
-              : null;
+            const fileUrl = pub.file_path || null;
             const isArchived = pub.status === "ARCHIVED";
 
             return (

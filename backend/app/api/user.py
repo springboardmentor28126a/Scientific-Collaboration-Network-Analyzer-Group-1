@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import Request, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -22,6 +23,7 @@ from app.services.user_service import (
     list_all_users,
 )
 from app.services.email_service import send_email
+from app.services.turnstile_service import verify_turnstile_token
 from app.core.dependencies import get_current_user, require_roles
 from app.models.user import User
 from app.utils.constants import UserRole
@@ -29,12 +31,21 @@ from app.utils.constants import UserRole
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
 @router.post("/register", response_model=UserResponse)
-def register_user(
+async def register_user(
     user: UserRegister,
+    request: Request,
     db: Session = Depends(get_db),
 ):
+    client_ip = request.client.host if request.client else None
+    captcha_valid = await verify_turnstile_token(user.captcha_token, client_ip)
+
+    if not captcha_valid:
+        raise HTTPException(
+            status_code=400,
+            detail="CAPTCHA verification failed. Please try again.",
+        )
+
     return register_researcher(db, user)
 
 

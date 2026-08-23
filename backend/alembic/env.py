@@ -19,6 +19,7 @@ from app.models.conference_registration import ConferenceRegistration
 from app.models.collaboration import Collaboration
 from app.models.citation import Citation
 from app.models.notification import Notification
+from app.models.otp_code import OtpCode
 from app.models.message import Message
 config = context.config
 

@@ -1,19 +1,24 @@
-from pydantic import BaseModel
 from datetime import datetime
+from pydantic import BaseModel, ConfigDict
 
 
 class MessageCreate(BaseModel):
-    receiver_id: int
     content: str
+
+
+class SenderBrief(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MessageResponse(BaseModel):
     id: int
-    sender_id: int
-    receiver_id: int
+    collaboration_id: int
     content: str
-    is_read: bool
     created_at: datetime
+    sender: SenderBrief
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

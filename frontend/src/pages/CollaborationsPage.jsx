@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-import ChatWindow from "../components/collaboration/ChatWindow";
 import DashboardLayout from "../layouts/DashboardLayout";
 import CoauthorPicker from "../components/publication/CoauthorPicker";
+import ChatModal from "../components/collaboration/ChatModal";
 import {
   sendCollaborationRequest,
   fetchIncomingRequests,
@@ -29,7 +29,8 @@ function CollaborationsPage() {
   const [selectedRecipient, setSelectedRecipient] = useState([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [chatWith, setChatWith] = useState(null);
+
+  const [chattingWith, setChattingWith] = useState(null);
 
   useEffect(() => {
     loadAll();
@@ -175,12 +176,12 @@ function CollaborationsPage() {
                   <div className="col-md-4 mb-3" key={c.id}>
                     <div className="border rounded-3 p-3">
                       <strong>{other.first_name} {other.last_name}</strong>
-                      {other.designation && <p className="text-muted small mb-0">{other.designation}</p>}
+                      {other.designation && <p className="text-muted small mb-1">{other.designation}</p>}
                       <button
-                        className="btn btn-sm btn-outline-primary mt-2"
-                        onClick={() => setChatWith({ id: other.id, name: `${other.first_name} ${other.last_name}` })}
+                        className="btn btn-outline-primary btn-sm mt-2"
+                        onClick={() => setChattingWith({ collaboration: c, other })}
                       >
-                        Message
+                        Open Chat
                       </button>
                     </div>
                   </div>
@@ -191,12 +192,12 @@ function CollaborationsPage() {
         </div>
       </div>
 
-      {chatWith && (
-        <ChatWindow
-          otherResearcherId={chatWith.id}
-          otherName={chatWith.name}
+      {chattingWith && (
+        <ChatModal
+          collaboration={chattingWith.collaboration}
           myResearcherId={myResearcherId}
-          onClose={() => setChatWith(null)}
+          otherResearcherName={`${chattingWith.other.first_name} ${chattingWith.other.last_name}`}
+          onClose={() => setChattingWith(null)}
         />
       )}
     </DashboardLayout>

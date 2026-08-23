@@ -1,0 +1,16 @@
+                                            Table "public.messages"
+        Column        |           Type           | Collation | Nullable |               Default                
+----------------------+--------------------------+-----------+----------+--------------------------------------
+ id                   | integer                  |           | not null | nextval('messages_id_seq'::regclass)
+ collaboration_id     | integer                  |           | not null | 
+ sender_researcher_id | integer                  |           | not null | 
+ content              | text                     |           | not null | 
+ is_read              | boolean                  |           | not null | 
+ created_at           | timestamp with time zone |           | not null | now()
+Indexes:
+    "messages_pkey" PRIMARY KEY, btree (id)
+    "ix_messages_id" btree (id)
+Foreign-key constraints:
+    "messages_collaboration_id_fkey" FOREIGN KEY (collaboration_id) REFERENCES collaborations(id)
+    "messages_sender_researcher_id_fkey" FOREIGN KEY (sender_researcher_id) REFERENCES researchers(id)
+
