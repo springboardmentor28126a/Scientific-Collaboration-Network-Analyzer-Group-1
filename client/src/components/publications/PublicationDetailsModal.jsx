@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../../services/api";
 import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+import PublicationReferences from "./PublicationReferences";
 
 function PublicationDetailsModal({ publication, onClose }) {
 
@@ -15,74 +16,28 @@ function PublicationDetailsModal({ publication, onClose }) {
 
     return (
 
-        <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                background: "rgba(0,0,0,.5)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 999,
-            }}
-        >
+        <div className="modal-backdrop">
 
             <div
                 ref={modalRef}
-                style={{
-                    width: "700px",
-                    background: "var(--surface-alt)",
-                    color: "var(--text)",
-                    borderRadius: "15px",
-                    padding: "30px",
-                    maxHeight: "90vh",
-                    overflowY: "auto",
-                    boxShadow: "0 8px 25px rgba(0,0,0,.2)",
-                }}
+                className="modal-panel surface-card"
             >
 
-                <h1
-                    style={{
-                        color: "#2563eb",
-                        marginBottom: "20px",
-                    }}
-                >
+                <span className="page-kicker">Publication record</span>
+                <h1 style={{ marginTop: "8px" }}>
                     {publication.title}
                 </h1>
 
                 <hr />
 
-                <p>
-                    <b>Authors:</b> {publication.authors}
-                </p>
-
-                <p>
-                    <b>Publication Type:</b>{" "}
-                    {publication.publication_type}
-                </p>
-
-                <p>
-                    <b>Journal:</b>{" "}
-                    {publication.journal || "N/A"}
-                </p>
-
-                <p>
-                    <b>Publication Year:</b>{" "}
-                    {publication.publication_year}
-                </p>
-
-                <p>
-                    <b>DOI:</b>{" "}
-                    <span style={{ color: "var(--text)" }}>{publication.doi || "N/A"}</span>
-                </p>
-
-                <p>
-                    <b>Keywords:</b>{" "}
-                    <span style={{ color: "var(--text)" }}>{publication.keywords || "N/A"}</span>
-                </p>
+                <div className="metadata-grid">
+                    <div className="metadata-item"><span>Authors</span><strong>{publication.authors || "N/A"}</strong></div>
+                    <div className="metadata-item"><span>Type</span><strong>{publication.publication_type || "N/A"}</strong></div>
+                    <div className="metadata-item"><span>Journal</span><strong>{publication.journal || "N/A"}</strong></div>
+                    <div className="metadata-item"><span>Year</span><strong>{publication.publication_year || "N/A"}</strong></div>
+                    <div className="metadata-item"><span>DOI</span><strong>{publication.doi || "N/A"}</strong></div>
+                    <div className="metadata-item"><span>Keywords</span><strong>{publication.keywords || "N/A"}</strong></div>
+                </div>
 
                 <p>
                     <b>Abstract:</b>
@@ -100,6 +55,8 @@ function PublicationDetailsModal({ publication, onClose }) {
                 >
                     {publication.abstract || "No Abstract Available"}
                 </div>
+
+                <PublicationReferences publicationId={publication.id} />
 
                 {
 
@@ -138,19 +95,7 @@ function PublicationDetailsModal({ publication, onClose }) {
 
                 }
 
-                <button
-
-                    onClick={onClose}
-                    style={{
-                        background: "var(--danger)",
-                        color: "var(--on-danger)",
-                        border: "none",
-                        padding: "10px 18px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                    }}
-
-                >
+                <button className="button-danger" onClick={onClose}>
 
                     Close
 

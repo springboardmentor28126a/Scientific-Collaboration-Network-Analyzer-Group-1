@@ -5,6 +5,8 @@ import { FaTrash } from "react-icons/fa";
 import PublicationDetailsModal from "../components/publications/PublicationDetailsModal";
 import EditPublicationModal from "../components/publications/EditPublicationModal";
 import DeleteConfirmationModal from "../components/publications/DeleteConfirmationModal";
+import ReferenceSelector from "../components/publications/ReferenceSelector";
+import PublicationReferences from "../components/publications/PublicationReferences";
 import { createCitation } from "../services/citationService";
 import useDismissibleLayer from "../hooks/useDismissibleLayer";
 import { getAuthUser } from "../utils/authStorage";
@@ -746,20 +748,27 @@ function Publications() {
 
     };
     return (
-        <div style={{ padding: "30px" }}>
+        <div className="app-page">
 
-            <h1>Scientific Collaboration Network Analyzer</h1>
-
-            <h2>Publication Management</h2>
+            <header className="page-header">
+                <div>
+                    <span className="page-kicker">Publication workspace</span>
+                    <h1>Publication Management</h1>
+                    <p className="page-description">
+                        Add, review, edit, search, and connect publications with their reference network.
+                    </p>
+                </div>
+            </header>
 
             {/* Search */}
 
-            <div style={{ marginBottom: "20px" }}>
+            <div className="page-toolbar surface-card content-panel">
 
                 <label className="publication-form-label">
-                    Title <span className="required-mark">*</span>
+                    Search publications
                 </label>
                 <input
+                    className="search-input"
                     type="text"
                     placeholder="Search by Title"
                     value={searchTitle}
@@ -768,22 +777,22 @@ function Publications() {
 
                 <button
                     onClick={searchPublication}
-                    style={{ marginLeft: "10px" }}
+                    className="button-primary"
                 >
                     Search
                 </button>
 
                 <button
                     onClick={loadPublications}
-                    style={{ marginLeft: "10px" }}
+                    className="button-secondary"
                 >
                     Show All
                 </button>
 
                 <select
+                    className="filter-select"
                     value={sortOption}
                     onChange={(e) => setSortOption(e.target.value)}
-                    style={{ marginLeft: "10px", padding: "10px", borderRadius: "8px" }}
                 >
                     <option>Title (A-Z)</option>
                     <option>Title (Z-A)</option>
@@ -802,7 +811,14 @@ function Publications() {
 
             {/* Add Publication */}
 
-            <div style={{ marginBottom: "20px" }}>
+            <div className="form-panel surface-card content-panel">
+                <div>
+                    <span className="page-kicker">Create record</span>
+                    <h2>Add Publication</h2>
+                    <p className="page-description">
+                        Required fields are marked. References selected here are saved after the publication is created.
+                    </p>
+                </div>
 
                 <label className="publication-form-label">
                     Title <span className="required-mark">*</span>

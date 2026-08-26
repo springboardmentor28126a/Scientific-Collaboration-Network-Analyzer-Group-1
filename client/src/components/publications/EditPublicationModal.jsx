@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import useDismissibleLayer from "../../hooks/useDismissibleLayer";
+import ReferenceSelector from "./ReferenceSelector";
 
 function EditPublicationModal({
 
@@ -187,43 +188,13 @@ function EditPublicationModal({
                 <p style={{ marginTop: "12px", color: "var(--muted)" }}>
                     Status is managed automatically by the review workflow.
                 </p>
-                <label style={{ marginTop: "15px", display: "block" }}>
-                    References (Citations)
-                </label>
-                <div className="citation-selection-notice" role="status">
-                    <span className="citation-selection-notice-icon">i</span>
-                    <span><strong>{selectedCitations.length ? `${selectedCitations.length} citation${selectedCitations.length === 1 ? "" : "s"} selected` : "Select references for this publication"}</strong><small>{selectedCitations.length ? "Selected references will be saved when you save changes." : "Choose publications below to add them as references."}</small></span>
-                </div>
-
-                <select
-                    multiple
-                    value={selectedCitations}
-                    onChange={(e) => {
-                        const values = [...e.target.selectedOptions].map(option =>
-                            Number(option.value)
-                        );
-
-                        console.log("Selected:", values);
-
-                        setSelectedCitations(values);
-                    }}
-                    style={{
-                        width: "100%",
-                        height: "120px",
-                        marginTop: "10px",
-                        borderRadius: "8px",
-                        background: "white",
-                        color: "black"
-                    }}
-                >
-                    {publications
-                        .filter(pub => pub.id !== form.id)
-                        .map((pub) => (
-                            <option key={pub.id} value={pub.id}>
-                                {pub.title}
-                            </option>
-                        ))}
-                </select>
+                <ReferenceSelector
+                    publications={publications}
+                    selectedIds={selectedCitations}
+                    onChange={setSelectedCitations}
+                    excludeId={form.id}
+                    helperText="Update the existing references connected to this publication."
+                />
 
                 <div
                         className="edit-modal-actions"
@@ -238,13 +209,7 @@ function EditPublicationModal({
 
                     <button
                         onClick={onClose}
-                        style={{
-                            background: "#ef4444",
-                            color: "white",
-                            border: "none",
-                            padding: "10px 18px",
-                            borderRadius: "8px"
-                        }}
+                        className="button-danger"
                     >
                         Cancel
                     </button>
@@ -256,13 +221,7 @@ function EditPublicationModal({
                                 citations: selectedCitations
                             })
                         }
-                        style={{
-                            background: "#22c55e",
-                            color: "white",
-                            border: "none",
-                            padding: "10px 18px",
-                            borderRadius: "8px"
-                        }}
+                        className="button-success"
                     >
                         Save Changes
                     </button>
