@@ -13,7 +13,7 @@ load_dotenv(BACKEND_DIR / ".env")
 
 def _ensure_supabase_ssl(database_url: str) -> str:
     parsed = urlparse(database_url)
-    if not parsed.hostname or "supabase.co" not in parsed.hostname:
+    if not parsed.hostname or "supabase" not in parsed.hostname:
         return database_url
 
     query_params = parse_qsl(parsed.query)

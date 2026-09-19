@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AppShell from "../components/AppShell";
 import { getNetworkGraph } from "../api/collaborations";
+import { useToast } from "../components/ToastContext";
 import "./NetworkGraph.css";
 
 const COLOR_PALETTE = [
@@ -9,6 +10,9 @@ const COLOR_PALETTE = [
 ];
 
 export default function NetworkGraph() {
+  const { showToast } = useToast();
+  const svgRef = useRef(null);
+
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,6 +31,39 @@ export default function NetworkGraph() {
 
   // Simulated node positions state
   const [nodePositions, setNodePositions] = useState({});
+
+  const exportGraphAsPNG = () => {
+    if (!svgRef.current) return;
+    try {
+      const svgElement = svgRef.current;
+      const svgData = new XMLSerializer().serializeToString(svgElement);
+      const canvas = document.createElement("canvas");
+      canvas.width = 1600;
+      canvas.height = 1200;
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+
+        const a = document.createElement("a");
+        a.download = `collaboration-network-graph-${Date.now()}.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        showToast("Collaboration network graph exported as PNG image!", "success");
+      };
+
+      img.src = url;
+    } catch {
+      showToast("Failed to export graph image.", "error");
+    }
+  };
 
   const fetchGraph = async () => {
     setLoading(true);
@@ -210,6 +247,9 @@ export default function NetworkGraph() {
             </select>
 
             <div className="network-zoom-btns">
+              <button onClick={exportGraphAsPNG} className="network-export-btn">
+                📸 Export PNG
+              </button>
               <button onClick={() => setZoom((z) => Math.min(z + 0.2, 2.5))} className="notif-mark-all-btn">
                 🔍 +
               </button>
@@ -237,7 +277,7 @@ export default function NetworkGraph() {
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
             >
-              <svg className="network-svg" viewBox="0 0 800 600">
+              <svg ref={svgRef} className="network-svg" viewBox="0 0 800 600">
                 <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
                   {/* Edges */}
                   {filteredLinks.map((link) => {
@@ -250,16 +290,27 @@ export default function NetworkGraph() {
                       (selectedNode.id === link.source || selectedNode.id === link.target);
 
                     return (
-                      <line
-                        key={link.id}
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={p2.x}
-                        y2={p2.y}
-                        stroke={isHighlighted ? "#4f7fff" : "rgba(148, 163, 184, 0.25)"}
-                        strokeWidth={Math.min(link.weight * 1.5, 6)}
-                        strokeDasharray={link.types.includes("project_team") ? "4 2" : "none"}
-                      />
+                      <g key={link.id}>
+                        <line
+                          x1={p1.x}
+                          y1={p1.y}
+                          x2={p2.x}
+                          y2={p2.y}
+                          stroke={isHighlighted ? "#4f7fff" : "rgba(148, 163, 184, 0.25)"}
+                          strokeWidth={Math.min(link.weight * 1.5, 6)}
+                          strokeDasharray={link.types.includes("project_team") ? "4 2" : "none"}
+                        />
+                        {/* Animated energy pulse line */}
+                        <line
+                          x1={p1.x}
+                          y1={p1.y}
+                          x2={p2.x}
+                          y2={p2.y}
+                          stroke={isHighlighted ? "#7c3aed" : "rgba(79, 127, 255, 0.6)"}
+                          strokeWidth={Math.min(link.weight * 1.2, 4)}
+                          className="network-link-pulse"
+                        />
+                      </g>
                     );
                   })}
 

@@ -39,6 +39,17 @@ export default function AppShell({ children }) {
   const [toastMessage, setToastMessage] = useState("");
   const dropdownRef = useRef(null);
 
+  const [theme, setTheme] = useState(() => localStorage.getItem("scna_theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("scna_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   const fetchNotifSummary = async () => {
     if (!user) return;
     try {
@@ -194,6 +205,17 @@ export default function AppShell({ children }) {
           >
             <span>🔍 Search network...</span>
             <span className="app-search-kbd">Ctrl+K</span>
+          </button>
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="app-notif-btn"
+            title={theme === "dark" ? "Switch to Day Light Mode" : "Switch to Night Dark Mode"}
+            aria-label="Toggle Theme"
+            style={{ fontSize: "1.1rem" }}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
           </button>
 
           {/* Notification Bell Dropdown */}

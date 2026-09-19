@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import AppShell from "../components/AppShell";
 import { useAuth } from "../hooks/useAuth";
 import { getDashboardStats } from "../api/dashboard";
+import AnalyticsCharts from "../components/AnalyticsCharts";
 import "./Dashboard.css";
 
 const getGreeting = () => {
@@ -124,6 +125,8 @@ export default function Dashboard() {
                     </article>
                   </div>
                 </section>
+
+                <AnalyticsCharts />
 
                 <div className="dashboard-lower-grid">
                   <div className="dashboard-panel">
@@ -279,6 +282,8 @@ export default function Dashboard() {
                     </article>
                   </div>
                 </section>
+
+                <AnalyticsCharts />
 
                 <div className="dashboard-panel">
                   <div className="dashboard-section-header">
