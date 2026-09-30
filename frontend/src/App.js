@@ -43,6 +43,7 @@ import Citation from "./pages/Citation";
 import AddCitation from "./pages/AddCitation";
 import EditCitation from "./pages/EditCitation";
 
+import Notification from "./pages/Notification";
 function App() {
   return (
     <BrowserRouter>
@@ -93,6 +94,8 @@ function App() {
         <Route path="/citation" element={<Citation />} />
         <Route path="/add-citation" element={<AddCitation />} />
         <Route path="/edit-citation/:id" element={<EditCitation />} />
+
+        <Route path="/notification" element={<Notification />} />
       </Routes>
 
     </BrowserRouter>

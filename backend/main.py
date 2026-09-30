@@ -23,6 +23,7 @@ from search import router as search_router
 from export import router as export_router
 from citation import router as citation_router
 import report
+import notification
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -114,6 +115,7 @@ app.include_router(search_router)
 app.include_router(export_router)
 app.include_router(citation_router)
 app.include_router(report.router)
+app.include_router(notification.router)
 # -----------------------------
 # Home
 # -----------------------------

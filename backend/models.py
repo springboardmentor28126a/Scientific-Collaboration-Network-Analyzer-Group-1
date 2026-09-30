@@ -27,7 +27,7 @@ class Publication(Base):
 
     file_path = Column(String(255), nullable=True)
 
-    status = Column(String(50), default="Draft")
+    status = Column(String(50), default="Draft", index=True)
 # -----------------------------
 # Conference Model
 # -----------------------------
@@ -105,3 +105,11 @@ class Citation(Base):
     journal = Column(String(255), nullable=False)
     year = Column(Integer, nullable=False)
     doi = Column(String(255), nullable=True)
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    message = Column(String(500), nullable=False)
+    is_read = Column(String(20), default="No")

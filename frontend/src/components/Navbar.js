@@ -52,11 +52,16 @@ function NavigationBar() {
       <Link to="/institution">Institutions</Link>
 
       {" | "}
-      
+
       <Link to="/search">Search</Link>
 
       {" | "}
+
       <Link to="/citation">Citations</Link>
+
+      {" | "}
+
+      <Link to="/notification">Notifications</Link>
     </nav>
   );
 }

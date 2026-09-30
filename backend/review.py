@@ -4,18 +4,31 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 from database import get_db
+from email_service import send_email
 
 router = APIRouter(
     prefix="/reviews",
     tags=["Reviewer"]
 )
 
+
 # -------------------------------------------------
 # Review Queue
 # -------------------------------------------------
 @router.get("/queue")
-def review_queue(db: Session = Depends(get_db)):
-    publications = db.query(models.Publication).all()
+def review_queue(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    publications = (
+        db.query(models.Publication)
+        .filter(models.Publication.status == "Under Review")
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
     return publications
 
 
@@ -38,7 +51,6 @@ def claim_publication(
             detail="Publication not found"
         )
 
-    # Already claimed?
     existing_review = db.query(models.Review).filter(
         models.Review.publication_id == publication_id
     ).first()
@@ -100,7 +112,37 @@ def approve_review(
     ).first()
 
     if publication:
+
         publication.status = "Published"
+
+        # -------------------------------
+        # In-App Notification
+        # -------------------------------
+        notification = models.Notification(
+            user_id=1,
+            message=f'Your publication "{publication.title}" has been approved.',
+            is_read="No"
+        )
+
+        db.add(notification)
+
+        # -------------------------------
+        # Email Notification
+        # -------------------------------
+        send_email(
+            "23981a4672@raghuenggcollege.in",
+            "Publication Approved",
+            f"""
+Hello,
+
+Congratulations!
+
+Your publication "{publication.title}" has been approved.
+
+Regards,
+Scientific Collaboration Network Analyzer
+"""
+        )
 
     db.commit()
     db.refresh(review)
@@ -141,7 +183,37 @@ def reject_review(
     ).first()
 
     if publication:
+
         publication.status = "Rejected"
+
+        # -------------------------------
+        # In-App Notification
+        # -------------------------------
+        notification = models.Notification(
+            user_id=1,
+            message=f'Your publication "{publication.title}" has been rejected.',
+            is_read="No"
+        )
+
+        db.add(notification)
+
+        # -------------------------------
+        # Email Notification
+        # -------------------------------
+        send_email(
+            "23981a4672@raghuenggcollege.in",
+            "Publication Rejected",
+            f"""
+Hello,
+
+Your publication "{publication.title}" has been rejected.
+
+Please review the comments and submit again.
+
+Regards,
+Scientific Collaboration Network Analyzer
+"""
+        )
 
     db.commit()
     db.refresh(review)
@@ -156,6 +228,16 @@ def reject_review(
 # My Reviews
 # -------------------------------------------------
 @router.get("/my")
-def my_reviews(db: Session = Depends(get_db)):
-    reviews = db.query(models.Review).all()
+def my_reviews(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    reviews = (
+        db.query(models.Review)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
     return reviews

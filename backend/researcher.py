@@ -9,6 +9,7 @@ router = APIRouter(
     tags=["Researcher"]
 )
 
+
 # CREATE researcher
 @router.post("/researcher")
 def create_researcher(
@@ -17,7 +18,7 @@ def create_researcher(
 ):
     new_researcher = models.User(
         username=researcher.name,
-        email=f"{researcher.name.lower()}@example.com",
+        email=f"{researcher.name.lower().replace(' ', '.')}@example.com",
         password="temp123",
         role="Researcher"
     )
@@ -29,7 +30,12 @@ def create_researcher(
 
         return {
             "message": "Researcher added successfully",
-            "researcher": new_researcher
+            "researcher": {
+                "id": new_researcher.id,
+                "username": new_researcher.username,
+                "email": new_researcher.email,
+                "role": new_researcher.role
+            }
         }
 
     except Exception as e:
@@ -80,7 +86,12 @@ def update_researcher(
 
     return {
         "message": "Researcher updated successfully",
-        "researcher": user
+        "researcher": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role
+        }
     }
 
 
@@ -97,4 +108,6 @@ def delete_researcher(user_id: int, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
 
-    return {"message": "Researcher deleted successfully"}
+    return {
+        "message": "Researcher deleted successfully"
+    }

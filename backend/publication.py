@@ -23,13 +23,13 @@ def create_publication(
 ):
 
     new_publication = models.Publication(
-    title=publication.title,
-    author=publication.author,
-    journal=publication.journal,
-    year=publication.year,
-    type=publication.type,
-    status=publication.status
-)
+        title=publication.title,
+        author=publication.author,
+        journal=publication.journal,
+        year=publication.year,
+        type=publication.type,
+        status=publication.status
+    )
 
     db.add(new_publication)
     db.commit()
@@ -48,14 +48,25 @@ def create_publication(
     "/publication",
     response_model=list[PublicationResponse]
 )
-def get_all_publications(db: Session = Depends(get_db)):
-    return db.query(models.Publication).all()
+def get_all_publications(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    publications = (
+        db.query(models.Publication)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return publications
 
 
 # ======================================================
 # SEARCH / FILTER / SORT
-# (Must come BEFORE /publication/{publication_id})
 # ======================================================
+
 
 # -----------------------------
 # SEARCH Publication
@@ -63,13 +74,19 @@ def get_all_publications(db: Session = Depends(get_db)):
 @router.get("/publication/search")
 def search_publication(
     title: str,
+    skip: int = 0,
+    limit: int = 10,
     db: Session = Depends(get_db)
 ):
-    return (
+    publications = (
         db.query(models.Publication)
         .filter(models.Publication.title.ilike(f"%{title}%"))
+        .offset(skip)
+        .limit(limit)
         .all()
     )
+
+    return publications
 
 
 # -----------------------------
@@ -78,13 +95,19 @@ def search_publication(
 @router.get("/publication/filter")
 def filter_publication(
     status: str,
+    skip: int = 0,
+    limit: int = 10,
     db: Session = Depends(get_db)
 ):
-    return (
+    publications = (
         db.query(models.Publication)
         .filter(models.Publication.status == status)
+        .offset(skip)
+        .limit(limit)
         .all()
     )
+
+    return publications
 
 
 # -----------------------------
@@ -93,19 +116,26 @@ def filter_publication(
 @router.get("/publication/sort")
 def sort_publication(
     order: str = "desc",
+    skip: int = 0,
+    limit: int = 10,
     db: Session = Depends(get_db)
 ):
 
+    query = db.query(models.Publication)
+
     if order.lower() == "asc":
-        return (
-            db.query(models.Publication)
-            .order_by(models.Publication.year.asc())
-            .all()
+        query = query.order_by(
+            models.Publication.year.asc()
+        )
+    else:
+        query = query.order_by(
+            models.Publication.year.desc()
         )
 
     return (
-        db.query(models.Publication)
-        .order_by(models.Publication.year.desc())
+        query
+        .offset(skip)
+        .limit(limit)
         .all()
     )
 
@@ -165,7 +195,7 @@ def update_publication(
     db_publication.year = publication.year
     db_publication.type = publication.type
     db_publication.status = publication.status
-    
+
     db.commit()
     db.refresh(db_publication)
 

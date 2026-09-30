@@ -222,3 +222,19 @@ class CitationResponse(CitationCreate):
 
     class Config:
         from_attributes = True
+
+class NotificationCreate(BaseModel):
+    user_id: int
+    message: str
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    message: str
+    is_read: str
+
+    class Config:
+        from_attributes = True
+
+class NotificationUpdate(BaseModel):
+    is_read: str
