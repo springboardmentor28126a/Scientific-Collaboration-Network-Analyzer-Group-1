@@ -50,7 +50,7 @@ function Project() {
 
       <h1>Projects</h1>
 
-      <Link to="/addproject">
+      <Link to="/add-project">
         <button
           style={{
             padding: "10px 20px",
@@ -100,7 +100,7 @@ function Project() {
 
               <td>
 
-                <Link to={`/editproject/${project.id}`}>
+                <Link to={`/edit-project/${project.id}`}>
                   <button style={{ marginRight: "10px" }}>
                     Edit
                   </button>

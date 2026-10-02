@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .env
 backend/uploads/
+scientific_collaboration.db
 frontend/src/App.test.js
 frontend/src/setupTests.js
 package.json

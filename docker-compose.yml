@@ -1,0 +1,18 @@
+services:
+
+  backend:
+    build: ./backend
+    container_name: scientific-collaboration-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/scientific_collaboration.db:/app/scientific_collaboration.db
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build: ./frontend
+    container_name: scientific-collaboration-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import API from "../api";
 
 function EditPublication() {
-
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -12,15 +11,13 @@ function EditPublication() {
     author: "",
     journal: "",
     year: "",
-    status: "Draft"
+    type: "",
+    status: "Draft",
   });
 
   useEffect(() => {
-
     const fetchPublication = async () => {
-
       try {
-
         const response = await API.get(`/publication/${id}`);
 
         setPublication({
@@ -28,60 +25,59 @@ function EditPublication() {
           author: response.data.author,
           journal: response.data.journal,
           year: response.data.year,
-          status: response.data.status
+          type: response.data.type,
+          status: response.data.status,
         });
-
       } catch (error) {
         console.log(error);
         alert("Failed to load publication.");
       }
-
     };
 
     fetchPublication();
-
   }, [id]);
 
   const handleChange = (e) => {
     setPublication({
       ...publication,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
-
-      await API.put(`/publication/${id}`, publication);
+      await API.put(`/publication/${id}`, {
+        title: publication.title,
+        author: publication.author,
+        journal: publication.journal,
+        year: Number(publication.year),
+        type: publication.type,
+        status: publication.status,
+      });
 
       alert("Publication updated successfully.");
 
       navigate("/publication");
-
     } catch (error) {
       console.log(error);
       alert("Failed to update publication.");
     }
-
   };
 
   return (
-
-    <div style={{ padding: "30px" }}>
-
+    <div style={{ width: "60%", margin: "40px auto" }}>
       <h1>Edit Publication</h1>
 
       <form onSubmit={handleSubmit}>
-
         <input
           type="text"
           name="title"
           value={publication.title}
           onChange={handleChange}
           placeholder="Title"
+          style={{ width: "100%", padding: "8px" }}
         />
 
         <br /><br />
@@ -92,6 +88,7 @@ function EditPublication() {
           value={publication.author}
           onChange={handleChange}
           placeholder="Author"
+          style={{ width: "100%", padding: "8px" }}
         />
 
         <br /><br />
@@ -102,6 +99,7 @@ function EditPublication() {
           value={publication.journal}
           onChange={handleChange}
           placeholder="Journal"
+          style={{ width: "100%", padding: "8px" }}
         />
 
         <br /><br />
@@ -112,7 +110,27 @@ function EditPublication() {
           value={publication.year}
           onChange={handleChange}
           placeholder="Year"
+          style={{ width: "100%", padding: "8px" }}
         />
+
+        <br /><br />
+
+        <label>Type</label>
+
+        <br />
+
+        <select
+          name="type"
+          value={publication.type}
+          onChange={handleChange}
+          style={{ width: "100%", padding: "8px" }}
+        >
+          <option value="">Select Type</option>
+          <option value="Journal">Journal</option>
+          <option value="Conference">Conference</option>
+          <option value="Book Chapter">Book Chapter</option>
+          <option value="Research Paper">Research Paper</option>
+        </select>
 
         <br /><br />
 
@@ -124,6 +142,7 @@ function EditPublication() {
           name="status"
           value={publication.status}
           onChange={handleChange}
+          style={{ width: "100%", padding: "8px" }}
         >
           <option value="Draft">Draft</option>
           <option value="Submitted">Submitted</option>
@@ -138,10 +157,15 @@ function EditPublication() {
           Update Publication
         </button>
 
+        <button
+          type="button"
+          onClick={() => navigate("/publication")}
+          style={{ marginLeft: "10px" }}
+        >
+          Cancel
+        </button>
       </form>
-
     </div>
-
   );
 }
 

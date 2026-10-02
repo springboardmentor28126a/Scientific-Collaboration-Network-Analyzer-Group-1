@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from security import hash_password
 from database import get_db
 from schemas import UserUpdate, UserResponse, ResearcherCreate
 import models
@@ -19,7 +19,7 @@ def create_researcher(
     new_researcher = models.User(
         username=researcher.name,
         email=f"{researcher.name.lower().replace(' ', '.')}@example.com",
-        password="temp123",
+        password=hash_password("temp123"),
         role="Researcher"
     )
 

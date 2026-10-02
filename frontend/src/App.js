@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import NavigationBar from "./components/Navbar";
 import Search from "./pages/Search";
@@ -29,7 +29,8 @@ import EditCollaboration from "./pages/EditCollaboration";
 
 // Project
 import Project from "./pages/Project";
-
+import AddProject from "./pages/AddProject";
+import EditProject from "./pages/EditProject";
 // Review
 import ReviewQueue from "./pages/ReviewQueue";
 import MyReviews from "./pages/MyReviews";
@@ -53,7 +54,7 @@ function App() {
       <Routes>
 
         {/* Home & Auth */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -79,6 +80,8 @@ function App() {
 
         {/* Project */}
         <Route path="/project" element={<Project />} />
+        <Route path="/add-project" element={<AddProject />} />
+        <Route path="/edit-project/:id" element={<EditProject />} />
 
         {/* Review */}
         <Route path="/reviewqueue" element={<ReviewQueue />} />

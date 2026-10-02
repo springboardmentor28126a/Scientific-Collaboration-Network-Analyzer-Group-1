@@ -29,6 +29,11 @@ function PublicationYearChart() {
       {
         label: "Publications",
         data: [],
+        backgroundColor: "#1976D2",
+        borderColor: "#0D47A1",
+        borderWidth: 1,
+        borderRadius: 6,
+        hoverBackgroundColor: "#0D47A1",
       },
     ],
   });
@@ -47,6 +52,11 @@ function PublicationYearChart() {
           {
             label: "Publications",
             data: Object.values(response.data),
+            backgroundColor: "#1976D2",
+            borderColor: "#0D47A1",
+            borderWidth: 1,
+            borderRadius: 6,
+            hoverBackgroundColor: "#0D47A1",
           },
         ],
       });
@@ -58,7 +68,28 @@ function PublicationYearChart() {
   return (
     <div style={{ width: "600px", marginTop: "30px" }}>
       <h3>Publications by Year</h3>
-      <Bar data={chartData} />
+
+      <Bar
+        data={chartData}
+        options={{
+          responsive: true,
+
+          plugins: {
+            legend: {
+              position: "top",
+            },
+          },
+
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+              },
+            },
+          },
+        }}
+      />
     </div>
   );
 }

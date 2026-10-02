@@ -1,71 +1,59 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import { Container, Form, Button, Card } from "react-bootstrap";
 
 function Login() {
+
+  const navigate = useNavigate();
 
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
   });
 
-
   const handleChange = (e) => {
-
     setLoginData({
       ...loginData,
       [e.target.name]: e.target.value
     });
-
   };
 
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
-
       const response = await API.post("/login", loginData);
 
-      alert("Login Successful");
+      if (response.data.message === "Login Successful") {
+        alert("Login Successful");
+        navigate("/dashboard");
+      } else {
+        alert(response.data.message);
+      }
 
-      console.log(response.data);
-
-    }
-    catch(error){
-
+    } catch (error) {
       alert("Login Failed");
-
       console.log(error);
-
     }
-
   };
 
-
   return (
-
     <Container className="mt-5">
 
-      <Card 
+      <Card
         className="shadow p-4 mx-auto"
-        style={{maxWidth:"450px"}}
+        style={{ maxWidth: "450px" }}
       >
 
         <h2 className="text-center mb-4">
           User Login
         </h2>
 
-
         <Form onSubmit={handleSubmit}>
 
-
           <Form.Group className="mb-3">
-
-            <Form.Label>
-              Email
-            </Form.Label>
+            <Form.Label>Email</Form.Label>
 
             <Form.Control
               type="email"
@@ -73,17 +61,12 @@ function Login() {
               value={loginData.email}
               onChange={handleChange}
               placeholder="Enter email"
+              required
             />
-
           </Form.Group>
 
-
-
           <Form.Group className="mb-3">
-
-            <Form.Label>
-              Password
-            </Form.Label>
+            <Form.Label>Password</Form.Label>
 
             <Form.Control
               type="password"
@@ -91,29 +74,23 @@ function Login() {
               value={loginData.password}
               onChange={handleChange}
               placeholder="Enter password"
+              required
             />
-
           </Form.Group>
 
-
-
-          <Button 
+          <Button
             type="submit"
             className="w-100"
           >
             Login
           </Button>
 
-
         </Form>
-
 
       </Card>
 
     </Container>
-
   );
-
 }
 
 export default Login;

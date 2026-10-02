@@ -19,13 +19,35 @@ def get_summary():
         .count()
     )
 
-    total_publications = db.query(models.Publication).count()
+    total_publications = (
+        db.query(models.Publication)
+        .count()
+    )
 
-    total_conferences = db.query(models.Conference).count()
+    total_conferences = (
+        db.query(models.Conference)
+        .count()
+    )
 
-    total_collaborations = db.query(models.Collaboration).count()
+    total_collaborations = (
+        db.query(models.Collaboration)
+        .count()
+    )
 
-    total_projects = db.query(models.Project).count()
+    total_projects = (
+        db.query(models.Project)
+        .count()
+    )
+
+    total_institutions = (
+        db.query(models.Institution)
+        .count()
+    )
+
+    total_reviews = (
+        db.query(models.Review)
+        .count()
+    )
 
     db.close()
 
@@ -34,5 +56,7 @@ def get_summary():
         "total_publications": total_publications,
         "total_conferences": total_conferences,
         "total_collaborations": total_collaborations,
-        "total_projects": total_projects
+        "total_projects": total_projects,
+        "total_institutions": total_institutions,
+        "total_reviews": total_reviews
     }
